@@ -303,6 +303,11 @@
   .zoomCtl button + button { margin-left: -1px; }
   .zoomCtl .zv { min-width: 44px; }
 
+  /* Hover peek: the hovered app shows over the current one, non-interactive, with a blue frame */
+  .face.peek { visibility: visible; z-index: 5; pointer-events: none; }
+  .face.peek::before { content: ''; position: absolute; inset: 0; border: 3px solid #06f; z-index: 30; pointer-events: none; }
+  .face.peek::after { content: 'Preview. Click the button to switch.'; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: #06f; color: #fff; font: 12px Arial, Helvetica, sans-serif; padding: 4px 10px; z-index: 31; pointer-events: none; white-space: nowrap; }
+
   /* Status bar */
   #status { flex-direction: row; align-items: center; justify-content: center; gap: .4em; font-size: 13px; font-variant-numeric: tabular-nums; }
 </style>
@@ -854,6 +859,7 @@ var Flip = (function () {
   function flipTo(panel, name, done) {
     var card = panel && panel.querySelector('.card');
     if (!card || card._busy) return;
+    unpeek(card);
     var faces = [].slice.call(card.children);
     var cur = card.querySelector('.face.front'), nxt = card.querySelector('.face[data-face="' + name + '"]');
     if (!nxt || nxt === cur) { if (done) done(); return; }
@@ -888,6 +894,17 @@ var Flip = (function () {
     }, OUT + 20);
   }
 
+  function peek(card, name) {
+    if (card._busy) return;
+    unpeek(card);
+    var f = card.querySelector('.face[data-face="' + name + '"]');
+    if (f && !f.classList.contains('front')) f.classList.add('peek');
+  }
+  function unpeek(card) {
+    clearTimeout(card._pt);
+    card.querySelectorAll('.face.peek').forEach(function (f) { f.classList.remove('peek'); });
+  }
+
   // Wire every face switcher: each face's own button is marked current.
   document.querySelectorAll('.card').forEach(function (card) {
     var panel = card.parentElement;
@@ -897,6 +914,13 @@ var Flip = (function () {
         b.classList.toggle('on', self);
         if (self) b.setAttribute('aria-current', 'true');
         b.onclick = function () { flipTo(panel, b.dataset.flip); };
+        // Hover peek: show the other face live, in place, without flipping. Mouse and pen only.
+        b.addEventListener('pointerenter', function (e) {
+          if (self || e.pointerType === 'touch') return;
+          clearTimeout(card._pt);
+          card._pt = setTimeout(function () { peek(card, b.dataset.flip); }, 180);
+        });
+        b.addEventListener('pointerleave', function () { unpeek(card); });
       });
     });
   });
