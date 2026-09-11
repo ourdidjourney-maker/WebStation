@@ -93,7 +93,7 @@
   .seg button + button { margin-left: -1px; }
 
   /* Image gallery */
-  #gStage { background: #222; }
+  #gStage { background: #222; overflow: auto; }
   #gImg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: none; }
   #gHint { color: #aaa; }
   #galFace.drag #gStage { outline: 3px dashed #fff; outline-offset: -6px; }
@@ -292,6 +292,16 @@
   .flashBox { background: #000; color: #fff; padding: 18px 28px; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.5); cursor: default; }
   .flashText { font-size: 22px; margin-bottom: 12px; }
   .flashBox button { font: 14px Arial, Helvetica, sans-serif; padding: 6px 18px; border: 0; background: #fff; color: #000; cursor: pointer; }
+
+  /* Data lights: app buttons turn green when that app holds data */
+  .seg button.has { background: #c9efcf; border-color: #2e8b47; }
+  .seg button.has.on { background: #1a7f37; color: #fff; border-color: #1a7f37; }
+
+  /* Per-panel zoom control (end of each toolbar) */
+  .zoomCtl { display: inline-flex; margin-left: auto; }
+  .zoomCtl button { min-width: 22px; padding: 0 5px; }
+  .zoomCtl button + button { margin-left: -1px; }
+  .zoomCtl .zv { min-width: 44px; }
 
   /* Status bar */
   #status { flex-direction: row; align-items: center; justify-content: center; gap: .4em; font-size: 13px; font-variant-numeric: tabular-nums; }
@@ -592,6 +602,7 @@
               <label><input type="checkbox" id="kAuto" checked> Auto-run</label>
               <button id="kCon" class="on">Console</button>
               <button id="kExport">Save HTML</button>
+              <button id="kClear" title="Empty the HTML, CSS and JS tabs">Clear</button>
             </div>
             <div class="body" id="codeBody">
               <div id="codeEdit">
@@ -1149,11 +1160,13 @@ var Sys = (function () {
     if (old) bctx.putImageData(old, 0, 0);
     stack.style.width = w + 'px'; stack.style.height = h + 'px';
   }
-  new ResizeObserver(resize).observe(body);
+  // Resize in the next frame: growing the canvas can add scrollbars, which would re-trigger the observer in the same frame.
+  new ResizeObserver(function () { requestAnimationFrame(resize); }).observe(body);
   resize();
 
   /* --- Undo / redo --- */
   function snap() {
+    paintAPI.dirty = true;
     undo.push(bctx.getImageData(0, 0, base.width, base.height));
     if (undo.length > MAX_UNDO) undo.shift();
     redo.length = 0;
@@ -1161,6 +1174,7 @@ var Sys = (function () {
   function restore(from, to) {
     if (!from.length) return;
     to.push(bctx.getImageData(0, 0, base.width, base.height));
+    paintAPI.dirty = true;
     var d = from.pop();
     bctx.fillStyle = '#fff'; bctx.fillRect(0, 0, base.width, base.height);
     bctx.putImageData(d, 0, 0);
@@ -1175,7 +1189,7 @@ var Sys = (function () {
   });
 
   /* --- Helpers --- */
-  function pos(e) { var r = base.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  function pos(e) { var r = base.getBoundingClientRect(), k = base.width / (r.width || 1); return { x: (e.clientX - r.left) * k, y: (e.clientY - r.top) * k }; }   // k undoes panel zoom
   function hexRGB(h) { return [parseInt(h.substr(1, 2), 16), parseInt(h.substr(3, 2), 16), parseInt(h.substr(5, 2), 16)]; }
   function commitOverlay(a) {
     bctx.save(); bctx.globalAlpha = a; bctx.drawImage(ov, 0, 0); bctx.restore();
@@ -1358,6 +1372,7 @@ var Sys = (function () {
   $('pClear').onclick = function () {
     commitText(); snap();
     bctx.fillStyle = '#fff'; bctx.fillRect(0, 0, base.width, base.height);
+    paintAPI.dirty = false;
   };
   $('pSave').onclick = function () {
     commitText();
@@ -1736,6 +1751,16 @@ var Sys = (function () {
   function stopShow() { clearInterval(timer); timer = null; showBtn.classList.remove('on'); }
 
   galleryAPI.addBlob = function (blob, name) { show(addBlob(blob, name)); };
+  // Panel zoom: below 100% the image shrinks centred; above 100% it enlarges and the stage scrolls.
+  var gz = 1, stage = $('gStage');
+  galleryAPI.zoom = function (z) {
+    gz = z;
+    var st = img.style;
+    if (gz === 1) { st.width = st.height = st.left = st.top = ''; return; }
+    st.width = st.height = (gz * 100) + '%';
+    st.left = st.top = gz < 1 ? ((1 - gz) * 50) + '%' : '0';
+    if (gz > 1) { stage.scrollLeft = (stage.scrollWidth - stage.clientWidth) / 2; stage.scrollTop = (stage.scrollHeight - stage.clientHeight) / 2; }
+  };
 
   $('gAdd').onclick = function () { $('gFile').click(); };
   $('gFile').onchange = function () { add(this.files); this.value = ''; };
@@ -2413,6 +2438,13 @@ var Sys = (function () {
     t.addEventListener('input', changed);
   });
 
+  $('kClear').onclick = function () {
+    var old = { html: areas.html.value, css: areas.css.value, js: areas.js.value };
+    if (!old.html && !old.css && !old.js) return;
+    areas.html.value = areas.css.value = areas.js.value = '';
+    save(); run();
+    Sys.toast('Code cleared.', { ms: 6000, actions: [{ label: 'Undo', fn: function () { areas.html.value = old.html; areas.css.value = old.css; areas.js.value = old.js; save(); run(); } }] });
+  };
   $('kRun').onclick = run;
   auto.onchange = function () { if (auto.checked) run(); };
   $('kCon').onclick = function () { con.hidden = !con.hidden; this.classList.toggle('on', !con.hidden); };
@@ -3198,6 +3230,71 @@ var Sys = (function () {
   setInterval(renderRows, 10 * 60 * 1000);
   save();
   renderRows();
+})();
+
+/* ================= Per-panel zoom ================= */
+// A − 100% + control at the end of every face's toolbar (also Ctrl + mouse wheel over a panel).
+// Zoom scales each face's content area; toolbars stay at normal size.
+(function () {
+  var ui = store.get('ws.ui', {});
+  ui.zoom = ui.zoom || {};
+  ['browser', 'paint', 'calendar', 'word', 'media'].forEach(function (id) {
+    var panel = $(id), card = panel.querySelector('.card'), z = 1, ctls = [];
+    function set(v) {
+      z = Math.round(Math.max(0.5, Math.min(1.5, v)) * 10) / 10;
+      card.querySelectorAll('.face').forEach(function (face) {
+        if (face.id === 'galFace') { galleryAPI.zoom(z); return; }   // the gallery image always fits its box, so it scales itself
+        var content = face.querySelector('.body');
+        if (content) content.style.zoom = z === 1 ? '' : String(z);
+      });
+      ctls.forEach(function (c) { c.querySelector('.zv').textContent = Math.round(z * 100) + '%'; });
+      ui.zoom[id] = z; store.set('ws.ui', ui);
+    }
+    card.querySelectorAll('.face').forEach(function (face) {
+      var c = document.createElement('span');
+      c.className = 'zoomCtl';
+      c.innerHTML = '<button aria-label="Zoom out" title="Zoom out">−</button><button class="zv" title="Reset zoom"></button><button aria-label="Zoom in" title="Zoom in">+</button>';
+      c.children[0].onclick = function () { set(z - 0.1); };
+      c.children[1].onclick = function () { set(1); };
+      c.children[2].onclick = function () { set(z + 0.1); };
+      face.querySelector('.bar').appendChild(c);
+      ctls.push(c);
+    });
+    panel.addEventListener('wheel', function (e) { if (!e.ctrlKey) return; e.preventDefault(); set(z + (e.deltaY < 0 ? 0.1 : -0.1)); }, { passive: false });
+    set(ui.zoom[id] || 1);
+  });
+})();
+
+/* ================= Data lights on app buttons ================= */
+// Any app that holds data lights up its switcher button (green), checked every 1.5 s.
+(function () {
+  function any(sel, test) { return [].some.call(document.querySelectorAll(sel), test || function () { return true; }); }
+  var CHECK = {
+    web: function () { return !!$('bFrame').getAttribute('src'); },
+    tasks: function () { return any('#tBoard .tcard'); },
+    paint: function () { return !!paintAPI.dirty; },
+    gallery: function () { return $('gStrip').children.length > 0; },
+    pdf: function () { return !$('dList').disabled; },
+    calendar: function () { return Object.keys(store.get('ws.calendar', {})).length > 0; },
+    calc: function () { var c = store.get('ws.calc', {}); return !!(c.hist && c.hist.length); },
+    clock: function () { var c = store.get('ws.clock', {}); return !!((c.zones && c.zones.length) || (c.alarms && c.alarms.length)); },
+    time: function () { var t = store.get('ws.tracker', {}); return !!(t.projects && t.projects.length); },
+    word: function () { return !!$('wEditor').textContent.trim(); },
+    sheet: function () { return Object.keys(store.get('ws.sheet', {})).length > 0; },
+    code: function () { return any('#codeEdit textarea', function (t) { return t.value.trim(); }); },
+    notes: function () { return any('#nList .nitem') || !!$('nText').value.trim(); },
+    media: function () { return !!$('mVideo').getAttribute('src') || $('mYT').style.display === 'block'; },
+    rec: function () { return any('#rList li:not(.empty)'); }
+  };
+  function update() {
+    Object.keys(CHECK).forEach(function (k) {
+      var on = false;
+      try { on = !!CHECK[k](); } catch (e) {}
+      document.querySelectorAll('[data-flip="' + k + '"]').forEach(function (b) { b.classList.toggle('has', on); });
+    });
+  }
+  update();
+  setInterval(update, 1500);
 })();
 
 /* ================= Status bar ================= */
