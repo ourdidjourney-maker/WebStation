@@ -10,7 +10,7 @@
 
   /* Gapless layout: the black background shows through 2px gaps, so every
      panel shares one 2px line with its neighbours. Proportions from the mockup. */
-  #app { height: 100vh; display: grid; grid-template-rows: 28fr 72fr; gap: 2px; padding: 2px; background: #000; }
+  #app { height: 100vh; display: grid; grid-template-rows: 28fr 72fr auto; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 2px; background: #000; }
   #lower { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; min-height: 0; }
   .column { display: grid; gap: 2px; min-height: 0; min-width: 0; }
   #left  { grid-template-rows: 66.5fr 33.5fr; }
@@ -242,7 +242,8 @@
   #mnav button { flex: 1; font: 13px Arial, Helvetica, sans-serif; padding: 9px 4px; border: 0; background: #e6e6e6; color: #000; cursor: pointer; }
   #mnav button.on { background: #fff; font-weight: bold; }
   @media (max-width: 820px) {
-    #app { grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); }
+    #app { grid-template-rows: auto minmax(0, 1fr) auto auto; grid-template-columns: minmax(0, 1fr); }
+    #ticker { grid-row: 4; }
     #lower, #left, #right { display: contents; }
     #mnav { display: flex; grid-row: 1; }
     #app > .panel, #lower .panel { grid-row: 2; grid-column: 1; display: none; }
@@ -252,6 +253,30 @@
   }
 
   #status { position: relative; }
+  /* RSS ticker */
+  #ticker { position: relative; display: flex; background: #111; color: #eee; min-height: 24px; font-size: 13px; }
+  #tkBtn { flex: 0 0 auto; border: 0; border-right: 1px solid #444; background: #222; color: #fff; font: 12px Arial, Helvetica, sans-serif; padding: 0 10px; cursor: pointer; }
+  #tkBtn:hover, #tkBtn[aria-expanded="true"] { background: #3a3a3a; }
+  #tkRows { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .tkRow { display: flex; height: 24px; align-items: center; border-top: 1px solid #333; }
+  .tkRow:first-child { border-top: 0; }
+  .tkLabel { flex: 0 0 auto; max-width: 180px; height: 100%; line-height: 24px; padding: 0 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: bold; color: #fff; background: #1c1c1c; }
+  .tkView { flex: 1; min-width: 0; height: 100%; overflow: hidden; }
+  .tkView.tkMsg { color: #999; padding: 0 10px; font-size: 12px; }
+  .tkView.still { overflow-x: auto; }
+  .tkTrack { display: inline-flex; white-space: nowrap; line-height: 24px; will-change: transform; }
+  .tkTrack.run { animation: tkScroll linear infinite; }
+  .tkRow:hover .tkTrack, .tkRow:focus-within .tkTrack { animation-play-state: paused; }
+  @keyframes tkScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .tkCopy { display: inline-flex; }
+  .tkTrack a { color: #eee; text-decoration: none; }
+  .tkTrack a:hover, .tkTrack a:focus-visible { color: #fff; text-decoration: underline; }
+  .tkSep { padding: 0 14px; color: #666; }
+  #tkPop { position: absolute; bottom: 100%; left: 0; width: min(560px, 100%); max-height: 50vh; display: flex; flex-direction: column; background: #fff; color: #000; border: 1px solid #000; box-shadow: 0 -4px 16px rgba(0,0,0,.3); z-index: 50; }
+  #tkPop[hidden] { display: none; }
+  #tkList { flex: 1; }
+  .tkNote { font-size: 11px; color: #666; padding: 5px 8px; border-top: 1px solid #eee; }
+
   /* Status bar */
   #status { flex-direction: row; align-items: center; justify-content: center; gap: .4em; font-size: 13px; font-variant-numeric: tabular-nums; }
 </style>
@@ -641,6 +666,15 @@
         <span id="stBtns"><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
+    </div>
+  </div>
+  <div id="ticker" aria-label="News ticker">
+    <button id="tkBtn" aria-expanded="false" aria-controls="tkPop" title="Add, remove, or turn feeds on and off">Feeds</button>
+    <div id="tkRows"></div>
+    <div id="tkPop" hidden>
+      <div class="bar"><input type="text" id="tkUrl" class="grow" placeholder="RSS or Atom feed address" aria-label="Feed address" spellcheck="false"><button id="tkAdd">Add feed</button><button id="tkRefresh">Refresh all</button><button id="tkClose">Close</button></div>
+      <ul id="tkList" class="clist" aria-label="Your feeds"></ul>
+      <div class="tkNote">When a site doesn’t allow direct access, feeds are fetched through a public proxy (allorigins.win, then corsproxy.io).</div>
     </div>
   </div>
 </div>
@@ -2928,6 +2962,160 @@ var Sys = (function () {
 
   ui(); renderList();
   store.getFiles('recording').then(function (a) { recs = a; renderList(); });
+})();
+
+/* ================= RSS ticker (full width, bottom) ================= */
+(function () {
+  var KEY = 'ws.feeds', rows = $('tkRows'), pop = $('tkPop'), list = $('tkList'), btn = $('tkBtn'), urlIn = $('tkUrl');
+  var feeds = store.get(KEY, null), cache = {}, SPEED = 60;   // SPEED in pixels per second
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!feeds) feeds = [{ id: uid(), url: 'https://feeds.bbci.co.uk/news/world/rss.xml', title: '', on: true }];
+  // Direct first (works for feeds that allow it), then public CORS proxies.
+  var PROXIES = [
+    function (u) { return u; },
+    function (u) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); },
+    function (u) { return 'https://corsproxy.io/?url=' + encodeURIComponent(u); }
+  ];
+
+  function save() { store.set(KEY, feeds); }
+  function host(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
+  function fetchFeed(url) {
+    var i = 0;
+    function attempt() {
+      if (i >= PROXIES.length) return Promise.reject(new Error('unreachable'));
+      var ctl = new AbortController(), timer = setTimeout(function () { ctl.abort(); }, 12000);
+      return fetch(PROXIES[i++](url), { signal: ctl.signal })
+        .then(function (r) { clearTimeout(timer); if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(function (t) { if (!/<(rss|feed|rdf:RDF)[\s>]/i.test(t)) throw new Error('not a feed'); return t; })
+        .catch(function () { clearTimeout(timer); return attempt(); });
+    }
+    return attempt();
+  }
+  function parse(text) {
+    var doc = new DOMParser().parseFromString(text, 'text/xml');
+    if (doc.querySelector('parsererror')) throw new Error('bad xml');
+    var ch = doc.querySelector('channel > title, feed > title');
+    var items = [].slice.call(doc.querySelectorAll('item, entry'), 0, 30).map(function (it) {
+      var t = it.querySelector('title'), alt = it.querySelector('link[rel="alternate"]'), l = alt || it.querySelector('link');
+      var href = ((l && (l.getAttribute('href') || l.textContent)) || '').trim();
+      return { title: t ? t.textContent.trim() : '', link: /^https?:\/\//i.test(href) ? href : '' };
+    }).filter(function (x) { return x.title; });
+    return { title: ch ? ch.textContent.trim() : '', items: items };
+  }
+
+  function row(f) {
+    var r = document.createElement('div');
+    r.className = 'tkRow'; r.dataset.id = f.id;
+    r.innerHTML = '<span class="tkLabel"></span><div class="tkView"><div class="tkTrack"></div></div>';
+    r.firstChild.textContent = f.title || host(f.url);
+    r.firstChild.title = f.url;
+    return r;
+  }
+  function msg(r, text) {
+    var view = r.querySelector('.tkView'), track = r.querySelector('.tkTrack');
+    track.classList.remove('run'); track.style.animationDuration = '';
+    view.classList.add('tkMsg'); track.textContent = text;
+  }
+  function fill(r, items) {
+    var view = r.querySelector('.tkView'), track = r.querySelector('.tkTrack');
+    view.classList.remove('tkMsg'); track.classList.remove('run'); track.innerHTML = '';
+    if (!items.length) { msg(r, 'This feed has no headlines right now.'); return; }
+    var copy = document.createElement('span');
+    copy.className = 'tkCopy';
+    items.forEach(function (it) {
+      var a = document.createElement(it.link ? 'a' : 'span');
+      a.textContent = it.title;
+      if (it.link) { a.href = it.link; a.target = '_blank'; a.rel = 'noopener noreferrer'; }
+      var sep = document.createElement('span'); sep.className = 'tkSep'; sep.setAttribute('aria-hidden', 'true'); sep.textContent = '•';
+      copy.appendChild(a); copy.appendChild(sep);
+    });
+    track.appendChild(copy);
+    if (reduce) { view.classList.add('still'); return; }   // no motion: scroll by hand instead
+    // Seamless loop: two identical halves, each at least as wide as the view, scrolled by exactly one half.
+    var reps = Math.max(1, Math.ceil(view.clientWidth / Math.max(1, copy.offsetWidth)));
+    for (var i = 1; i < reps; i++) track.appendChild(copy.cloneNode(true));
+    var n = track.children.length;
+    for (var j = 0; j < n; j++) {
+      var c = track.children[j].cloneNode(true);
+      c.setAttribute('aria-hidden', 'true');
+      c.querySelectorAll('a').forEach(function (a) { a.tabIndex = -1; });
+      track.appendChild(c);
+    }
+    track.style.animationDuration = (track.scrollWidth / 2 / SPEED) + 's';
+    track.classList.add('run');
+  }
+  function load(f, r) {
+    fetchFeed(f.url).then(parse).then(function (d) {
+      if (d.title && d.title !== f.title) { f.title = d.title; save(); r.firstChild.textContent = d.title; renderList(); }
+      cache[f.id] = d.items;
+      fill(r, d.items);
+    }).catch(function () {
+      if (cache[f.id]) return;   // keep showing the last good headlines
+      msg(r, 'Couldn’t load this feed. It may be offline, or the address isn’t an RSS or Atom feed.');
+    });
+  }
+  function renderRows() {
+    rows.innerHTML = '';
+    var on = feeds.filter(function (f) { return f.on; });
+    if (!on.length) {
+      var r = row({ title: 'News', url: '' }); rows.appendChild(r);
+      msg(r, 'No feeds are on. Use Feeds to add one or turn one on.');
+      return;
+    }
+    on.forEach(function (f) {
+      var r = row(f); rows.appendChild(r);
+      if (cache[f.id]) fill(r, cache[f.id]); else msg(r, 'Loading…');
+      load(f, r);
+    });
+  }
+
+  /* --- Feed manager --- */
+  function renderList() {
+    list.innerHTML = '';
+    if (!feeds.length) { var e = document.createElement('li'); e.className = 'empty'; e.textContent = 'No feeds yet. Paste a feed address above.'; list.appendChild(e); }
+    feeds.forEach(function (f) {
+      var li = document.createElement('li');
+      li.innerHTML = '<label><input type="checkbox"> On</label><span class="grow1"></span><button class="x">×</button>';
+      var cb = li.querySelector('input'); cb.checked = f.on;
+      cb.onchange = function () { f.on = cb.checked; save(); renderRows(); };
+      li.children[1].textContent = f.title ? f.title + ' (' + host(f.url) + ')' : f.url;
+      li.children[1].title = f.url;
+      var x = li.querySelector('.x'); x.setAttribute('aria-label', 'Remove ' + (f.title || f.url));
+      x.onclick = function () { feeds = feeds.filter(function (q) { return q !== f; }); delete cache[f.id]; save(); renderList(); renderRows(); };
+      list.appendChild(li);
+    });
+  }
+  function add() {
+    var u = urlIn.value.trim();
+    if (!u) { urlIn.focus(); return; }
+    if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+    try { new URL(u); } catch (e) { Sys.toast('That isn’t a valid web address.'); return; }
+    if (feeds.some(function (f) { return f.url === u; })) { Sys.toast('That feed is already in your list.'); return; }
+    feeds.push({ id: uid(), url: u, title: '', on: true });
+    urlIn.value = '';
+    save(); renderList(); renderRows();
+  }
+  function openPop(open) {
+    pop.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    if (open) { renderList(); urlIn.focus(); }
+  }
+  btn.onclick = function () { openPop(pop.hidden); };
+  $('tkClose').onclick = function () { openPop(false); btn.focus(); };
+  $('tkAdd').onclick = add;
+  $('tkRefresh').onclick = function () { renderRows(); Sys.toast('Refreshing feeds…', { ms: 1500 }); };
+  urlIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') add(); });
+  pop.addEventListener('keydown', function (e) { if (e.key === 'Escape') { openPop(false); btn.focus(); } });
+
+  // Re-lay out (from cache, no refetch) when the width changes, so the loop never shows a gap.
+  var rt = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(rt);
+    rt = setTimeout(function () { rows.querySelectorAll('.tkRow').forEach(function (r) { if (cache[r.dataset.id]) fill(r, cache[r.dataset.id]); }); }, 300);
+  });
+  setInterval(renderRows, 10 * 60 * 1000);
+  save();
+  renderRows();
 })();
 
 /* ================= Status bar ================= */
