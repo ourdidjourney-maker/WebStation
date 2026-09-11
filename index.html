@@ -110,14 +110,16 @@
   #sWrap { overflow: auto; outline: none; }
   #sGrid { border-collapse: separate; border-spacing: 0; table-layout: fixed; font: 12px Arial, Helvetica, sans-serif; }
   #sGrid th { position: sticky; background: #eee; color: #444; font-weight: normal; border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 0 4px; user-select: none; }
-  #sGrid thead th { top: 0; width: 80px; height: 20px; z-index: 1; }
+  #sGrid thead th { top: 0; height: 20px; z-index: 1; }
   #sGrid thead th:first-child { left: 0; width: 36px; z-index: 2; }
   #sGrid tbody th { left: 0; text-align: center; z-index: 1; }
   #sGrid th.hl { background: #d6e4ff; color: #000; }
-  #sGrid td { height: 20px; padding: 0 4px; border-right: 1px solid #e3e3e3; border-bottom: 1px solid #e3e3e3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: cell; }
+  #sGrid td { padding: 0 4px; border-right: 1px solid #e3e3e3; border-bottom: 1px solid #e3e3e3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: cell; }
   #sGrid td.n { text-align: right; }
   #sGrid td.e { color: #c00; }
   #sGrid td.sel { outline: 2px solid #06f; outline-offset: -2px; }
+  #sGrid col.hcol { width: 36px; }
+  #sGrid tbody tr { height: 20px; }
   #sEdit { position: absolute; display: none; z-index: 3; height: 20px; border: 2px solid #06f; font: 12px Arial, Helvetica, sans-serif; padding: 0 2px; outline: none; background: #fff; }
 
   /* Code playground */
@@ -234,7 +236,7 @@
   .toast button { font: 12px Arial, Helvetica, sans-serif; background: #fff; color: #000; border: 0; padding: 3px 8px; cursor: pointer; white-space: nowrap; }
 
   /* Status bar buttons */
-  #stBtns { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; gap: 3px; }
+  #stBtns { display: flex; gap: 3px; flex: 0 0 auto; }
   #stBtns button { font: 11px Arial, Helvetica, sans-serif; height: 20px; padding: 0 6px; border: 1px solid #777; background: #fff; color: #000; cursor: pointer; }
 
   /* Mobile: one panel at a time, chosen from the nav bar */
@@ -304,13 +306,13 @@
   .zoomCtl .zv { min-width: 44px; }
 
   /* Hover peek: the hovered app shows over the current one, non-interactive, with a blue frame */
-  .face.peek { visibility: visible; z-index: 5; pointer-events: none; }
+  .face.peek { visibility: visible; z-index: 5; pointer-events: none; background: #fff; }   /* opaque: never let the face underneath show through */
   .face.peek::before { content: ''; position: absolute; inset: 0; border: 3px solid #06f; z-index: 30; pointer-events: none; }
   .face.peek::after { content: 'Preview. Click the button to switch.'; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: #06f; color: #fff; font: 12px Arial, Helvetica, sans-serif; padding: 4px 10px; z-index: 31; pointer-events: none; white-space: nowrap; }
 
   /* Panel close / reopen */
   .pclose { margin-left: 3px; font-weight: bold; }
-  #stDock { position: absolute; left: 4px; top: 50%; transform: translateY(-50%); display: flex; gap: 3px; align-items: center; font-size: 11px; color: #555; }
+  #stDock { display: flex; gap: 3px; align-items: center; font-size: 11px; color: #555; flex: 0 1 auto; min-width: 0; overflow: hidden; }
   #stDock button, #tmOpen { font: 11px Arial, Helvetica, sans-serif; height: 20px; padding: 0 6px; border: 1px solid #777; background: #fff; color: #000; cursor: pointer; }
   @media (min-width: 821px) {
     .panel.closed { display: none !important; }
@@ -342,8 +344,325 @@
   .tmSys div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid #eee; padding: 3px 0; }
   .tmSys span { color: #666; }
 
+  /* File viewer */
+  #fvBody { display: flex; }
+  .fvCol { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; border-right: 1px solid #000; }
+  .fvColHead { display: flex; align-items: center; gap: 4px; padding: 3px 6px; background: #eee; border-bottom: 1px solid #ccc; font-size: 11px; }
+  .fvColHead strong { font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
+  .fvColHead button { font: 11px Arial, Helvetica, sans-serif; height: 20px; border: 1px solid #777; background: #fff; color: #000; cursor: pointer; padding: 0 6px; }
+  .fvColHead button:disabled { opacity: .4; cursor: default; }
+  #fvPath { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #555; direction: rtl; text-align: left; }
+  .fvList { flex: 1; min-height: 0; overflow: auto; list-style: none; font-size: 12px; }
+  .fvList li { display: flex; gap: 6px; align-items: center; padding: 3px 6px; border-bottom: 1px solid #eee; cursor: pointer; outline: none; }
+  .fvList li:hover { background: #f2f2f2; }
+  .fvList li.on { background: #000; color: #fff; }
+  .fvList li.on small { color: #ccc; }
+  .fvList li:focus-visible { outline: 2px solid #06f; outline-offset: -2px; }
+  .fvList li.empty, .fvList li.fvHead { cursor: default; }
+  .fvList li.empty { color: #777; border: 0; }
+  .fvList li.fvHead { background: #f4f4f4; color: #444; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 1; }
+  .fvList .fvIcon { flex: 0 0 auto; }
+  .fvList .grow1 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fvList small { color: #666; white-space: nowrap; }
+  .fvGo { font: 10px Arial, Helvetica, sans-serif; height: 18px; border: 1px solid #aaa; background: #fff; color: #000; cursor: pointer; padding: 0 5px; }
+  #fvPrev { flex: 1.2 1 0; min-width: 0; display: flex; flex-direction: column; border-right: 0; }
+  #fvPrevName { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; }
+  #fvPrevBody { flex: 1; min-height: 0; overflow: auto; background: #222; display: flex; align-items: center; justify-content: center; }
+  #fvPrevBody img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  #fvPrevBody iframe, #fvPrevBody video { width: 100%; height: 100%; border: 0; background: #000; }
+  #fvPrevBody audio { width: 90%; }
+  #fvPrevBody pre { align-self: stretch; flex: 1; margin: 0; padding: 8px 10px; background: #fff; color: #000; font: 11px/1.5 Consolas, "Courier New", monospace; white-space: pre-wrap; overflow-wrap: anywhere; overflow: auto; }
+  #fvPrevBody .fvNo { color: #bbb; font-size: 12px; padding: 20px; text-align: center; }
+  #fvFace.drag #fvBody { outline: 3px dashed #06f; outline-offset: -5px; }
+
+  /* ===================== GLASS THEME =====================
+     Everything here is scoped to body.glass, so the plain UI is untouched when it's off. */
+  body.glass {
+    background: #0b1020;
+    background-image:
+      radial-gradient(1200px 700px at 12% -10%, rgba(88, 130, 255, .38), transparent 60%),
+      radial-gradient(1000px 620px at 105% 8%, rgba(226, 86, 190, .30), transparent 58%),
+      radial-gradient(900px 800px at 45% 115%, rgba(46, 214, 190, .26), transparent 60%),
+      linear-gradient(160deg, #0a0f1e 0%, #131a33 48%, #0a1226 100%);
+    color: #eef2ff;
+  }
+  body.glass::before {   /* slow drifting light, sits behind everything */
+    content: ''; position: fixed; inset: -20%; z-index: 0; pointer-events: none;
+    background: radial-gradient(560px 560px at 30% 40%, rgba(120, 160, 255, .20), transparent 62%),
+                radial-gradient(480px 480px at 72% 62%, rgba(255, 120, 210, .16), transparent 62%);
+    animation: gDrift 26s ease-in-out infinite alternate;
+  }
+  @keyframes gDrift { from { transform: translate3d(-2.5%, -1.5%, 0) scale(1); } to { transform: translate3d(2.5%, 2%, 0) scale(1.06); } }
+
+  body.glass #app { background: transparent; gap: 10px; padding: 10px; position: relative; z-index: 1; }
+  body.glass #lower { gap: 10px; }
+  body.glass .column { gap: 10px; }
+
+  /* --- Panels --- */
+  body.glass .panel {
+    background: rgba(20, 27, 51, .55);
+    -webkit-backdrop-filter: blur(22px) saturate(165%);
+    backdrop-filter: blur(22px) saturate(165%);
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 16px;
+    box-shadow: 0 18px 44px rgba(3, 6, 18, .5), inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 -1px 0 rgba(0, 0, 0, .18);
+    transition: box-shadow .45s cubic-bezier(.22,.7,.3,1), border-color .45s cubic-bezier(.22,.7,.3,1), transform .45s cubic-bezier(.22,.7,.3,1);
+  }
+  body.glass .panel:hover { border-color: rgba(255, 255, 255, .26); box-shadow: 0 22px 54px rgba(3, 6, 18, .56), inset 0 1px 0 rgba(255, 255, 255, .3); }
+  body.glass .panel:focus-within { border-color: rgba(120, 170, 255, .5); box-shadow: 0 22px 54px rgba(3, 6, 18, .56), 0 0 0 1px rgba(120, 170, 255, .28), inset 0 1px 0 rgba(255, 255, 255, .3); }
+  body.glass .card, body.glass .face { border-radius: inherit; }
+  body.glass .face { background: transparent; }
+  body.glass .panel.flipping { background: transparent; }
+
+  /* --- Toolbars --- */
+  body.glass .bar {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .11), rgba(255, 255, 255, .04));
+    border-bottom: 1px solid rgba(255, 255, 255, .14);
+    color: #e8edff;
+    padding: 6px 8px;
+    border-radius: 16px 16px 0 0;
+  }
+  body.glass .bar + .bar, body.glass .face > .bar ~ .bar { border-radius: 0; }
+  body.glass #mCtl, body.glass #calAdd { border-top: 1px solid rgba(255, 255, 255, .14); border-radius: 0 0 16px 16px; }
+  body.glass .sep { background: rgba(255, 255, 255, .22); }
+
+  /* --- Controls: fade in, glow, press --- */
+  body.glass .bar button, body.glass .bar select, body.glass .bar input[type=text], body.glass .bar input[type=time],
+  body.glass .bar input[type=number], body.glass .clist button, body.glass .crow2 button, body.glass .crow2 input,
+  body.glass .fvColHead button, body.glass #stBtns button, body.glass #stDock button, body.glass #tkBtn, body.glass .tmHead button,
+  body.glass #tmApps td.act button, body.glass #tmRun button, body.glass .fvGo, body.glass .nitem, body.glass .qh {
+    background: rgba(255, 255, 255, .08);
+    border: 1px solid rgba(255, 255, 255, .16);
+    color: #e9eeff;
+    border-radius: 9px;
+    transition: background .35s cubic-bezier(.22,.7,.3,1), border-color .35s cubic-bezier(.22,.7,.3,1),
+                box-shadow .35s cubic-bezier(.22,.7,.3,1), transform .18s cubic-bezier(.22,.7,.3,1), color .35s ease;
+  }
+  body.glass .bar button:hover:not(:disabled), body.glass .clist button:hover:not(:disabled), body.glass .crow2 button:hover:not(:disabled),
+  body.glass .fvColHead button:hover:not(:disabled), body.glass #stBtns button:hover, body.glass #stDock button:hover,
+  body.glass #tkBtn:hover, body.glass .tmHead button:hover, body.glass #tmApps td.act button:hover, body.glass #tmRun button:hover, body.glass .fvGo:hover {
+    background: rgba(255, 255, 255, .18);
+    border-color: rgba(160, 200, 255, .5);
+    box-shadow: 0 0 0 3px rgba(120, 170, 255, .14), 0 6px 18px rgba(0, 0, 0, .3);
+    transform: translateY(-1px);
+  }
+  body.glass .bar button:active:not(:disabled), body.glass .clist button:active, body.glass .crow2 button:active { transform: translateY(0) scale(.97); }
+  body.glass .bar button.on, body.glass .seg button.on {
+    background: linear-gradient(180deg, rgba(126, 170, 255, .95), rgba(86, 128, 240, .95));
+    border-color: rgba(190, 215, 255, .7);
+    color: #071024;
+    box-shadow: 0 0 18px rgba(110, 160, 255, .45), inset 0 1px 0 rgba(255, 255, 255, .55);
+  }
+  body.glass .bar input[type=text]:focus, body.glass .bar select:focus, body.glass .bar input[type=time]:focus,
+  body.glass .bar input[type=number]:focus, body.glass .crow2 input:focus {
+    border-color: rgba(150, 195, 255, .75); box-shadow: 0 0 0 3px rgba(120, 170, 255, .18); outline: none;
+  }
+  body.glass .bar select option { background: #141b33; color: #eef2ff; }
+  body.glass .bar input::placeholder { color: rgba(230, 238, 255, .45); }
+  body.glass .bar label, body.glass .crow2 label { color: #dde5ff; }
+  body.glass .bar input[type=color] { border-radius: 7px; border-color: rgba(255, 255, 255, .3); background: rgba(255, 255, 255, .1); }
+  body.glass input[type=range] { accent-color: #7eaaff; }
+  body.glass button:disabled, body.glass input:disabled, body.glass select:disabled { opacity: .32; }
+
+  /* Ripple on press */
+  body.glass .bar button, body.glass .seg button, body.glass .clist button, body.glass .crow2 button, body.glass #qKeys button { position: relative; overflow: hidden; }
+  body.glass .ripple { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, .5); transform: translate(-50%, -50%) scale(0); pointer-events: none; animation: gRipple .55s cubic-bezier(.2,.6,.3,1) forwards; }
+  @keyframes gRipple { to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+
+  /* Data lights */
+  body.glass .seg button.has { background: rgba(60, 220, 150, .22); border-color: rgba(90, 240, 175, .55); color: #d8ffee; animation: gPulse 3.2s ease-in-out infinite; }
+  body.glass .seg button.has.on { background: linear-gradient(180deg, rgba(70, 235, 160, .95), rgba(30, 190, 130, .95)); color: #04201a; animation: none; }
+  @keyframes gPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(80, 235, 165, .32); } 50% { box-shadow: 0 0 14px 2px rgba(80, 235, 165, .3); } }
+
+  /* --- Content surfaces --- */
+  body.glass .body { background: transparent; color: #e9eeff; }
+  body.glass #wEditor, body.glass #nText, body.glass #codeEdit textarea { background: rgba(8, 12, 26, .4); color: #eef2ff; }
+  body.glass #wEditor:empty:before, body.glass #nText::placeholder, body.glass #codeEdit textarea::placeholder { color: rgba(230, 238, 255, .38); }
+  body.glass #paintBody { background: rgba(8, 12, 26, .45); }
+  body.glass #paintStack canvas { border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }
+  body.glass .hint { color: rgba(225, 233, 255, .6); }
+
+  /* Calendar */
+  body.glass .day { background: rgba(255, 255, 255, .04); color: #e6ecff; border-color: rgba(255, 255, 255, .07); transition: background .3s ease, color .3s ease, box-shadow .3s ease; }
+  body.glass .day:hover { background: rgba(255, 255, 255, .14); }
+  body.glass .day.other { color: rgba(220, 230, 255, .35); }
+  body.glass .day.today { box-shadow: inset 0 0 0 2px rgba(126, 170, 255, .9); }
+  body.glass .day.sel { background: linear-gradient(180deg, rgba(126, 170, 255, .95), rgba(86, 128, 240, .95)); color: #071024; }
+  body.glass .dow, body.glass #calDate, body.glass #trHead { color: #cfdaff; border-color: rgba(255, 255, 255, .12); }
+  body.glass #calGrid { border-right-color: rgba(255, 255, 255, .12); }
+  body.glass #calList li, body.glass .clist li, body.glass .fvList li, body.glass #nList li { border-color: rgba(255, 255, 255, .08); }
+  body.glass .clist li.empty, body.glass .fvList li.empty, body.glass #calList li.empty { color: rgba(225, 233, 255, .5); }
+  body.glass .clist small, body.glass .fvList small, body.glass #calList .t { color: rgba(215, 226, 255, .62); }
+
+  /* Sheet */
+  body.glass #sGrid th { background: rgba(255, 255, 255, .09); color: #dbe4ff; border-color: rgba(255, 255, 255, .12); }
+  body.glass #sGrid th.hl { background: rgba(126, 170, 255, .35); color: #fff; }
+  body.glass #sGrid td { border-color: rgba(255, 255, 255, .07); color: #e9eeff; }
+  body.glass #sGrid td.sel { outline-color: #7eaaff; }
+  body.glass #sGrid td.e { color: #ff9a9a; }
+  body.glass #sEdit, body.glass #pTextInput { background: rgba(12, 18, 38, .95); color: #eef2ff; border-color: #7eaaff; }
+  body.glass #sName { background: rgba(255, 255, 255, .06); }
+
+  /* Tasks */
+  body.glass #tBoard { background: transparent; }
+  body.glass .tcol { border-color: rgba(255, 255, 255, .1); }
+  body.glass .tcol h3 { background: rgba(255, 255, 255, .07); color: #e6ecff; border-color: rgba(255, 255, 255, .12); }
+  body.glass .tcard {
+    background: rgba(255, 255, 255, .09); border: 1px solid rgba(255, 255, 255, .16); color: #eaf0ff; border-radius: 11px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+    transition: transform .3s cubic-bezier(.22,.7,.3,1), box-shadow .3s ease, background .3s ease;
+  }
+  body.glass .tcard:hover { background: rgba(255, 255, 255, .15); transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0, 0, 0, .35); }
+  body.glass .tcard button { color: rgba(235, 241, 255, .7); }
+  body.glass .tlist.over { background: rgba(126, 170, 255, .16); border-radius: 12px; }
+  body.glass .tempty { color: rgba(225, 233, 255, .45); }
+
+  /* Lists, gallery, files, media */
+  body.glass .nitem { border-radius: 0; background: transparent; border: 0; color: #e9eeff; }
+  body.glass .nitem:hover { background: rgba(255, 255, 255, .1); }
+  body.glass .nitem.on { background: linear-gradient(90deg, rgba(126, 170, 255, .9), rgba(86, 128, 240, .75)); color: #071024; }
+  body.glass #nList, body.glass #trProjects, body.glass #qMain, body.glass .fvCol, body.glass #codeEdit, body.glass #calGrid, body.glass #rStage { border-color: rgba(255, 255, 255, .12); }
+  body.glass .fvList li:hover { background: rgba(255, 255, 255, .1); }
+  body.glass .fvList li.on { background: linear-gradient(90deg, rgba(126, 170, 255, .9), rgba(86, 128, 240, .7)); color: #071024; }
+  body.glass .fvList li.fvHead { background: rgba(255, 255, 255, .07); color: #cfdaff; border-color: rgba(255, 255, 255, .12); }
+  body.glass #gStage, body.glass #mStage, body.glass #rStage, body.glass #fvPrevBody, body.glass #dStage { background: rgba(6, 9, 20, .6); }
+  body.glass #gStrip { background: rgba(6, 9, 20, .55); border-color: rgba(255, 255, 255, .12); }
+  body.glass #gStrip img { border-radius: 7px; transition: opacity .35s ease, transform .35s cubic-bezier(.22,.7,.3,1), border-color .35s ease; }
+  body.glass #gStrip img:hover { transform: translateY(-3px) scale(1.04); }
+  body.glass #gStrip img.on { border-color: #7eaaff; box-shadow: 0 0 14px rgba(126, 170, 255, .55); }
+  body.glass #fvPrevBody pre, body.glass #kConsole { background: rgba(8, 12, 26, .75); color: #dfe7ff; }
+  body.glass #trProjects li.run { background: rgba(126, 170, 255, .16); }
+
+  /* Calculator */
+  body.glass #qDisplay { background: rgba(8, 12, 26, .45); border-color: rgba(255, 255, 255, .12); }
+  body.glass #qRes { color: rgba(220, 230, 255, .62); }
+  body.glass #qKeys { background: rgba(255, 255, 255, .08); gap: 1px; }
+  body.glass #qKeys button { background: rgba(20, 28, 54, .72); color: #eaf0ff; border: 0; transition: background .28s ease, color .25s ease, box-shadow .28s ease; }
+  body.glass #qKeys button:hover { background: rgba(255, 255, 255, .17); }
+  body.glass #qKeys button.op, body.glass #qKeys button.fn { background: rgba(36, 48, 88, .75); }
+  body.glass #qKeys button.eq { background: linear-gradient(180deg, rgba(126, 170, 255, .95), rgba(86, 128, 240, .95)); color: #071024; }
+  body.glass #qKeys button.hit { background: rgba(160, 200, 255, .5); }
+  body.glass .cbig { text-shadow: 0 0 26px rgba(126, 170, 255, .5); }
+  body.glass .cmid { color: rgba(220, 230, 255, .65); }
+
+  /* Status bar, ticker, dialogs */
+  body.glass #status { color: #dfe7ff; }
+  body.glass #stDock { color: rgba(220, 230, 255, .65); }
+  body.glass #ticker { background: rgba(10, 15, 32, .62); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, .14); border-radius: 14px; color: #e6ecff; }
+  body.glass .tkRow { border-color: rgba(255, 255, 255, .1); }
+  body.glass .tkLabel { background: rgba(255, 255, 255, .08); color: #fff; border-radius: 13px 0 0 13px; }
+  body.glass #tkBtn { border-radius: 13px 0 0 13px; border: 0; border-right: 1px solid rgba(255, 255, 255, .14); }
+  body.glass .tkTrack a { color: #e6ecff; }
+  body.glass .tkTrack a:hover { color: #fff; text-shadow: 0 0 12px rgba(126, 170, 255, .8); }
+  body.glass #tkPop, body.glass #tm {
+    background: rgba(18, 25, 48, .9); -webkit-backdrop-filter: blur(26px); backdrop-filter: blur(26px);
+    color: #eef2ff; border: 1px solid rgba(255, 255, 255, .18); border-radius: 16px;
+    box-shadow: 0 26px 70px rgba(0, 0, 0, .6);
+  }
+  body.glass #tmOverlay { background: rgba(4, 7, 18, .55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: gFade .28s ease both; }
+  body.glass #tm { animation: gRise .38s cubic-bezier(.2,.8,.3,1) both; }
+  @keyframes gFade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes gRise { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
+  body.glass .tmHead { background: linear-gradient(90deg, rgba(126, 170, 255, .28), rgba(226, 86, 190, .22)); color: #fff; border-radius: 16px 16px 0 0; border-bottom: 1px solid rgba(255, 255, 255, .16); }
+  body.glass #tmApps th, body.glass #tmApps td, body.glass .tmSys div { border-color: rgba(255, 255, 255, .1); }
+  body.glass #tmApps th, body.glass .tmSys span, body.glass .tmBody h4 { color: rgba(215, 226, 255, .66); }
+  body.glass .s-on { color: #6ef0ad; } body.glass .s-in { color: rgba(220, 230, 255, .6); } body.glass .s-panel { color: #ff9a9a; }
+  body.glass .dot { background: #4ceaa0; box-shadow: 0 0 10px rgba(76, 234, 160, .7); }
+  body.glass .toast {
+    background: rgba(18, 25, 48, .88); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+    color: #eef2ff; border: 1px solid rgba(255, 255, 255, .2); border-radius: 13px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
+    animation: gToast .4s cubic-bezier(.2,.8,.3,1) both;
+  }
+  @keyframes gToast { from { opacity: 0; transform: translateY(-14px) scale(.95); } to { opacity: 1; transform: none; } }
+  body.glass .toast button { background: rgba(255, 255, 255, .9); border-radius: 8px; }
+  body.glass .flashBox { background: rgba(18, 25, 48, .92); border: 1px solid rgba(255, 255, 255, .25); border-radius: 16px; -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
+  body.glass #mnav { background: transparent; gap: 8px; }
+  body.glass #mnav button { background: rgba(255, 255, 255, .1); color: #e9eeff; border-radius: 11px; border: 1px solid rgba(255, 255, 255, .16); }
+  body.glass #mnav button.on { background: linear-gradient(180deg, rgba(126, 170, 255, .95), rgba(86, 128, 240, .95)); color: #071024; }
+  body.glass #splitH::after { background: transparent; }
+  body.glass #splitH:hover::after, body.glass #splitH:focus-visible::after { background: rgba(126, 170, 255, .85); box-shadow: 0 0 14px rgba(126, 170, 255, .7); }
+  body.glass .face.peek {
+    background: rgba(17, 24, 46, .985);
+    -webkit-backdrop-filter: blur(26px) saturate(160%);
+    backdrop-filter: blur(26px) saturate(160%);
+    box-shadow: 0 0 60px rgba(0, 0, 0, .5);
+    animation: gPeekIn .28s cubic-bezier(.2,.8,.3,1) both;
+  }
+  @keyframes gPeekIn { from { opacity: 0; transform: scale(.995); } to { opacity: 1; transform: none; } }
+  body.glass .face.peek::before { border-color: rgba(126, 170, 255, .9); border-radius: 16px; box-shadow: 0 0 40px rgba(126, 170, 255, .35) inset; }
+  body.glass .face.peek::after { background: linear-gradient(90deg, rgba(126, 170, 255, .95), rgba(86, 128, 240, .95)); color: #071024; border-radius: 9px; }
+
+  /* --- Flip: motion blur + specular sweep --- */
+  body.glass .panel.flipping .card { filter: blur(1.6px) brightness(1.12); }
+  body.glass .card { transform-style: preserve-3d; }
+  body.glass .panel.flipping::after {
+    content: ''; position: absolute; inset: 0; z-index: 40; pointer-events: none; border-radius: inherit; overflow: hidden;
+    background: linear-gradient(105deg, transparent 32%, rgba(255, 255, 255, .28) 48%, rgba(190, 220, 255, .16) 56%, transparent 72%);
+    background-size: 260% 100%;
+    animation: gSheen .62s cubic-bezier(.3,.5,.4,1) both;
+  }
+  @keyframes gSheen { from { background-position: 190% 0; } to { background-position: -60% 0; } }
+
+  /* Face arriving after a flip */
+  body.glass .face.front.arrive > * { animation: gArrive .42s cubic-bezier(.2,.8,.3,1) both; }
+  @keyframes gArrive { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+
+  body.glass ::-webkit-scrollbar { width: 11px; height: 11px; }
+  body.glass ::-webkit-scrollbar-track { background: rgba(255, 255, 255, .05); }
+  body.glass ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .2); border-radius: 7px; border: 2px solid transparent; background-clip: padding-box; }
+  body.glass ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, .34); background-clip: padding-box; }
+
+  @media (prefers-reduced-motion: reduce) {
+    body.glass *, body.glass *::before, body.glass *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+
+  /* Glass: remaining dark-on-dark text */
+  body.glass #wCount, body.glass #sMsg, body.glass #rStatus, body.glass .tkNote, body.glass #trHead,
+  body.glass .fvColHead, body.glass #fvPath, body.glass #qRes, body.glass .tcount, body.glass #calDate {
+    color: rgba(222, 232, 255, .7);
+  }
+  body.glass #rStatus { color: #ff8f8f; }
+  body.glass .fvColHead { background: rgba(255, 255, 255, .07); border-color: rgba(255, 255, 255, .12); }
+  body.glass .fvColHead strong { color: #e6ecff; }
+  body.glass #kConsole:empty:before, body.glass #wEditor:empty:before { color: rgba(222, 232, 255, .42); }
+  body.glass .tcol h3 { color: #eaf0ff; }
+  body.glass #sFx, body.glass #tkUrl { background: rgba(255, 255, 255, .08); }
+
+  /* Panel blur: the card's content blurs, the toolbar stays readable so the controls still work */
+  /* Blur the whole panel — toolbar and content together — so a parked panel reads as one soft shape.
+     The blur button itself is lifted back out so it stays usable. */
+  .panel.blurred .card {
+    filter: blur(var(--blur, 8px)) saturate(var(--blurSat, .18)) contrast(var(--blurCon, .45)) brightness(var(--blurBri, .88));
+    opacity: var(--blurDim, .55);
+    transition: filter .38s cubic-bezier(.22,.7,.3,1), opacity .38s cubic-bezier(.22,.7,.3,1);
+  }
+  .panel.proxOn .card { transition: filter .12s linear, opacity .12s linear; }
+  /* With proximity off, hovering a blurred panel clears it */
+  .panel.blurred:not(.proxOn):hover .card { filter: none; opacity: 1; }
+  /* Unblur chip: lives outside the panel (a filter would blur it too), so a parked panel can always be restored */
+  .unblurChip {
+    position: fixed; z-index: 700; display: flex; align-items: center; gap: 6px;
+    font: 12px Arial, Helvetica, sans-serif; padding: 5px 10px; cursor: pointer;
+    background: #fff; color: #000; border: 1px solid #777; border-radius: 9px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+    opacity: .35; transition: opacity .3s ease, transform .3s cubic-bezier(.22,.7,.3,1);
+  }
+  .unblurChip:hover { opacity: 1; transform: translateY(-1px); }
+  body.glass .unblurChip { background: rgba(18, 25, 48, .92); color: #eef2ff; border-color: rgba(255, 255, 255, .28); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+  .panel { position: relative; }
+  .blurTrack { position: absolute; inset: 0; z-index: 55; display: none; }
+  .panel.blurred .blurTrack { display: block; }
+  .blurBtn { margin-left: 3px; }
+  body.glass .panel.blurred { box-shadow: 0 10px 30px rgba(3, 6, 18, .4), inset 0 1px 0 rgba(255, 255, 255, .12); }
+  body.glass .panel.blurred.proxOn { border-color: rgba(126, 170, 255, .28); }
+  body.glass #proxBtn.on { background: linear-gradient(180deg, rgba(126, 170, 255, .95), rgba(86, 128, 240, .95)); color: #071024; border-color: rgba(190, 215, 255, .7); box-shadow: 0 0 16px rgba(110, 160, 255, .45); }
+  #proxBtn.on { background: #000; color: #fff; border-color: #000; }
+  @media (prefers-reduced-motion: reduce) { .panel.blurred .card { transition: none; } }
+
   /* Status bar */
-  #status { flex-direction: row; align-items: center; justify-content: center; gap: .4em; font-size: 13px; font-variant-numeric: tabular-nums; }
+  #status { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; padding: 0 6px; font-size: 13px; font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+  #stClock { flex: 1 1 auto; text-align: center; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -397,7 +716,7 @@
         <div class="card">
           <div class="face front" data-face="paint" id="paintFace" tabindex="-1">
             <div class="bar">
-              <span class="seg"><button data-flip="paint">Paint</button><button data-flip="gallery">Gallery</button><button data-flip="pdf">PDF</button></span>
+              <span class="seg"><button data-flip="paint">Paint</button><button data-flip="gallery">Gallery</button><button data-flip="pdf">PDF</button><button data-flip="files">Files</button></span>
               <span class="sep"></span>
               <button data-tool="brush" class="on">Brush</button>
               <button data-tool="eraser">Eraser</button>
@@ -434,7 +753,7 @@
           </div>
           <div class="face" data-face="gallery" id="galFace" tabindex="-1">
             <div class="bar">
-              <span class="seg"><button data-flip="paint">Paint</button><button data-flip="gallery">Gallery</button><button data-flip="pdf">PDF</button></span>
+              <span class="seg"><button data-flip="paint">Paint</button><button data-flip="gallery">Gallery</button><button data-flip="pdf">PDF</button><button data-flip="files">Files</button></span>
               <span class="sep"></span>
               <button id="gAdd">Add images</button>
               <button id="gPrev" aria-label="Previous image">◀</button>
@@ -453,7 +772,7 @@
           </div>
           <div class="face" data-face="pdf" id="pdfFace" tabindex="-1">
             <div class="bar">
-              <span class="seg"><button data-flip="paint">Paint</button><button data-flip="gallery">Gallery</button><button data-flip="pdf">PDF</button></span>
+              <span class="seg"><button data-flip="paint">Paint</button><button data-flip="gallery">Gallery</button><button data-flip="pdf">PDF</button><button data-flip="files">Files</button></span>
               <span class="sep"></span>
               <button id="dOpen">Open PDF</button>
               <select id="dList" class="grow" aria-label="Saved PDFs"></select>
@@ -465,6 +784,31 @@
               <iframe id="dFrame" title="PDF viewer"></iframe>
               <div class="hint" id="dHint">Open a PDF or drop one here. PDFs display in your browser’s built-in viewer. If nothing appears (common on phones), use “Open in new tab”.</div>
             </div>
+          </div>
+          <div class="face" data-face="files" id="fvFace" tabindex="-1">
+            <div class="bar">
+              <span class="seg"><button data-flip="paint">Paint</button><button data-flip="gallery">Gallery</button><button data-flip="pdf">PDF</button><button data-flip="files">Files</button></span>
+              <span class="sep"></span>
+              <button id="fvFolder">Choose folder</button>
+              <button id="fvFiles">Choose files</button>
+              <button id="fvRefresh">Refresh</button>
+            </div>
+            <div class="body" id="fvBody">
+              <div class="fvCol">
+                <div class="fvColHead"><strong>This workspace</strong></div>
+                <ul id="fvWs" class="fvList" aria-label="Workspace files"></ul>
+              </div>
+              <div class="fvCol">
+                <div class="fvColHead"><button id="fvUp" title="Collapse all folders">Collapse</button><span id="fvPath"></span></div>
+                <ul id="fvPc" class="fvList" aria-label="Files on this computer"></ul>
+              </div>
+              <div class="fvCol" id="fvPrev">
+                <div class="fvColHead"><span id="fvPrevName">Preview</span></div>
+                <div id="fvPrevBody"></div>
+              </div>
+            </div>
+            <input type="file" id="fvFileInput" multiple hidden>
+            <input type="file" id="fvDirInput" webkitdirectory directory multiple hidden>
           </div>
         </div>
       </section>
@@ -729,9 +1073,9 @@
 
       <!-- ===== Status bar ===== -->
       <section class="panel" id="status" aria-label="Status">
-        <span id="sysTime">--</span><span>/</span><span id="footprint">--</span>
+        <span id="stClock"><span id="sysTime">--</span> / <span id="footprint">--</span></span>
         <span id="stDock" aria-label="Closed panels"></span>
-        <span id="stBtns"><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
+        <span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
     </div>
@@ -902,7 +1246,7 @@ var paintAPI = {}, galleryAPI = {}, mediaAPI = {};
 // video and editable content never bleed through during the turn.
 var Flip = (function () {
   var reduce = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
-  var OUT = 230, IN = 270, P = 'perspective(2400px) ';
+  var OUT = 230, IN = 270, GOUT = 330, GIN = 380, P = 'perspective(2400px) ';
 
   function flipTo(panel, name, done) {
     var card = panel && panel.querySelector('.card');
@@ -923,23 +1267,29 @@ var Flip = (function () {
     if (reduce.matches) { swap(); if (done) done(); return; }
 
     card._busy = true;
+    var glass = document.body.classList.contains('glass');
+    var out = glass ? GOUT : OUT, inn = glass ? GIN : IN;
     panel.classList.add('flipping');
-    card.style.transition = 'transform ' + OUT + 'ms cubic-bezier(.55,0,.85,.4)';
+    card.style.transition = 'transform ' + out + 'ms cubic-bezier(.55,0,.85,.4)';
     card.style.transform = P + 'rotateY(' + (-90 * dir) + 'deg)';
     setTimeout(function () {
       swap();
       card.style.transition = 'none';
       card.style.transform = P + 'rotateY(' + (90 * dir) + 'deg)';
       void card.offsetWidth;   // commit the jump before animating back in
-      card.style.transition = 'transform ' + IN + 'ms cubic-bezier(.15,.6,.45,1)';
+      card.style.transition = 'transform ' + inn + 'ms cubic-bezier(.15,.6,.45,1)';
       card.style.transform = P + 'rotateY(0deg)';
+      if (glass) {
+        nxt.classList.add('arrive');
+        setTimeout(function () { nxt.classList.remove('arrive'); }, inn + 460);
+      }
       setTimeout(function () {
         card.style.transition = ''; card.style.transform = '';
         panel.classList.remove('flipping');
         card._busy = false;
         if (done) done();
-      }, IN + 20);
-    }, OUT + 20);
+      }, inn + 20);
+    }, out + 20);
   }
 
   function peek(card, name) {
@@ -1457,6 +1807,29 @@ var Sys = (function () {
     bctx.drawImage(img, 0, 0, img.width * s, img.height * s);
   }
   paintAPI.importImage = importImage;
+
+  // Paste an image from the clipboard (screenshot, web page, file manager) onto the canvas.
+  function pasteFrom(dt) {
+    if (!dt) return false;
+    var file = null;
+    [].forEach.call(dt.items || [], function (it) { if (!file && it.kind === 'file' && /^image\//.test(it.type)) file = it.getAsFile(); });
+    if (!file) [].forEach.call(dt.files || [], function (f) { if (!file && /^image\//.test(f.type)) file = f; });
+    if (!file) return false;
+    var u = URL.createObjectURL(file), img = new Image();
+    img.onload = function () { importImage(img); URL.revokeObjectURL(u); Sys.toast('Image pasted. Undo removes it.', { ms: 4000 }); };
+    img.onerror = function () { URL.revokeObjectURL(u); Sys.toast('That image couldn’t be pasted.'); };
+    img.src = u;
+    return true;
+  }
+  // Fires when Paint has focus, and also for a plain Ctrl+V anywhere that isn't a text field.
+  document.addEventListener('paste', function (e) {
+    var t = e.target, typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+    var mine = panel.contains(t) || (!typing && panel.classList.contains('front') && Panels.isOpen('paint'));
+    if (!mine) return;
+    if (pasteFrom(e.clipboardData)) e.preventDefault();
+  });
+  ov.addEventListener('dragover', function (e) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+  ov.addEventListener('drop', function (e) { if (pasteFrom(e.dataTransfer)) e.preventDefault(); });
 
   $('pOpen').onclick = function () { $('pFile').click(); };
   $('pFile').onchange = function () {
@@ -2071,6 +2444,65 @@ var Sys = (function () {
   grid.querySelectorAll('td').forEach(function (td) { cells[td.dataset.id] = td; });
   var colHeads = grid.querySelectorAll('thead th'), rowHeads = grid.querySelectorAll('tbody th');
 
+  /* --- Column and row sizes: drag a header edge to resize, double-click to auto-fit --- */
+  var SKEY = 'ws.sheetSize', size = store.get(SKEY, { c: {}, r: {} }), DEFC = 80, DEFR = 20;
+  var cg = document.createElement('colgroup');
+  cg.innerHTML = '<col class="hcol">' + Array(COLS + 1).join('<col>');
+  grid.insertBefore(cg, grid.firstChild);
+  var cols = cg.querySelectorAll('col:not(.hcol)');
+  function totalW() { var t = 36; for (var c = 0; c < COLS; c++) t += (size.c[c] || DEFC); return t; }
+  function applyCol(c) { cols[c].style.width = (size.c[c] || DEFC) + 'px'; grid.style.width = totalW() + 'px'; }
+  function applyRow(r) { rowHeads[r].parentElement.style.height = (size.r[r] || DEFR) + 'px'; }
+  function applyAll() { for (var c = 0; c < COLS; c++) applyCol(c); for (var r = 0; r < ROWS; r++) if (size.r[r]) applyRow(r); }
+  function saveSize() { store.set(SKEY, size); }
+
+  var drag = null;
+  function onEdge(e) {   // within 4px of a header's trailing edge
+    var th = e.target.closest('th');
+    if (!th) return null;
+    var r = th.getBoundingClientRect(), head = th.parentElement.parentElement.tagName === 'THEAD';
+    if (head && th.cellIndex > 0 && e.clientX > r.right - 4) return { type: 'c', i: th.cellIndex - 1, start: e.clientX, was: size.c[th.cellIndex - 1] || DEFC };
+    if (!head && e.clientY > r.bottom - 4) return { type: 'r', i: th.parentElement.rowIndex - 1, start: e.clientY, was: size.r[th.parentElement.rowIndex - 1] || DEFR };
+    return null;
+  }
+  grid.addEventListener('pointermove', function (e) {
+    if (drag) return;
+    var d = onEdge(e);
+    grid.style.cursor = d ? (d.type === 'c' ? 'col-resize' : 'row-resize') : '';
+  });
+  grid.addEventListener('pointerdown', function (e) {
+    var d = onEdge(e);
+    if (!d) return;
+    e.preventDefault(); e.stopPropagation();   // don't start a cell selection
+    drag = d;
+    grid.setPointerCapture(e.pointerId);
+    document.body.classList.add('resizing');
+  }, true);
+  grid.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    if (drag.type === 'c') { size.c[drag.i] = Math.max(30, drag.was + e.clientX - drag.start); applyCol(drag.i); }
+    else { size.r[drag.i] = Math.max(14, drag.was + e.clientY - drag.start); applyRow(drag.i); }
+  });
+  function endDrag() { if (!drag) return; drag = null; document.body.classList.remove('resizing'); saveSize(); }
+  grid.addEventListener('pointerup', endDrag);
+  grid.addEventListener('pointercancel', endDrag);
+  grid.addEventListener('dblclick', function (e) {
+    var d = onEdge(e);
+    if (!d) return;
+    e.preventDefault(); e.stopPropagation();
+    if (d.type === 'c') {   // auto-fit: widest rendered text in the column
+      var probe = document.createElement('span');
+      probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font:12px Arial, Helvetica, sans-serif';
+      document.body.appendChild(probe);
+      var w = 40;
+      for (var r = 0; r < ROWS; r++) { probe.textContent = cells[idOf(d.i, r)].textContent; w = Math.max(w, probe.offsetWidth + 12); }
+      probe.remove();
+      size.c[d.i] = Math.min(400, w); applyCol(d.i);
+    } else { delete size.r[d.i]; applyRow(d.i); }
+    saveSize();
+  }, true);
+  applyAll();
+
   /* --- Formula engine: tokenize -> parse to AST -> evaluate --- */
   function ERR(code) { return { err: code }; }
 
@@ -2524,6 +2956,297 @@ var Sys = (function () {
 
   showTab(st.tab && areas[st.tab] ? st.tab : 'html');
   run();
+})();
+
+/* ================= File viewer (Paint panel face) ================= */
+// Left: everything this workspace holds. Right: read-only look at files on the computer.
+// Nothing is uploaded; all reading happens on the device.
+(function () {
+  var face = $('fvFace'), wsList = $('fvWs'), pcList = $('fvPc'), pcPath = $('fvPath'), pcUp = $('fvUp');
+  var prevBody = $('fvPrevBody'), prevName = $('fvPrevName');
+  var curURL = null, curBlob = null, curLabel = '';
+  var canDir = typeof window.showDirectoryPicker === 'function';
+
+  function bytes(n) { if (n == null) return ''; if (n < 1024) return n + ' B'; if (n < 1048576) return (n / 1024).toFixed(1) + ' KB'; if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB'; return (n / 1073741824).toFixed(2) + ' GB'; }
+  function when(ts) { return ts ? new Date(ts).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' }) : ''; }
+  function ext(n) { var m = /\.([A-Za-z0-9]+)$/.exec(n || ''); return m ? m[1].toLowerCase() : ''; }
+  function kindOf(name, type) {
+    var e = ext(name);
+    if (/^image\//.test(type) || /^(png|jpe?g|gif|webp|bmp|svg|avif|ico)$/.test(e)) return 'image';
+    if (type === 'application/pdf' || e === 'pdf') return 'pdf';
+    if (/^video\//.test(type) || /^(mp4|webm|ogv|mov|mkv)$/.test(e)) return 'video';
+    if (/^audio\//.test(type) || /^(mp3|wav|ogg|m4a|flac|opus)$/.test(e)) return 'audio';
+    if (/^text\//.test(type) || /^(txt|md|csv|json|xml|html?|css|js|ts|py|rb|java|c|cpp|h|sh|yml|yaml|log|ini|srt)$/.test(e)) return 'text';
+    return 'other';
+  }
+  var ICON = { image: '🖼', pdf: '📄', video: '🎞', audio: '🎵', text: '📝', folder: '📁', other: '📦' };
+  function row(icon, name, meta, onOpen) {
+    var li = document.createElement('li');
+    li.innerHTML = '<span class="fvIcon"></span><span class="grow1"></span><small></small>';
+    li.children[0].textContent = icon;
+    li.children[1].textContent = name; li.children[1].title = name;
+    li.children[2].textContent = meta;
+    li.tabIndex = 0;
+    li.onclick = onOpen;
+    li.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } };
+    return li;
+  }
+  function empty(ul, text) { var li = document.createElement('li'); li.className = 'empty'; li.textContent = text; ul.appendChild(li); }
+  function select(ul, li) { ul.querySelectorAll('li.on').forEach(function (x) { x.classList.remove('on'); }); if (li) li.classList.add('on'); }
+
+  /* --- Preview --- */
+  function clearPrev() {
+    if (curURL) { URL.revokeObjectURL(curURL); curURL = null; }
+    prevBody.innerHTML = ''; curBlob = null;
+  }
+  function preview(blob, name, type) {
+    clearPrev();
+    curBlob = blob; curLabel = name;
+    prevName.textContent = name;
+    var kind = kindOf(name, type || blob.type);
+    curURL = URL.createObjectURL(blob);
+    if (kind === 'image') { var i = new Image(); i.src = curURL; i.alt = name; prevBody.appendChild(i); }
+    else if (kind === 'pdf') { var f = document.createElement('iframe'); f.src = curURL; f.title = name; prevBody.appendChild(f); }
+    else if (kind === 'video' || kind === 'audio') {
+      var v = document.createElement(kind); v.src = curURL; v.controls = true; prevBody.appendChild(v);
+    }
+    else if (kind === 'text') {
+      var pre = document.createElement('pre'), r = new FileReader();
+      prevBody.appendChild(pre);
+      r.onload = function () { var t = String(r.result); pre.textContent = t.slice(0, 200000) + (t.length > 200000 ? '\n\n… (preview truncated)' : ''); };
+      r.onerror = function () { pre.textContent = 'Couldn’t read this file.'; };
+      r.readAsText(blob.slice(0, 400000));
+    }
+    else {
+      var d = document.createElement('div');
+      d.className = 'fvNo';
+      d.textContent = 'No preview available for this file type.';
+      prevBody.appendChild(d);
+    }
+  }
+  function previewText(title, text) {
+    clearPrev();
+    prevName.textContent = title;
+    var pre = document.createElement('pre'); pre.textContent = text; prevBody.appendChild(pre);
+    curBlob = new Blob([text], { type: 'text/plain' }); curLabel = title;
+  }
+
+
+  /* --- Left: workspace files --- */
+  var DOCS = [
+    { key: 'ws.document', name: 'Document', app: 'word', text: function (v) { var d = document.createElement('div'); d.innerHTML = v || ''; return d.textContent || '(empty)'; } },
+    { key: 'ws.notes', name: 'Notes', app: 'notes', count: function (v) { return (v || []).length; }, text: function (v) { return (v || []).map(function (n) { return '— ' + n.text; }).join('\n\n') || '(no notes)'; } },
+    { key: 'ws.sheet', name: 'Spreadsheet', app: 'sheet', count: function (v) { return Object.keys(v || {}).length; }, text: function (v) { return Object.keys(v || {}).sort().map(function (k) { return k + ': ' + v[k]; }).join('\n') || '(empty)'; } },
+    { key: 'ws.tasks', name: 'Tasks', app: 'tasks', count: function (v) { return (v || []).length; }, text: function (v) { return (v || []).map(function (t) { return '[' + t.col + '] ' + t.text; }).join('\n') || '(no tasks)'; } },
+    { key: 'ws.calendar', name: 'Calendar events', app: 'calendar', count: function (v) { var n = 0; Object.keys(v || {}).forEach(function (k) { n += v[k].length; }); return n; }, text: function (v) { return Object.keys(v || {}).sort().map(function (d) { return d + '\n' + v[d].map(function (e) { return '  ' + (e.time || 'all day') + ' ' + e.text; }).join('\n'); }).join('\n') || '(no events)'; } },
+    { key: 'ws.playground', name: 'Code playground', app: 'code', text: function (v) {
+      v = v || {};
+      var out = [];
+      if ((v.html || '').trim()) out.push('<!-- HTML -->\n' + v.html.trim());
+      if ((v.css || '').trim()) out.push('/* CSS */\n' + v.css.trim());
+      if ((v.js || '').trim()) out.push('// JS\n' + v.js.trim());
+      return out.join('\n\n') || '(empty)';
+    } },
+    { key: 'ws.tracker', name: 'Time entries', app: 'time', count: function (v) { return ((v || {}).entries || []).length; }, text: function (v) { v = v || {}; var names = {}; (v.projects || []).forEach(function (p) { names[p.id] = p.name; }); return (v.entries || []).map(function (e) { return names[e.pid] + ' ' + new Date(e.start).toLocaleString() + ' → ' + new Date(e.end).toLocaleTimeString(); }).join('\n') || '(no entries)'; } },
+    { key: 'ws.calc', name: 'Calculator history', app: 'calc', count: function (v) { return ((v || {}).hist || []).length; }, text: function (v) { return (((v || {}).hist) || []).map(function (h) { return h.e + ' = ' + h.r; }).join('\n') || '(no history)'; } }
+  ];
+  function renderWs() {
+    wsList.innerHTML = '';
+    var head = document.createElement('li'); head.className = 'fvHead'; head.textContent = 'Saved files'; wsList.appendChild(head);
+    store.getFiles().then(function (fs) {
+      if (!fs.length) empty(wsList, 'No saved files yet. Gallery images, PDFs and recordings appear here.');
+      fs.slice().reverse().forEach(function (f) {
+        var k = f.kind === 'image' ? 'image' : f.kind === 'pdf' ? 'pdf' : kindOf(f.name, f.type);
+        var li = row(ICON[k] || ICON.other, f.name, bytes(f.blob ? f.blob.size : 0) + ' · ' + when(f.t), function () {
+          select(wsList, li); preview(f.blob, f.name, f.type);
+        });
+        var go = document.createElement('button');
+        go.textContent = 'Open in app'; go.className = 'fvGo';
+        go.onclick = function (e) { e.stopPropagation(); Flip.to('paint', f.kind === 'pdf' ? 'pdf' : f.kind === 'recording' ? 'paint' : 'gallery'); if (f.kind === 'recording') Flip.to('media', 'rec'); };
+        li.appendChild(go);
+        wsList.appendChild(li);
+      });
+      var h2 = document.createElement('li'); h2.className = 'fvHead'; h2.textContent = 'App data'; wsList.appendChild(h2);
+      DOCS.forEach(function (d) {
+        var v = store.get(d.key), size = v === undefined ? 0 : new Blob([JSON.stringify(v)]).size;
+        var n = d.count ? d.count(v) : null;
+        var meta = (n != null ? n + ' item' + (n === 1 ? '' : 's') + ' · ' : '') + bytes(size);
+        var li = row(ICON.text, d.name, meta, function () { select(wsList, li); previewText(d.name, d.text(v)); });
+        var go = document.createElement('button');
+        go.textContent = 'Open in app'; go.className = 'fvGo';
+        go.onclick = function (e) {
+          e.stopPropagation();
+          var panel = { word: 'word', notes: 'word', sheet: 'word', code: 'word', tasks: 'browser', calendar: 'calendar', calc: 'calendar', time: 'calendar' }[d.app];
+          if (!Panels.isOpen(panel)) Panels.open(panel);
+          Flip.to(panel, d.app);
+        };
+        li.appendChild(go);
+        wsList.appendChild(li);
+      });
+    });
+  }
+
+  /* --- Right: files on this computer --- */
+  /* --- Right: a snapshot of one folder on this computer (read-only) --- */
+  // The user points at a folder once (browsers require that); everything after is passive:
+  // the whole tree is scanned and listed, subfolders included. Nothing is uploaded.
+  var tree = null, openDirs = {}, scanning = false;
+
+  function setPath(text) { pcPath.textContent = text || (tree ? tree.name : 'No folder chosen'); }
+  function node(name, isDir) { return { name: name, dir: isDir, children: [], size: 0, files: 0, dirs: 0, file: null, handle: null }; }
+
+  function summarize(n) {   // roll sizes and counts up the tree; also collect extension totals
+    var exts = {};
+    (function walk(d) {
+      d.children.sort(function (a, b) { return (b.dir - a.dir) || a.name.localeCompare(b.name); });
+      d.children.forEach(function (c) {
+        if (c.dir) { walk(c); d.dirs += c.dirs + 1; d.files += c.files; d.size += c.size; }
+        else {
+          d.files++; d.size += c.size;
+          var e = ext(c.name) || 'no extension';
+          exts[e] = exts[e] || { n: 0, size: 0 };
+          exts[e].n++; exts[e].size += c.size;
+        }
+      });
+    })(n);
+    n.exts = exts;
+    return n;
+  }
+  function summaryLine(n) {
+    var top = Object.keys(n.exts).sort(function (a, b) { return n.exts[b].n - n.exts[a].n; }).slice(0, 6)
+      .map(function (e) { return '.' + e + ' ×' + n.exts[e].n; }).join('  ');
+    return n.files + ' files · ' + n.dirs + ' folders · ' + bytes(n.size) + (top ? '  —  ' + top : '');
+  }
+
+  function render() {
+    pcList.innerHTML = '';
+    if (!tree) { empty(pcList, canDir ? 'Choose a folder to see everything inside it. Nothing is uploaded.' : 'Choose a folder to list its contents. Nothing is uploaded.'); return; }
+    var head = document.createElement('li');
+    head.className = 'fvHead'; head.textContent = summaryLine(tree);
+    pcList.appendChild(head);
+    (function draw(d, depth, path) {
+      d.children.forEach(function (c) {
+        var key = path + '/' + c.name, li;
+        if (c.dir) {
+          var open = openDirs[key] !== false;   // folders start expanded
+          li = row((open ? '▾ ' : '▸ ') + ICON.folder, c.name, c.files + ' files · ' + bytes(c.size), function () {
+            openDirs[key] = !open; render();
+          });
+        } else {
+          li = row(ICON[kindOf(c.name, c.file ? c.file.type : '')] || ICON.other, c.name,
+            (ext(c.name) ? '.' + ext(c.name) + ' · ' : '') + bytes(c.size) + (c.mtime ? ' · ' + when(c.mtime) : ''),
+            function () {
+              select(pcList, li);
+              if (c.file) { preview(c.file, c.name, c.file.type); }
+              else if (c.handle) c.handle.getFile().then(function (f) { preview(f, f.name, f.type); }, function () { previewText(c.name, 'Couldn’t open this file.'); });
+            });
+        }
+        li.style.paddingLeft = (6 + depth * 14) + 'px';
+        pcList.appendChild(li);
+        if (c.dir && openDirs[key] !== false) draw(c, depth + 1, key);
+      });
+    })(tree, 0, '');
+  }
+
+  function scanHandle(handle) {
+    scanning = true;
+    pcList.innerHTML = ''; empty(pcList, 'Scanning folder…');
+    var root = node(handle.name, true), count = 0;
+    (async function walk(dh, parent, depth) {
+      if (depth > 12) return;   // guard against very deep or looping trees
+      for await (var entry of dh.values()) {
+        if (entry.kind === 'directory') {
+          var d = node(entry.name, true);
+          parent.children.push(d);
+          await walk(entry, d, depth + 1);
+        } else {
+          var f = node(entry.name, false);
+          f.handle = entry;
+          try { var file = await entry.getFile(); f.size = file.size; f.mtime = file.lastModified; } catch (e) {}
+          parent.children.push(f);
+          if (++count % 200 === 0) { setPath('Scanning… ' + count + ' files'); await new Promise(function (r) { setTimeout(r, 0); }); }
+        }
+      }
+    })(handle, root, 0).then(function () {
+      tree = summarize(root); openDirs = {}; scanning = false;
+      setPath(); render();
+    }, function () {
+      scanning = false;
+      pcList.innerHTML = ''; empty(pcList, 'Couldn’t read that folder.');
+    });
+  }
+
+  function scanFlat(files) {   // webkitdirectory gives each file's path inside the chosen folder
+    if (!files.length) return;
+    var rootName = (files[0].webkitRelativePath || '').split('/')[0] || 'Selected files';
+    var root = node(rootName, true);
+    files.forEach(function (f) {
+      var rel = f.webkitRelativePath || f.name, parts = rel.split('/');
+      if (parts.length > 1) parts.shift();   // drop the root folder name
+      var cur = root;
+      parts.forEach(function (part, k) {
+        if (k === parts.length - 1) {
+          var n = node(part, false);
+          n.file = f; n.size = f.size; n.mtime = f.lastModified;
+          cur.children.push(n);
+        } else {
+          var found = null;
+          cur.children.forEach(function (c) { if (c.dir && c.name === part) found = c; });
+          if (!found) { found = node(part, true); cur.children.push(found); }
+          cur = found;
+        }
+      });
+    });
+    tree = summarize(root); openDirs = {};
+    setPath(); render();
+  }
+
+  $('fvFolder').onclick = function () {
+    if (canDir) window.showDirectoryPicker({ mode: 'read' }).then(function (h) {
+      store.putFile({ id: 'fv-dir', kind: 'handle', name: h.name, t: Date.now(), handle: h });   // remembered for next time
+      scanHandle(h);
+    }, function () {});
+    else $('fvDirInput').click();
+  };
+  $('fvFiles').onclick = function () { $('fvFileInput').click(); };
+  $('fvDirInput').onchange = function () { scanFlat([].slice.call(this.files)); this.value = ''; };
+  $('fvFileInput').onchange = function () { scanFlat([].slice.call(this.files)); this.value = ''; };
+  pcUp.onclick = function () {   // collapse everything back to the top level
+    openDirs = {};
+    tree && tree.children.forEach(function (c) { if (c.dir) openDirs['/' + c.name] = false; });
+    render();
+  };
+  $('fvRefresh').onclick = function () { renderWs(); if (lastHandle && !scanning) scanHandle(lastHandle); };
+
+  var lastHandle = null;
+  face.addEventListener('dragover', function (e) { e.preventDefault(); face.classList.add('drag'); });
+  face.addEventListener('dragleave', function (e) { if (!face.contains(e.relatedTarget)) face.classList.remove('drag'); });
+  face.addEventListener('drop', function (e) {
+    e.preventDefault(); face.classList.remove('drag');
+    var items = e.dataTransfer.items;
+    if (canDir && items && items.length === 1 && items[0].getAsFileSystemHandle) {
+      items[0].getAsFileSystemHandle().then(function (h) {
+        if (h && h.kind === 'directory') { lastHandle = h; scanHandle(h); }
+        else if (h) h.getFile().then(function (f) { scanFlat([f]); preview(f, f.name, f.type); });
+      }, function () {});
+      return;
+    }
+    if (e.dataTransfer.files.length) scanFlat([].slice.call(e.dataTransfer.files));
+  });
+
+  if (!canDir) $('fvFolder').title = 'Pick a folder; this browser lists everything inside it.';
+  face.addEventListener('faceshown', renderWs);
+  setPath(); render();
+  renderWs();
+  // Re-open the last folder if the browser still trusts it (no prompt).
+  if (canDir) store.getFiles('handle').then(function (a) {
+    var rec = a[a.length - 1];
+    if (!rec || !rec.handle || !rec.handle.queryPermission) return;
+    rec.handle.queryPermission({ mode: 'read' }).then(function (p) {
+      if (p !== 'granted') return;
+      lastHandle = rec.handle; scanHandle(rec.handle);
+    }, function () {});
+  });
 })();
 
 /* ================= Calculator (Calendar panel face) ================= */
@@ -3304,6 +4027,36 @@ var Sys = (function () {
   renderRows();
 })();
 
+/* ================= Glass theme toggle ================= */
+(function () {
+  var ui = store.get('ws.ui', {}), btn = $('themeBtn');
+  function set(on) {
+    document.body.classList.toggle('glass', on);
+    btn.classList.toggle('on', on);
+    btn.textContent = on ? 'Glass' : 'Plain';
+    btn.title = on ? 'Glass theme is on. Click for the plain theme.' : 'Plain theme is on. Click for the glass theme.';
+    btn.setAttribute('aria-pressed', String(on));
+    ui.glass = on; store.set('ws.ui', ui);
+  }
+  btn.onclick = function () { set(!document.body.classList.contains('glass')); };
+  set(ui.glass !== false);   // glass is the default; the choice is remembered
+
+  // Ripple on press, glass only.
+  document.addEventListener('pointerdown', function (e) {
+    if (!document.body.classList.contains('glass')) return;
+    var b = e.target.closest('.bar button, .seg button, .clist button, .crow2 button, #qKeys button');
+    if (!b || b.disabled) return;
+    var r = b.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2.2;
+    var s = document.createElement('span');
+    s.className = 'ripple';
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (e.clientX - r.left) + 'px';
+    s.style.top = (e.clientY - r.top) + 'px';
+    b.appendChild(s);
+    setTimeout(function () { s.remove(); }, 600);
+  }, true);
+})();
+
 /* ================= Panel close / reopen ================= */
 // Closing a panel hides it; the remaining panels take its space. Closed panels are listed in the status bar.
 // Desktop only: on narrow screens every panel stays reachable from the mobile nav.
@@ -3363,6 +4116,129 @@ var Panels = (function () {
   return { close: close, open: open, isOpen: isOpen, names: NAMES, ids: IDS };
 })();
 
+/* ================= Panel blur + proximity focus ================= */
+// Blur a panel to park it: still open, still running, just quiet for the eye.
+// Proximity mode: a blurred panel sharpens as the pointer nears its centre, and is fully
+// clear at the centre. With proximity off, a blurred panel clears on hover instead.
+var Blur = (function () {
+  var ui = store.get('ws.ui', {}), btn = $('proxBtn');
+  var blurred = {}, MAX = 8, prox = ui.prox !== false, pending = false, mouse = null;
+  (ui.blurred || []).forEach(function (id) { blurred[id] = true; });
+
+  function panels() { return Panels.ids.map($); }
+  function setVar(p, px) {
+    var k = px / MAX;   // 0 = fully clear, 1 = fully parked
+    p.style.setProperty('--blur', px.toFixed(2) + 'px');
+    // Washed out rather than dark: colour drains and contrast drops, so a parked panel
+    // can't catch the eye, but its shape still says what it is.
+    p.style.setProperty('--blurDim', (1 - 0.45 * k).toFixed(3));
+    p.style.setProperty('--blurSat', (1 - 0.82 * k).toFixed(3));
+    p.style.setProperty('--blurCon', (1 - 0.55 * k).toFixed(3));
+    p.style.setProperty('--blurBri', (1 - 0.12 * k).toFixed(3));
+    var t = p.querySelector('.blurTrack');
+    // Let clicks through once the panel is clear, so a sharpened panel is fully usable.
+    if (t) t.style.pointerEvents = px > 0.6 ? 'auto' : 'none';
+  }
+  function paint() {
+    pending = false;
+    panels().forEach(function (p) {
+      if (!blurred[p.id]) { p.style.removeProperty('--blur'); p.style.removeProperty('--blurDim'); return; }
+      if (!prox || !mouse) { setVar(p, MAX); return; }
+      var r = p.getBoundingClientRect();
+      if (!r.width) return;
+      var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      var d = Math.hypot(mouse.x - cx, mouse.y - cy);
+      // Outside the panel (beyond a small approach margin) it stays fully parked, so a panel
+      // never lights up because the pointer happens to be near it in another panel.
+      var M = 70, outside = Math.hypot(Math.max(r.left - M - mouse.x, 0, mouse.x - (r.right + M)),
+                                       Math.max(r.top - M - mouse.y, 0, mouse.y - (r.bottom + M)));
+      if (outside > 0) { setVar(p, MAX); return; }
+      var reach = Math.max(150, Math.min(r.width, r.height) * 0.6);
+      var t = Math.max(0, Math.min(1, d / reach));
+      setVar(p, MAX * t * t);   // eased so the clearing feels smooth near the centre
+    });
+  }
+  function schedule() { if (!pending) { pending = true; requestAnimationFrame(paint); } }
+
+  document.addEventListener('pointermove', function (e) {
+    if (e.pointerType === 'touch') return;
+    mouse = { x: e.clientX, y: e.clientY };
+    if (prox && Object.keys(blurred).length) schedule();
+  }, { passive: true });
+  window.addEventListener('scroll', function () { schedule(); place(); }, true);
+  window.addEventListener('resize', function () { schedule(); place(); });
+
+  function save() { ui.blurred = Object.keys(blurred); ui.prox = prox; store.set('ws.ui', ui); }
+  function apply(id) {
+    var p = $(id), on = !!blurred[id];
+    p.classList.toggle('blurred', on);
+    p.classList.toggle('proxOn', on && prox);
+    p.querySelectorAll('.blurBtn').forEach(function (b) {
+      b.classList.toggle('on', on);
+      b.title = on ? 'Unblur this panel' : 'Blur this panel (it stays open and running)';
+      b.setAttribute('aria-pressed', String(on));
+    });
+    schedule();
+  }
+  function toggle(id) {
+    if (blurred[id]) delete blurred[id]; else blurred[id] = true;
+    save(); apply(id); place();
+  }
+  // One floating chip per blurred panel, outside the blurred subtree.
+  var chips = {};
+  function place() {
+    Panels.ids.forEach(function (id) {
+      var p = $(id), on = blurred[id] && Panels.isOpen(id) && p.offsetWidth;
+      if (!on) { if (chips[id]) { chips[id].remove(); delete chips[id]; } return; }
+      var c = chips[id];
+      if (!c) {
+        c = document.createElement('button');
+        c.className = 'unblurChip';
+        c.textContent = '◐ ' + Panels.names[id];
+        c.title = 'Unblur the ' + Panels.names[id] + ' panel';
+        c.onclick = function () { toggle(id); };
+        document.body.appendChild(c);
+        chips[id] = c;
+      }
+      var r = p.getBoundingClientRect();
+      c.style.left = Math.round(r.right - c.offsetWidth - 8) + 'px';
+      c.style.top = Math.round(r.top + 7) + 'px';
+    });
+  }
+  function setProx(on) {
+    prox = on;
+    btn.classList.toggle('on', prox);
+    btn.setAttribute('aria-pressed', String(prox));
+    btn.title = prox ? 'Proximity focus is on: blurred panels sharpen as the pointer nears their centre.'
+                     : 'Proximity focus is off: blurred panels stay blurred and clear on hover.';
+    save();
+    Panels.ids.forEach(apply);
+  }
+  btn.onclick = function () {
+    setProx(!prox);
+    Sys.toast(prox ? 'Proximity focus on. Blurred panels sharpen as you approach them.'
+                   : 'Proximity focus off. Blurred panels clear on hover.', { ms: 3000 });
+  };
+
+  panels().forEach(function (p) {
+    var t = document.createElement('div');
+    t.className = 'blurTrack';
+    t.addEventListener('pointermove', function (e) {
+      if (e.pointerType === 'touch') return;
+      mouse = { x: e.clientX, y: e.clientY };
+      schedule();
+    });
+    t.addEventListener('pointerdown', function () { delete blurred[p.id]; save(); apply(p.id); place(); });   // click a parked panel to wake it
+    p.appendChild(t);
+  });
+
+  setProx(prox);
+  Panels.ids.forEach(apply);
+  place();
+  setInterval(place, 800);   // follows panel resizes, flips and closes
+  return { toggle: toggle, isBlurred: function (id) { return !!blurred[id]; } };
+})();
+
 /* ================= Per-panel zoom ================= */
 // A − 100% + control at the end of every face's toolbar (also Ctrl + mouse wheel over a panel).
 // Zoom scales each face's content area; toolbars stay at normal size.
@@ -3393,6 +4269,11 @@ var Panels = (function () {
       x.className = 'pclose'; x.textContent = '×';
       x.title = 'Close the ' + Panels.names[id] + ' panel'; x.setAttribute('aria-label', x.title);
       x.onclick = function () { Panels.close(id); };
+      var bl = document.createElement('button');   // park this panel: blur it but keep it open
+      bl.className = 'blurBtn'; bl.textContent = '◐';
+      bl.setAttribute('aria-label', 'Blur the ' + Panels.names[id] + ' panel');
+      bl.onclick = function () { Blur.toggle(id); };
+      face.querySelector('.bar').appendChild(bl);
       face.querySelector('.bar').appendChild(x);
       ctls.push(c);
     });
@@ -3411,6 +4292,7 @@ var Panels = (function () {
     paint: function () { return !!paintAPI.dirty; },
     gallery: function () { return $('gStrip').children.length > 0; },
     pdf: function () { return !$('dList').disabled; },
+    files: function () { return false; },
     calendar: function () { return Object.keys(store.get('ws.calendar', {})).length > 0; },
     calc: function () { var c = store.get('ws.calc', {}); return !!(c.hist && c.hist.length); },
     clock: function () { var c = store.get('ws.clock', {}); return !!((c.zones && c.zones.length) || (c.alarms && c.alarms.length)); },
@@ -3440,7 +4322,7 @@ var Panels = (function () {
   var timer = null, fileSizes = {}, lastFiles = 0, estimate = null, opener = null;
   var APPS = [
     { k: 'web', name: 'Web browser', panel: 'browser' }, { k: 'tasks', name: 'Tasks', panel: 'browser', key: 'ws.tasks' },
-    { k: 'paint', name: 'Paint', panel: 'paint', note: 'Not saved' }, { k: 'gallery', name: 'Gallery', panel: 'paint', file: 'image' }, { k: 'pdf', name: 'PDF viewer', panel: 'paint', file: 'pdf' },
+    { k: 'paint', name: 'Paint', panel: 'paint', note: 'Not saved' }, { k: 'gallery', name: 'Gallery', panel: 'paint', file: 'image' }, { k: 'pdf', name: 'PDF viewer', panel: 'paint', file: 'pdf' }, { k: 'files', name: 'File viewer', panel: 'paint', note: 'Not saved' },
     { k: 'calendar', name: 'Calendar', panel: 'calendar', key: 'ws.calendar' }, { k: 'calc', name: 'Calculator', panel: 'calendar', key: 'ws.calc' },
     { k: 'clock', name: 'Clock', panel: 'calendar', key: 'ws.clock' }, { k: 'time', name: 'Time tracker', panel: 'calendar', key: 'ws.tracker' },
     { k: 'word', name: 'Word processor', panel: 'word', key: 'ws.document' }, { k: 'sheet', name: 'Spreadsheet', panel: 'word', key: 'ws.sheet' },
