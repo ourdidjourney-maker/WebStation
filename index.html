@@ -1528,7 +1528,7 @@ var Sys = (function () {
 /* ================= Browser ================= */
 (function () {
   var frame = $('bFrame'), url = $('bUrl'), hint = $('bHint'), back = $('bBack'), fwd = $('bFwd');
-  var hist = [], idx = -1;   // our own history: cross-origin frames don't expose theirs
+  var hist = [], idx = -1, KEY = 'ws.web';   // our own history: cross-origin frames don't expose theirs
 
   function normalize(s) {
     s = s.trim();
@@ -1538,7 +1538,10 @@ var Sys = (function () {
     return 'https://' + s;
   }
   function update() { back.disabled = idx <= 0; fwd.disabled = idx >= hist.length - 1; }
-  function show(u) { frame.src = u; url.value = u; hint.style.display = 'none'; update(); }
+  function show(u) {
+    frame.src = u; url.value = u; hint.style.display = 'none'; update();
+    store.set(KEY, { url: u, t: Date.now() });
+  }
   function go() {
     var u = normalize(url.value);
     if (u === '') return;
@@ -1556,6 +1559,8 @@ var Sys = (function () {
     var u = idx >= 0 ? hist[idx] : normalize(url.value);
     if (u) window.open(u, '_blank', 'noopener');
   };
+  var last = store.get(KEY, null);   // reopen the last page
+  if (last && last.url) { hist = [last.url]; idx = 0; show(last.url); }
   update();
 })();
 
@@ -3048,7 +3053,35 @@ var Sys = (function () {
       return out.join('\n\n') || '(empty)';
     } },
     { key: 'ws.tracker', name: 'Time entries', app: 'time', count: function (v) { return ((v || {}).entries || []).length; }, text: function (v) { v = v || {}; var names = {}; (v.projects || []).forEach(function (p) { names[p.id] = p.name; }); return (v.entries || []).map(function (e) { return names[e.pid] + ' ' + new Date(e.start).toLocaleString() + ' → ' + new Date(e.end).toLocaleTimeString(); }).join('\n') || '(no entries)'; } },
-    { key: 'ws.calc', name: 'Calculator history', app: 'calc', count: function (v) { return ((v || {}).hist || []).length; }, text: function (v) { return (((v || {}).hist) || []).map(function (h) { return h.e + ' = ' + h.r; }).join('\n') || '(no history)'; } }
+    { key: 'ws.calc', name: 'Calculator history', app: 'calc', count: function (v) { return ((v || {}).hist || []).length; }, text: function (v) { return (((v || {}).hist) || []).map(function (h) { return h.e + ' = ' + h.r; }).join('\n') || '(no history)'; } },
+    { key: 'ws.clock', name: 'Clock settings', app: 'clock', count: function (v) { v = v || {}; return (v.zones || []).length + (v.alarms || []).length; }, text: function (v) {
+      v = v || {};
+      var out = [];
+      (v.zones || []).forEach(function (z) { out.push('Time zone: ' + z); });
+      (v.alarms || []).forEach(function (a) { out.push('Alarm ' + a.time + (a.on ? ' [on]' : ' [off]') + (a.label ? ' — ' + a.label : '')); });
+      if (v.pomo) out.push('Pomodoro: ' + v.pomo.work + ' min focus / ' + v.pomo.brk + ' min break');
+      return out.join('\n') || '(nothing set)';
+    } },
+    { key: 'ws.web', name: 'Web page', app: 'web', text: function (v) { return v && v.url ? v.url + '\n\nLast opened ' + new Date(v.t).toLocaleString() : '(no page open)'; } },
+    { key: 'ws.feeds', name: 'News feeds', app: 'web', count: function (v) { return (v || []).length; }, text: function (v) { return (v || []).map(function (f) { return (f.on ? '[on]  ' : '[off] ') + (f.title || '(untitled)') + '\n      ' + f.url; }).join('\n') || '(no feeds)'; } },
+    { key: 'ws.sheetSize', name: 'Sheet column sizes', app: 'sheet', count: function (v) { v = v || {}; return Object.keys(v.c || {}).length + Object.keys(v.r || {}).length; }, text: function (v) {
+      v = v || {};
+      var L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', out = [];
+      Object.keys(v.c || {}).forEach(function (c) { out.push('Column ' + L[c] + ': ' + Math.round(v.c[c]) + 'px'); });
+      Object.keys(v.r || {}).forEach(function (r) { out.push('Row ' + (+r + 1) + ': ' + Math.round(v.r[r]) + 'px'); });
+      return out.join('\n') || '(all default)';
+    } },
+    { key: 'ws.ui', name: 'Workspace settings', app: 'web', text: function (v) {
+      v = v || {};
+      var z = v.zoom || {}, out = [];
+      out.push('Theme: ' + (v.glass === false ? 'Plain' : 'Glass'));
+      out.push('Proximity focus: ' + (v.prox === false ? 'off' : 'on'));
+      out.push('Blurred panels: ' + ((v.blurred || []).join(', ') || 'none'));
+      out.push('Closed panels: ' + ((v.closed || []).join(', ') || 'none'));
+      out.push('Browser height: ' + Math.round(v.split || 28) + '%');
+      Object.keys(z).forEach(function (k) { if (z[k] !== 1) out.push('Zoom ' + k + ': ' + Math.round(z[k] * 100) + '%'); });
+      return out.join('\n');
+    } }
   ];
   function renderWs() {
     wsList.innerHTML = '';
@@ -3076,7 +3109,7 @@ var Sys = (function () {
         go.textContent = 'Open in app'; go.className = 'fvGo';
         go.onclick = function (e) {
           e.stopPropagation();
-          var panel = { word: 'word', notes: 'word', sheet: 'word', code: 'word', tasks: 'browser', calendar: 'calendar', calc: 'calendar', time: 'calendar' }[d.app];
+          var panel = { word: 'word', notes: 'word', sheet: 'word', code: 'word', tasks: 'browser', web: 'browser', calendar: 'calendar', calc: 'calendar', clock: 'calendar', time: 'calendar' }[d.app];
           if (!Panels.isOpen(panel)) Panels.open(panel);
           Flip.to(panel, d.app);
         };
@@ -4321,7 +4354,7 @@ var Blur = (function () {
   var ov = $('tmOverlay'), runEl = $('tmRun'), body = $('tmApps').querySelector('tbody'), sysEl = $('tmSys');
   var timer = null, fileSizes = {}, lastFiles = 0, estimate = null, opener = null;
   var APPS = [
-    { k: 'web', name: 'Web browser', panel: 'browser' }, { k: 'tasks', name: 'Tasks', panel: 'browser', key: 'ws.tasks' },
+    { k: 'web', name: 'Web browser', panel: 'browser', key: 'ws.web' }, { k: 'tasks', name: 'Tasks', panel: 'browser', key: 'ws.tasks' },
     { k: 'paint', name: 'Paint', panel: 'paint', note: 'Not saved' }, { k: 'gallery', name: 'Gallery', panel: 'paint', file: 'image' }, { k: 'pdf', name: 'PDF viewer', panel: 'paint', file: 'pdf' }, { k: 'files', name: 'File viewer', panel: 'paint', note: 'Not saved' },
     { k: 'calendar', name: 'Calendar', panel: 'calendar', key: 'ws.calendar' }, { k: 'calc', name: 'Calculator', panel: 'calendar', key: 'ws.calc' },
     { k: 'clock', name: 'Clock', panel: 'calendar', key: 'ws.clock' }, { k: 'time', name: 'Time tracker', panel: 'calendar', key: 'ws.tracker' },
