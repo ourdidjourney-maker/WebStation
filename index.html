@@ -1417,10 +1417,11 @@ var Sys = (function () {
 (function () {
   function toDataURL(blob) {
     return new Promise(function (res) {
+      if (!(blob instanceof Blob)) { res(null); return; }
       var r = new FileReader();
       r.onload = function () { res(r.result); };
       r.onerror = function () { res(null); };
-      r.readAsDataURL(blob);
+      try { r.readAsDataURL(blob); } catch (e) { res(null); }
     });
   }
   function fromDataURL(s) {
@@ -1435,11 +1436,14 @@ var Sys = (function () {
     var kv = {};
     store.keys().forEach(function (k) { kv[k] = store.get(k); });
     Sys.toast('Preparing backup…', { ms: 1500 });
-    store.getFiles().then(function (files) {
+    store.getFiles().then(function (all) {
+      // Only real files. A stored folder handle is a browser permission object: it holds no
+      // data and cannot be serialised, so it is never part of a backup.
+      var files = all.filter(function (f) { return f && f.blob instanceof Blob; });
       return Promise.all(files.map(function (f) {
         return toDataURL(f.blob).then(function (d) {
           var o = {};
-          Object.keys(f).forEach(function (k) { if (k !== 'blob') o[k] = f[k]; });
+          Object.keys(f).forEach(function (k) { if (k !== 'blob' && k !== 'handle') o[k] = f[k]; });
           o.data = d;
           return o;
         });
@@ -1448,6 +1452,8 @@ var Sys = (function () {
       var out = { app: 'workspace', version: 1, created: new Date().toISOString(), kv: kv, files: files };
       download(new Blob([JSON.stringify(out)], { type: 'application/json' }), 'workspace-backup-' + new Date().toISOString().slice(0, 10) + '.json');
       Sys.toast('Backup saved: ' + Object.keys(kv).length + ' data sets and ' + files.length + ' files.');
+    }).catch(function (e) {
+      Sys.toast('Backup failed: ' + ((e && e.message) || 'unknown error') + '. Nothing was changed.', { ms: 8000 });
     });
   };
 
@@ -1462,7 +1468,7 @@ var Sys = (function () {
       if (!b || b.app !== 'workspace' || !b.kv) { Sys.toast('That file isn’t a workspace backup.'); return; }
       Sys.toast('Restoring replaces everything currently in the workspace.', { sticky: true, actions: [
         { label: 'Replace everything', fn: function () {
-          var files = (b.files || []).map(function (o) {
+          var files = (b.files || []).filter(function (o) { return o && o.data; }).map(function (o) {
             var rec = {};
             Object.keys(o).forEach(function (k) { if (k !== 'data') rec[k] = o[k]; });
             rec.blob = fromDataURL(o.data);
