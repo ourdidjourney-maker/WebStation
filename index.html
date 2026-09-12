@@ -5191,13 +5191,14 @@ var Garden = (function () {
     if (!W || !H) return;
     layer.innerHTML = '';
     var tilt = rnd(8, 15) * (Math.random() < 0.5 ? -1 : 1);   // one wind direction per panel
-    var heavy = test ? 1.6 : 1;
+    var heavy = (typeof wet[id] === 'number' ? wet[id] : 1) * (test ? 1.4 : 1);
+    var soft = Math.min(1, heavy);   // light rain is thinner and fainter, not just sparser
 
     // Depth layers: near drops are longer, faster and brighter; far ones are faint and slow.
     var DEPTHS = [
-      { n: Math.round(W / 26 * heavy), w: 2,   len: [70, 130], dur: [0.42, 0.65], a: [0.30, 0.45] },
-      { n: Math.round(W / 20 * heavy), w: 1.5, len: [45, 85],  dur: [0.65, 0.95], a: [0.18, 0.30] },
-      { n: Math.round(W / 16 * heavy), w: 1,   len: [26, 50],  dur: [1.0, 1.6],   a: [0.09, 0.18] }
+      { n: Math.round(W / 26 * heavy), w: 2 * soft,   len: [70 * soft, 130 * soft], dur: [0.42, 0.65], a: [0.30 * soft, 0.45 * soft] },
+      { n: Math.round(W / 20 * heavy), w: 1.5 * soft, len: [45 * soft, 85 * soft],  dur: [0.65, 0.95], a: [0.18 * soft, 0.30 * soft] },
+      { n: Math.round(W / 16 * heavy), w: 1 * soft,   len: [26 * soft, 50 * soft],  dur: [1.0, 1.6],   a: [0.09 * soft, 0.18 * soft] }
     ];
     DEPTHS.forEach(function (D) {
       for (var i = 0; i < D.n; i++) {
@@ -5341,7 +5342,11 @@ var Garden = (function () {
 
   function startRain(pid) {
     if (!gardens[pid] || wet[pid]) return;
-    wet[pid] = true;
+    var ir = Math.random();
+    wet[pid] = ir < 0.3 ? rnd(0.25, 0.5)     // barely spitting
+             : ir < 0.72 ? rnd(0.7, 1.15)    // steady rain
+             : ir < 0.93 ? rnd(1.4, 2.1)     // heavy
+             : rnd(2.4, 3.4);                // a downpour
     stormy[pid] = Math.random() < 0.45;                      // some storms are just rain
     if (stormy[pid]) (boltTimers[pid] = boltTimers[pid] || []).push(
       setTimeout(function () { strike(pid); }, test ? rnd(800, 4000) : rnd(4000, 40000)));
