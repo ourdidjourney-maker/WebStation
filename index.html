@@ -633,13 +633,17 @@
   /* Panel blur: the card's content blurs, the toolbar stays readable so the controls still work */
   /* Blur the whole panel — toolbar and content together — so a parked panel reads as one soft shape.
      The blur button itself is lifted back out so it stays usable. */
+  .panel.blurred .kmHost, .panel.blurred .kmRain, .panel.blurred .kmGrime, .panel.blurred .kmFlash,
   .panel.blurred .card {
     filter: blur(var(--blur, 8px)) saturate(var(--blurSat, .18)) contrast(var(--blurCon, .45)) brightness(var(--blurBri, .88));
     opacity: var(--blurDim, .55);
     transition: filter .38s cubic-bezier(.22,.7,.3,1), opacity .38s cubic-bezier(.22,.7,.3,1);
   }
+  .panel.proxOn .kmHost, .panel.proxOn .kmRain, .panel.proxOn .kmGrime, .panel.proxOn .kmFlash,
   .panel.proxOn .card { transition: filter .12s linear, opacity .12s linear; }
   /* With proximity off, hovering a blurred panel clears it */
+  .panel.blurred:not(.proxOn):hover .kmHost, .panel.blurred:not(.proxOn):hover .kmRain,
+  .panel.blurred:not(.proxOn):hover .kmGrime, .panel.blurred:not(.proxOn):hover .kmFlash,
   .panel.blurred:not(.proxOn):hover .card { filter: none; opacity: 1; }
   /* Unblur chip: lives outside the panel (a filter would blur it too), so a parked panel can always be restored */
   .unblurChip {
