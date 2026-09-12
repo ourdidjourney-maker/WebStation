@@ -323,6 +323,25 @@
   }
   @media (max-width: 820px) { .pclose, #stDock { display: none !important; } }
 
+  /* Layout chooser */
+  #lyOverlay { position: fixed; inset: 0; z-index: 901; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 12px; }
+  #lyOverlay[hidden] { display: none; }
+  #ly { background: #fff; width: min(520px, 100%); max-height: calc(100vh - 24px); display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,.4); font-size: 12px; }
+  body.glass #ly { background: rgba(18,25,48,.92); color: #eef2ff; border: 1px solid rgba(255,255,255,.18); border-radius: 16px; -webkit-backdrop-filter: blur(26px); backdrop-filter: blur(26px); }
+  .lyNote { color: #666; margin-bottom: 8px; }
+  body.glass .lyNote { color: rgba(215,226,255,.7); }
+  #lyTable { width: 100%; border-collapse: collapse; }
+  #lyTable th { text-align: left; font-weight: normal; color: #666; border-bottom: 1px solid #ccc; padding: 4px 6px; }
+  #lyTable td { border-bottom: 1px solid #eee; padding: 4px 6px; }
+  body.glass #lyTable th, body.glass #lyTable td { border-color: rgba(255,255,255,.12); }
+  body.glass #lyTable th { color: rgba(215,226,255,.66); }
+  #lyTable select { font: 12px Arial, Helvetica, sans-serif; height: 22px; }
+  body.glass #lyTable select { background: rgba(255,255,255,.08); color: #eef2ff; border: 1px solid rgba(255,255,255,.16); border-radius: 7px; }
+  body.glass #lyTable select option { background: #141b33; }
+  .lyBtns { display: flex; gap: 6px; margin-top: 10px; }
+  .lyBtns button { font: 12px Arial, Helvetica, sans-serif; height: 26px; padding: 0 12px; border: 1px solid #777; background: #fff; color: #000; cursor: pointer; }
+  body.glass .lyBtns button { background: rgba(255,255,255,.1); color: #eef2ff; border-color: rgba(255,255,255,.2); border-radius: 9px; }
+
   /* Task Manager */
   #tmOverlay { position: fixed; inset: 0; z-index: 900; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 12px; }
   #tmOverlay[hidden] { display: none; }
@@ -1248,7 +1267,7 @@
       <section class="panel" id="status" aria-label="Status">
         <span id="stClock"><span id="sysTime">--</span> / <span id="footprint">--</span></span>
         <span id="stDock" aria-label="Closed panels"></span>
-        <span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
+        <span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
     </div>
@@ -1260,6 +1279,16 @@
       <div class="bar"><input type="text" id="tkUrl" class="grow" placeholder="RSS or Atom feed address" aria-label="Feed address" spellcheck="false"><button id="tkAdd">Add feed</button><button id="tkRefresh">Refresh all</button><button id="tkClose">Close</button></div>
       <ul id="tkList" class="clist" aria-label="Your feeds"></ul>
       <div class="tkNote">When a site doesn’t allow direct access, feeds are fetched through a public proxy (allorigins.win, then corsproxy.io).</div>
+    </div>
+  </div>
+</div>
+<div id="lyOverlay" hidden>
+  <div id="ly" role="dialog" aria-modal="true" aria-labelledby="lyTitle">
+    <div class="tmHead"><strong id="lyTitle">Layout — where each app lives</strong><button id="lyClose">Close</button></div>
+    <div class="tmBody">
+      <p class="lyNote">Pick a panel for each app. The workspace reloads when you apply — your work is saved, but an unsaved painting is not.</p>
+      <table id="lyTable"><thead><tr><th>App</th><th>Panel</th></tr></thead><tbody></tbody></table>
+      <div class="lyBtns"><button id="lyApply">Apply and reload</button><button id="lyReset">Reset to default</button></div>
     </div>
   </div>
 </div>
@@ -1417,6 +1446,106 @@ var paintAPI = {}, galleryAPI = {}, mediaAPI = {};
 // Two-phase turn: rotate edge-on (90°), swap faces at the invisible midpoint,
 // rotate back in from the other side. Only one face is ever visible, so iframes,
 // video and editable content never bleed through during the turn.
+/* ================= Layout: which panel each app lives in =================
+   Applied here, before any module wires itself to a panel. Changing it reloads the page,
+   which keeps every button bound to the panel it actually sits in. */
+var Layout = (function () {
+  var PANELS = [['browser', 'Browser (top)'], ['paint', 'Left'], ['calendar', 'Lower left'], ['word', 'Right'], ['media', 'Lower right']];
+  var APPS = [['web', 'Web browser'], ['tasks', 'Tasks'], ['paint', 'Paint'], ['gallery', 'Gallery'], ['pdf', 'PDF viewer'],
+              ['files', 'File viewer'], ['calendar', 'Calendar'], ['calc', 'Calculator'], ['clock', 'Clock'], ['time', 'Time tracker'],
+              ['word', 'Word processor'], ['sheet', 'Spreadsheet'], ['code', 'Code playground'], ['notes', 'Notes'],
+              ['media', 'Media player'], ['rec', 'Recorder']];
+  var HOME = {};   // where each app started out
+  document.querySelectorAll('.face').forEach(function (f) {
+    var p = f.closest('.panel');
+    if (p) HOME[f.dataset.face] = p.id;
+  });
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem('ws.layout') || '{}') || {}; } catch (e) {}
+
+  function faceEl(name) { return document.querySelector('.face[data-face="' + name + '"]'); }
+
+  function apply() {
+    Object.keys(saved).forEach(function (name) {
+      var f = faceEl(name), target = document.getElementById(saved[name]);
+      if (!f || !target) return;
+      var card = target.querySelector('.card');
+      if (card && f.parentElement !== card) card.appendChild(f);
+    });
+    // Every card needs at least one app, and exactly one showing.
+    document.querySelectorAll('.card').forEach(function (card) {
+      var faces = [].slice.call(card.querySelectorAll('.face'));
+      if (!faces.length) { card.parentElement.classList.add('closed'); return; }
+      var keep = card.querySelector('.face.front') || faces[0];
+      faces.forEach(function (x) { x.classList.toggle('front', x === keep); });
+    });
+    // Rebuild each switcher so it lists the apps actually in that panel.
+    var label = {};
+    APPS.forEach(function (a) { label[a[0]] = a[1]; });
+    var short = { web: 'Web', tasks: 'Tasks', paint: 'Paint', gallery: 'Gallery', pdf: 'PDF', files: 'Files',
+                  calendar: 'Calendar', calc: 'Calc', clock: 'Clock', time: 'Time', word: 'Word', sheet: 'Sheet',
+                  code: 'Code', notes: 'Notes', media: 'Media', rec: 'Recorder' };
+    document.querySelectorAll('.card').forEach(function (card) {
+      var names = [].map.call(card.querySelectorAll('.face'), function (f) { return f.dataset.face; });
+      card.querySelectorAll('.face .seg').forEach(function (seg) {
+        if (seg.querySelector('[data-tab], [data-ctab]')) return;   // leave inner tab strips alone
+        if (!seg.querySelector('[data-flip]')) return;
+        seg.innerHTML = names.map(function (n) {
+          return '<button data-flip="' + n + '">' + (short[n] || n) + '</button>';
+        }).join('');
+      });
+    });
+  }
+
+  function dialog() {
+    var body = document.querySelector('#lyTable tbody');
+    body.innerHTML = '';
+    APPS.forEach(function (a) {
+      var f = faceEl(a[0]);
+      if (!f) return;
+      var now = saved[a[0]] || HOME[a[0]];
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td></td><td></td>';
+      tr.children[0].textContent = a[1];
+      var sel = document.createElement('select');
+      sel.dataset.app = a[0];
+      PANELS.forEach(function (p) {
+        var o = document.createElement('option');
+        o.value = p[0]; o.textContent = p[1];
+        if (p[0] === now) o.selected = true;
+        sel.appendChild(o);
+      });
+      tr.children[1].appendChild(sel);
+      body.appendChild(tr);
+    });
+  }
+
+  (function () {   // the DOM is already parsed by the time this runs
+    var ov = document.getElementById('lyOverlay');
+    document.getElementById('lyOpen').onclick = function () { dialog(); ov.hidden = false; };
+    document.getElementById('lyClose').onclick = function () { ov.hidden = true; };
+    ov.addEventListener('click', function (e) { if (e.target === ov) ov.hidden = true; });
+    document.getElementById('lyApply').onclick = function () {
+      var next = {}, counts = {};
+      document.querySelectorAll('#lyTable select').forEach(function (sel) {
+        next[sel.dataset.app] = sel.value;
+        counts[sel.value] = (counts[sel.value] || 0) + 1;
+      });
+      if (!Object.keys(counts).length) return;
+      try { localStorage.setItem('ws.layout', JSON.stringify(next)); } catch (e) {}
+      location.reload();
+    };
+    document.getElementById('lyReset').onclick = function () {
+      try { localStorage.removeItem('ws.layout'); } catch (e) {}
+      location.reload();
+    };
+  })();
+
+  apply();
+  return { apply: apply };
+})();
+
 var Flip = (function () {
   var reduce = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   var OUT = 230, IN = 270, GOUT = 330, GIN = 380, P = 'perspective(2400px) ';
