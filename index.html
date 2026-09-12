@@ -660,6 +660,53 @@
   #proxBtn.on { background: #000; color: #fff; border-color: #000; }
   @media (prefers-reduced-motion: reduce) { .panel.blurred .card { transition: none; } }
 
+  /* Katy Mae — the garden */
+  .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
+  .kmHost.fading { opacity: 0; }
+  .kmFlower { position: absolute; overflow: visible; transform-origin: 50% 100%; pointer-events: none; }
+  .kmFlower path, .kmFlower ellipse, .kmFlower circle { pointer-events: auto; cursor: pointer; }
+  .kmFlower.kmCut { pointer-events: none; animation: kmFall var(--fall, 1200ms) cubic-bezier(.36,.02,.86,.54) forwards; }
+  .kmFlower.kmCut path, .kmFlower.kmCut ellipse, .kmFlower.kmCut circle { pointer-events: none; cursor: default; }
+  /* A clipped plant tips over, then drops away under the panel, tumbling as it goes. */
+  @keyframes kmFall {
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+    9%   { transform: translate(0, 2px) rotate(var(--tip, 8deg)); opacity: 1; }
+    85%  { opacity: 1; }
+    100% { transform: translate(var(--dx, 30px), var(--dy, 400px)) rotate(var(--spin, 120deg)); opacity: .9; }
+  }
+  .kmFlower.kmCut .kmSway { animation: none; }
+  .kmSway { transform-origin: 50% 100%; animation: kmSway var(--sway, 6s) ease-in-out var(--swayDelay, 0s) infinite alternate; }
+  @keyframes kmSway { from { transform: rotate(calc(var(--swayDeg, 2deg) * -1)); } to { transform: rotate(var(--swayDeg, 2deg)); } }
+  /* Stem draws itself upward */
+  /* The stem's dash and the head's travel are animated by SVG itself (see kmSMIL), so both
+     use the same user-unit coordinate system and can never drift apart. */
+  /* Leaves unfurl */
+  /* Leaves unfurl via SVG animateTransform, anchored at the stem join (see the leaf build). */
+  /* Petals open, then the heart appears */
+  .kmPetal { transform-box: fill-box; transform-origin: 50% 100%; scale: 0; opacity: 0;
+             animation: kmPetal calc(var(--grow, 80s) * .26) cubic-bezier(.2,.8,.3,1) var(--pd, 0s) forwards; }
+  @keyframes kmPetal { 60% { scale: 1.12; opacity: 1; } to { scale: 1; opacity: 1; } }
+  /* The head is a bud that swells as it rides. Position comes from SVG motion, size from here. */
+  .kmHead { scale: .05; animation: kmBud var(--grow, 80s) cubic-bezier(.3,.6,.4,1) forwards; }
+  @keyframes kmBud { 0% { scale: .05; } 72% { scale: .3; } 100% { scale: 1; } }
+  .kmHeart { scale: 0; animation: kmHeart calc(var(--grow, 80s) * .16) cubic-bezier(.2,.8,.3,1) var(--cd, 0s) forwards; }
+  @keyframes kmHeart { to { scale: 1; } }
+  /* A leaf drifting across */
+  .kmDrift { position: absolute; left: 0; top: 0; overflow: visible; opacity: 0;
+             animation: kmDrift var(--dur, 14s) linear forwards; }
+  @keyframes kmDrift {
+    0%   { opacity: 0; transform: translate(var(--x0), var(--y0)) rotate(0deg); }
+    12%  { opacity: .85; }
+    88%  { opacity: .85; }
+    100% { opacity: 0; transform: translate(var(--x1), var(--y1)) rotate(var(--spin, 360deg)); }
+  }
+  body.glass .kmFlower { filter: drop-shadow(0 3px 10px rgba(0,0,0,.35)); }
+  #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff87b6); color: #3d1026; border-color: #ff9ec4; box-shadow: none; }
+  body.glass #kmBtn.on { box-shadow: none; }
+  #kmTest.on { background: #000; color: #fff; border-color: #000; }
+  body.glass #kmTest.on { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
+  @media (prefers-reduced-motion: reduce) { .kmSway, .kmDrift { animation: none; } }
+
   /* Status bar */
   #status { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; padding: 0 6px; font-size: 13px; font-variant-numeric: tabular-nums; flex-wrap: wrap; }
   #stClock { flex: 1 1 auto; text-align: center; white-space: nowrap; }
@@ -1075,7 +1122,7 @@
       <section class="panel" id="status" aria-label="Status">
         <span id="stClock"><span id="sysTime">--</span> / <span id="footprint">--</span></span>
         <span id="stDock" aria-label="Closed panels"></span>
-        <span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
+        <span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
     </div>
@@ -4276,6 +4323,341 @@ var Blur = (function () {
   place();
   setInterval(place, 800);   // follows panel resizes, flips and closes
   return { toggle: toggle, isBlurred: function (id) { return !!blurred[id]; } };
+})();
+
+/* ================= Katy Mae — the garden =================
+   For Katy Mae. Flowers grow, in their own time, in whichever panels the garden chooses.
+   Each flower is drawn as SVG and animated by CSS: the stem rises, leaves unfurl, the bud
+   swells and opens, then the whole thing sways. Test mode runs the same growth ~20x faster. */
+var Garden = (function () {
+  var ui = store.get('ws.ui', {}), btn = $('kmBtn'), testBtn = $('kmTest'), rangeBtn = $('kmRange');
+  var on = false, test = false, timers = [], gardens = {}, leafTimer = null;
+  var RANGES = [10, 20, 30, 60], rangeIdx = 0;   // minutes: the longest a plant may take to grow
+
+  // Soft palettes: petal, petal edge, heart
+  var PALETTES = [
+    ['#ffd3e2', '#ff9ec4', '#ffe9a8'],   // blush
+    ['#e8d7ff', '#c3a4f5', '#fff0b8'],   // lilac
+    ['#fff1c9', '#ffd27a', '#ffb1a0'],   // butter
+    ['#ffdcd1', '#ff9e86', '#ffe6b0'],   // coral
+    ['#d8f0ff', '#8fc9f7', '#fff2c4'],   // sky
+    ['#ffffff', '#e7e0ff', '#ffdd8f']    // daisy
+  ];
+  var GREENS = ['#5fbf7d', '#4aa76a', '#6fcf8e', '#3f9a63'];
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+
+  function svg(tag, attrs) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  /* --- Petal shapes, by species --------------------------------------- */
+  function petalShape(kind, r) {
+    if (kind === 'daisy')  return { tag: 'ellipse', a: { cx: 0, cy: -r * 0.92, rx: r * 0.20, ry: r * 0.92 } };
+    if (kind === 'cosmos') return { tag: 'path', a: { d: 'M0 0 C ' + (-r * 0.34) + ' ' + (-r * 0.6) + ', ' + (-r * 0.46) + ' ' + (-r * 0.95) + ', ' + (-r * 0.3) + ' ' + (-r * 1.15) +
+                                                    ' L ' + (r * 0.3) + ' ' + (-r * 1.15) + ' C ' + (r * 0.46) + ' ' + (-r * 0.95) + ', ' + (r * 0.34) + ' ' + (-r * 0.6) + ', 0 0 Z' } };
+    if (kind === 'star')   return { tag: 'path', a: { d: 'M0 0 L ' + (-r * 0.3) + ' ' + (-r * 0.55) + ' L 0 ' + (-r * 1.35) + ' L ' + (r * 0.3) + ' ' + (-r * 0.55) + ' Z' } };
+    if (kind === 'poppy')  return { tag: 'path', a: { d: 'M0 0 C ' + (-r * 0.95) + ' ' + (-r * 0.35) + ', ' + (-r * 0.9) + ' ' + (-r * 1.15) + ', 0 ' + (-r * 1.2) +
+                                                    ' C ' + (r * 0.9) + ' ' + (-r * 1.15) + ', ' + (r * 0.95) + ' ' + (-r * 0.35) + ', 0 0 Z' } };
+    if (kind === 'bell')   return { tag: 'path', a: { d: 'M0 0 C ' + (-r * 0.7) + ' ' + (r * 0.25) + ', ' + (-r * 0.55) + ' ' + (r * 1.0) + ', 0 ' + (r * 1.15) +
+                                                    ' C ' + (r * 0.55) + ' ' + (r * 1.0) + ', ' + (r * 0.7) + ' ' + (r * 0.25) + ', 0 0 Z' } };
+    if (kind === 'round')  return { tag: 'ellipse', a: { cx: 0, cy: -r * 0.72, rx: r * 0.52, ry: r * 0.74 } };
+    if (kind === 'tulip')  return { tag: 'path', a: { d: 'M0 0 C ' + (-r * 0.55) + ' ' + (-r * 0.5) + ', ' + (-r * 0.42) + ' ' + (-r * 1.25) + ', 0 ' + (-r * 1.5) +
+                                                    ' C ' + (r * 0.42) + ' ' + (-r * 1.25) + ', ' + (r * 0.55) + ' ' + (-r * 0.5) + ', 0 0 Z' } };
+    return { tag: 'path', a: { d: 'M0 0 C ' + (-r * 0.62) + ' ' + (-r * 0.45) + ', ' + (-r * 0.5) + ' ' + (-r * 1.1) + ', 0 ' + (-r * 1.35) +
+                                 ' C ' + (r * 0.5) + ' ' + (-r * 1.1) + ', ' + (r * 0.62) + ' ' + (-r * 0.45) + ', 0 0 Z' } };   // 'petal'
+  }
+
+  /* --- One flower ---------------------------------------------------- */
+  function flower(host, x, grow) {
+    var H = host.clientHeight, W = host.clientWidth;
+    if (!H || !W) return;
+
+    // Species decides petal shape, count and proportions; every plant also gets its own size.
+    var KINDS = ['daisy', 'round', 'tulip', 'petal', 'star', 'bell', 'poppy', 'cosmos'];
+    var kind = pick(KINDS);
+    var layered = (kind === 'poppy' || kind === 'cosmos' || Math.random() < 0.3);   // a second, smaller ring inside
+    var scale = rnd(0.55, 1.5);                                  // overall plant size
+    var height = Math.min(H * 0.72, rnd(H * 0.14, H * 0.5) * scale);
+    var pal = pick(PALETTES), green = pick(GREENS);
+    var petals = kind === 'tulip' ? Math.round(rnd(3, 5))
+               : kind === 'bell' ? Math.round(rnd(4, 6))
+               : kind === 'daisy' ? Math.round(rnd(10, 16))
+               : kind === 'star' ? Math.round(rnd(5, 8))
+               : kind === 'cosmos' ? Math.round(rnd(7, 10))
+               : kind === 'poppy' ? Math.round(rnd(4, 6))
+               : Math.round(rnd(5, 9));
+    var r = (kind === 'daisy' ? rnd(13, 20) : kind === 'tulip' ? rnd(9, 14) : kind === 'bell' ? rnd(8, 13)
+             : kind === 'poppy' ? rnd(14, 21) : kind === 'star' ? rnd(12, 18) : rnd(11, 18)) * (0.75 + scale * 0.3);
+    var lean = rnd(-20, 20);
+    var leafCount = Math.round(rnd(2, 4));
+    var box = 120, x0 = box / 2, y0 = box, y1 = box - 60;
+
+    var s = svg('svg', { class: 'kmFlower', viewBox: '0 0 ' + box + ' ' + box, 'aria-hidden': 'true' });
+    var px = box * (height / 60);
+    s.style.left = (x - px / 2) + 'px';
+    s.style.bottom = '-6px';
+    s.style.width = px + 'px';
+    s.style.height = px + 'px';
+    s.style.setProperty('--grow', grow + 'ms');
+    s.style.setProperty('--sway', rnd(4, 9).toFixed(2) + 's');
+    s.style.setProperty('--swayDeg', rnd(1.2, 3.8).toFixed(2) + 'deg');
+    s.style.setProperty('--swayDelay', (-rnd(0, 4)).toFixed(2) + 's');   // so plants don't sway in unison
+
+    var g = svg('g', { class: 'kmSway' });
+    s.appendChild(g);
+
+    // Stem: a gentle curve from the ground to the head
+    // Control points of the stem curve, kept so leaves can be placed exactly on it.
+    var P0 = [x0, y0], P1 = [x0 + lean, y0 - 22], P2 = [x0 + lean, y1 + 22], P3 = [x0 + lean * 0.4, y1];
+    function onStem(t) {   // cubic bezier at t (0 = ground, 1 = tip)
+      var u = 1 - t, a = u * u * u, b2 = 3 * u * u * t, c = 3 * u * t * t, e = t * t * t;
+      return [a * P0[0] + b2 * P1[0] + c * P2[0] + e * P3[0],
+              a * P0[1] + b2 * P1[1] + c * P2[1] + e * P3[1]];
+    }
+    var d = 'M' + P0[0] + ' ' + P0[1] +
+            ' C ' + P1[0] + ' ' + P1[1] + ', ' + P2[0] + ' ' + P2[1] + ', ' + P3[0] + ' ' + P3[1];
+    var stem = svg('path', { d: d, class: 'kmStem', stroke: green, 'stroke-width': (rnd(1.4, 2.4) * (0.7 + scale * 0.4)).toFixed(2),
+                             fill: 'none', 'stroke-linecap': 'round' });
+    g.appendChild(stem);
+
+    // Leaves unfurl as the stem passes them, so each one waits its turn
+    for (var i = 0; i < leafCount; i++) {
+      var t = rnd(0.22, 0.78), side = i % 2 ? -1 : 1, ls = rnd(0.75, 1.25) * (0.7 + scale * 0.4);
+      var jp = onStem(t), lx = jp[0], ly = jp[1];   // exactly on the stem curve
+      // Outer group places the leaf on the stem; inner group scales it open from that exact
+      // point (0,0 in its own space), so a leaf can never drift away from where it joins.
+      var at = svg('g', { transform: 'translate(' + lx + ' ' + ly + ') rotate(' + (-side * rnd(5, 25)) + ')' });
+      var grp = svg('g', { transform: 'scale(0)' });
+      grp.appendChild(svg('path', {
+        class: 'kmLeaf',
+        d: 'M0 0 C ' + (side * 13 * ls) + ' ' + (-6 * ls) + ', ' + (side * 19 * ls) + ' ' + (-2 * ls) + ', ' + (side * 22 * ls) + ' ' + (5 * ls) +
+           ' C ' + (side * 15 * ls) + ' ' + (10 * ls) + ', ' + (side * 6 * ls) + ' ' + (7 * ls) + ', 0 0 Z',
+        fill: green, opacity: '.92'
+      }));
+      grp.appendChild(svg('animateTransform', {
+        attributeName: 'transform', type: 'scale', from: '0', to: '1',
+        begin: (grow * t * 0.92 / 1000) + 's', dur: (grow * 0.16 / 1000) + 's',
+        calcMode: 'spline', keyTimes: '0;1', keySplines: '.2 .8 .3 1', fill: 'freeze'
+      }));
+      at.appendChild(grp);
+      g.appendChild(at);
+    }
+
+    // Head: rides the stem tip as it grows, opening only once it arrives
+    var head = svg('g', { class: 'kmHead' });
+    head.setAttribute('transform', 'translate(' + x0 + ' ' + y0 + ')');   // starts at the ground, at the stem's base
+
+    var shape = petalShape(kind, r);
+    for (var j = 0; j < petals; j++) {
+      var a = (360 / petals) * j;
+      var attrs = {};
+      for (var k in shape.a) attrs[k] = shape.a[k];
+      attrs.fill = pal[0];
+      attrs.stroke = pal[1];
+      attrs['stroke-width'] = '.7';
+      attrs.transform = 'rotate(' + a + ')';
+      attrs.class = 'kmPetal';
+      var pel = svg(shape.tag, attrs);
+      pel.style.setProperty('--pd', (grow * (0.74 + (j / petals) * 0.14)) + 'ms');
+      head.appendChild(pel);
+    }
+    if (layered) {   // an inner ring, rotated between the outer petals
+      var ir = r * rnd(0.5, 0.68), inner = petalShape(kind === 'bell' ? 'petal' : kind, ir);
+      for (var m = 0; m < petals; m++) {
+        var ia = (360 / petals) * m + (180 / petals);
+        var iat = {};
+        for (var q in inner.a) iat[q] = inner.a[q];
+        iat.fill = pal[1]; iat.stroke = pal[1]; iat['stroke-width'] = '.4'; iat.opacity = '.9';
+        iat.transform = 'rotate(' + ia + ')';
+        iat.class = 'kmPetal';
+        var ip = svg(inner.tag, iat);
+        ip.style.setProperty('--pd', (grow * (0.8 + (m / petals) * 0.1)) + 'ms');
+        head.appendChild(ip);
+      }
+    }
+    var heart = svg('circle', { r: (kind === 'tulip' || kind === 'bell' ? r * 0.18 : kind === 'poppy' ? r * 0.42 : r * 0.34).toFixed(1), fill: pal[2], class: 'kmHeart' });
+    heart.style.setProperty('--cd', (grow * 0.9) + 'ms');
+    head.appendChild(heart);
+    g.appendChild(head);
+
+    s.addEventListener('pointerdown', function (e) { e.preventDefault(); clip(s); });
+    host.appendChild(s);
+
+    // Both animations run in the SVG's own user-unit space, over the same duration and with the
+    // same easing curve, so the head sits exactly on the stem tip at every instant of growth.
+    var EASE = '.2 .7 .3 1', dur = (grow / 1000) + 's';
+    var len = 90;
+    try { len = stem.getTotalLength() || 90; } catch (e) {}
+    stem.setAttribute('stroke-dasharray', len);
+    stem.setAttribute('stroke-dashoffset', len);
+    stem.appendChild(svg('animate', {
+      attributeName: 'stroke-dashoffset', from: len, to: 0, dur: dur,
+      calcMode: 'spline', keyTimes: '0;1', keySplines: EASE, fill: 'freeze'
+    }));
+    head.setAttribute('transform', '');   // motion supplies the transform from here on
+    head.appendChild(svg('animateMotion', {
+      dur: dur, path: d, rotate: '0', fill: 'freeze',
+      calcMode: 'spline', keyPoints: '0;1', keyTimes: '0;1', keySplines: EASE
+    }));
+    return s;
+  }
+
+  /* --- Clipping ------------------------------------------------------- */
+  // The plant stops growing where it is, tips over, falls away below the panel, and is gone.
+  // The panel then grows a fresh one somewhere else.
+  function clip(s) {
+    if (s.dataset.cut) return;
+    s.dataset.cut = '1';
+    try { s.pauseAnimations(); } catch (e) {}          // freeze growth at the moment of the cut
+    var host = s.parentElement, panel = s.closest('.panel');
+    var id = panel && panel.id;
+    var fall = rnd(1000, 1500), rect = s.getBoundingClientRect();
+    var below = host ? (host.getBoundingClientRect().bottom - rect.top) + 120 : 500;
+    var dir = Math.random() < 0.5 ? -1 : 1;
+    s.style.setProperty('--fall', fall + 'ms');
+    s.style.setProperty('--dy', Math.round(below) + 'px');
+    s.style.setProperty('--dx', Math.round(dir * rnd(20, 90)) + 'px');
+    s.style.setProperty('--tip', (dir * rnd(6, 14)).toFixed(1) + 'deg');
+    s.style.setProperty('--spin', Math.round(dir * rnd(70, 220)) + 'deg');
+    s.classList.add('kmCut');
+    setTimeout(function () {
+      s.remove();
+      var g = gardens[id];
+      if (!on || !g) return;
+      g.count = Math.max(0, g.count - 1);
+      setTimeout(function () { if (on && gardens[id]) { plant(id); } },
+                 test ? rnd(400, 1200) : rnd(3000, 12000));   // a new one takes its own time to appear
+    }, fall + 60);
+  }
+
+  /* --- A leaf drifting across a panel --------------------------------- */
+  function drift(host) {
+    var W = host.clientWidth, H = host.clientHeight;
+    if (!W || !H) return;
+    var box = 26, dur = test ? rnd(2600, 4200) : rnd(11000, 19000);
+    var l = svg('svg', { class: 'kmDrift', viewBox: '0 0 24 16', width: box, height: box * 0.7, 'aria-hidden': 'true' });
+    l.appendChild(svg('path', {
+      d: 'M1 8 C 7 0, 17 0, 23 8 C 17 16, 7 16, 1 8 Z',
+      fill: pick(GREENS), opacity: '.75'
+    }));
+    l.appendChild(svg('path', { d: 'M1 8 L23 8', stroke: 'rgba(255,255,255,.5)', 'stroke-width': '.8' }));
+    var fromLeft = Math.random() < 0.5;
+    l.style.setProperty('--x0', (fromLeft ? -40 : W + 40) + 'px');
+    l.style.setProperty('--x1', (fromLeft ? W + 40 : -40) + 'px');
+    l.style.setProperty('--y0', rnd(H * 0.1, H * 0.55) + 'px');
+    l.style.setProperty('--y1', rnd(H * 0.45, H * 0.92) + 'px');
+    l.style.setProperty('--spin', (fromLeft ? 1 : -1) * rnd(220, 540) + 'deg');
+    l.style.setProperty('--dur', dur + 'ms');
+    host.appendChild(l);
+    setTimeout(function () { l.remove(); }, dur + 200);
+  }
+
+  /* --- Planting ------------------------------------------------------- */
+  function hostFor(id) {
+    var p = $(id), h = p.querySelector('.kmHost');
+    if (!h) { h = document.createElement('div'); h.className = 'kmHost'; p.appendChild(h); }
+    return h;
+  }
+  function plant(id) {
+    var g = gardens[id];
+    if (!g || g.count >= g.max) return;
+    var host = hostFor(id);
+    if (!host.clientWidth) return;
+    var x = rnd(host.clientWidth * 0.06, host.clientWidth * 0.94);
+    // Every plant takes its own time, anywhere from one minute up to the chosen limit.
+    flower(host, x, test ? rnd(3500, 6000) : rnd(60000, RANGES[rangeIdx] * 60000));
+    g.count++;
+  }
+  function schedule(id) {
+    var g = gardens[id];
+    if (!g) return;
+    // Sprouting is unpredictable too: the gap scales with the chosen range.
+    var span = RANGES[rangeIdx] * 60000;
+    var wait = test ? rnd(700, 1800) : rnd(span * 0.08, span * 0.55);
+    g.timer = setTimeout(function () {
+      if (!on) return;
+      plant(id);
+      if (gardens[id] && gardens[id].count < gardens[id].max) schedule(id);
+    }, wait);
+    timers.push(g.timer);
+  }
+
+  function choosePanels() {
+    var open = Panels.ids.filter(Panels.isOpen);
+    if (!open.length) return [];
+    var roll = Math.random();
+    // Sometimes one panel, sometimes a few, sometimes the whole workspace blooms.
+    var n = roll < 0.28 ? 1 : roll < 0.58 ? 2 : roll < 0.82 ? 3 : open.length;
+    var shuffled = open.slice().sort(function () { return Math.random() - 0.5; });
+    return shuffled.slice(0, Math.min(n, open.length));
+  }
+
+  function start() {
+    stop(true);
+    on = true;
+    var chosen = choosePanels();
+    chosen.forEach(function (id) {
+      gardens[id] = { count: 0, max: Math.round(rnd(3, 7)) };
+      plant(id);            // one straight away, so something is always happening
+      schedule(id);
+    });
+    leafTimer = setInterval(function () {
+      var ids = Object.keys(gardens);
+      if (!ids.length) return;
+      drift(hostFor(pick(ids)));
+    }, test ? 900 : 6500);
+    timers.push(leafTimer);
+    Sys.toast(chosen.length === Panels.ids.length ? 'Everything is blooming for Katy Mae.'
+      : 'A garden is growing for Katy Mae in ' + chosen.length + (chosen.length === 1 ? ' panel.' : ' panels.'), { ms: 4000 });
+  }
+  function stop(quiet) {
+    on = false;
+    timers.forEach(clearTimeout);
+    timers.forEach(clearInterval);
+    timers = [];
+    clearInterval(leafTimer); leafTimer = null;
+    gardens = {};
+    document.querySelectorAll('.kmHost').forEach(function (h) {
+      h.classList.add('fading');
+      setTimeout(function () { h.remove(); }, 1400);
+    });
+    if (!quiet) Sys.toast('The garden is resting.', { ms: 2500 });
+  }
+
+  function setBtns() {
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', String(on));
+    rangeBtn.hidden = !on;
+    rangeBtn.textContent = '1–' + RANGES[rangeIdx] + ' min';
+    rangeBtn.title = 'Each plant takes a random time between one minute and ' + RANGES[rangeIdx] + ' minutes. Click to change.';
+    testBtn.hidden = !on;
+    testBtn.classList.toggle('on', test);
+    testBtn.setAttribute('aria-pressed', String(test));
+    ui.km = on; ui.kmTest = test; ui.kmRange = rangeIdx; store.set('ws.ui', ui);
+  }
+  btn.onclick = function () { if (on) stop(); else start(); setBtns(); };
+  rangeBtn.onclick = function () {
+    rangeIdx = (rangeIdx + 1) % RANGES.length;
+    setBtns();
+    Sys.toast('Plants will now take between one minute and ' + RANGES[rangeIdx] + ' minutes to grow.', { ms: 3000 });
+  };
+  testBtn.onclick = function () {
+    test = !test;
+    setBtns();
+    if (on) { start(); }   // replant at the new speed so the change is visible immediately
+    Sys.toast(test ? 'Test mode: the garden grows in seconds.' : 'Normal speed: flowers take their time.', { ms: 3000 });
+  };
+
+  // Read the saved state BEFORE setBtns(), which writes ui.km from the current (still false) flag.
+  var wasOn = false;   // the garden is always off at startup; it only runs when asked
+  test = false;        // and never resumes in test mode
+  rangeIdx = Math.min(RANGES.length - 1, Math.max(0, ui.kmRange | 0));
+  if (wasOn) start();
+  setBtns();
+  return { isOn: function () { return on; } };
 })();
 
 /* ================= Per-panel zoom ================= */
