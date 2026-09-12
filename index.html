@@ -4546,8 +4546,8 @@ var Sys = (function () {
   function set(on) {
     document.body.classList.toggle('glass', on);
     btn.classList.toggle('on', on);
-    btn.textContent = on ? 'Glass' : 'Plain';
-    btn.title = on ? 'Glass theme is on. Click for the plain theme.' : 'Plain theme is on. Click for the glass theme.';
+    btn.textContent = on ? 'Glass' : 'Performance';
+    btn.title = on ? 'Glass theme is on. Click for performance mode.' : 'Performance mode is on. Click for the glass theme.';
     btn.setAttribute('aria-pressed', String(on));
     ui.glass = on; store.set('ws.ui', ui);
   }
