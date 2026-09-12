@@ -781,6 +781,21 @@
     100% { translate: 0 0; scale: 1; }
   }
 
+  /* A typed letter is struck like hot steel: white heat, then orange, then cooled */
+  .wpStamp { position: fixed; z-index: 199; pointer-events: none; white-space: pre;
+             animation: wpStamp var(--heat, 1100ms) cubic-bezier(.25,.5,.35,1) 60ms forwards; }
+  @keyframes wpStamp {
+    0%   { opacity: 1; color: var(--cool, #fff); }   /* the letter, as written */
+    9%   { opacity: 1; color: #ff7a10; }             /* heat comes up fast */
+    18%  { opacity: 1; color: #ffb300; }
+    28%  { opacity: 1; color: #ffe800; }             /* full heat */
+    42%  { opacity: 1; color: #ffec2e; }             /* and it holds there a moment */
+    58%  { opacity: 1; color: #fff566; }
+    74%  { opacity: 1; color: #fffbA8; }
+    88%  { opacity: 1; color: #fffdea; }             /* cooling slowly */
+    100% { opacity: 0; color: var(--cool, #fff); }
+  }
+
   /* Deleted letters get tossed off the panel */
   .wpDrop { position: fixed; z-index: 200; pointer-events: none; white-space: pre;
             animation: wpDrop var(--fall, 1400ms) linear forwards; }
@@ -806,6 +821,28 @@
                pointer-events: none; opacity: 0; transition: opacity 1.6s ease; }
   body.saver #saverHint { opacity: 1; animation: saverBreathe 5s ease-in-out infinite; }
   @keyframes saverBreathe { 0%, 100% { opacity: .2; } 50% { opacity: .55; } }
+
+  /* Winter: snow drifting down, settling along the bottom, and melting into runs of water */
+  .kmFlake { position: absolute; top: 0; left: 0; will-change: transform; filter: blur(var(--blurPx, .4px));
+             animation: kmSnowFall var(--dur, 9s) linear var(--delay, 0s) infinite; }
+  @keyframes kmSnowFall {
+    0%   { transform: translate3d(var(--x), -30px, 0); opacity: 0; }
+    6%   { opacity: var(--a, .9); }
+    100% { transform: translate3d(calc(var(--x) + var(--drift, 40px)), var(--fallTo, 700px), 0); opacity: var(--a, .9); }
+  }
+  /* the flake's own wobble, so it does not fall in a straight line */
+  .kmFlakeSway { display: block; width: 100%; height: 100%; border-radius: 50%;
+                 background: radial-gradient(circle at 42% 38%, rgba(255,255,255,.98) 0%, rgba(255,255,255,.85) 42%, rgba(236,244,255,.35) 72%, rgba(226,238,255,0) 100%);
+                 animation: kmFlakeSway var(--sw, 3s) ease-in-out var(--swd, 0s) infinite alternate; }
+  @keyframes kmFlakeSway { from { transform: translateX(calc(var(--swa, 8px) * -1)); } to { transform: translateX(var(--swa, 8px)); } }
+
+  /* Snow gathering along the bottom edge of the panel */
+  .kmPile { position: absolute; left: -2%; right: -2%; bottom: -1px; height: 0; pointer-events: none;
+            background: linear-gradient(180deg, #fdfeff 0%, #eaf1fb 40%, #dbe6f5 100%);
+            filter: drop-shadow(0 -1px 2px rgba(255,255,255,.5));
+            transition: height 2.5s linear;
+            clip-path: polygon(0% 42%, 6% 24%, 13% 38%, 21% 18%, 29% 34%, 37% 14%, 45% 30%, 53% 16%,
+                               61% 32%, 69% 12%, 77% 30%, 85% 20%, 92% 36%, 100% 22%, 100% 100%, 0% 100%); }
 
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
@@ -840,11 +877,11 @@
   /* Leaves unfurl via SVG animateTransform, anchored at the stem join (see the leaf build). */
   /* Petals open, then the heart appears */
   .kmPetal { transform-box: fill-box; transform-origin: 50% 100%; scale: 0; opacity: 0;
-             animation: kmPetal calc(var(--grow, 80s) * .26) cubic-bezier(.2,.8,.3,1) var(--pd, 0s) forwards; }
+             animation: kmPetal calc(var(--grow, 80s) * .18) cubic-bezier(.2,.8,.3,1) var(--pd, 0s) forwards; }
   @keyframes kmPetal { 60% { scale: 1.12; opacity: 1; } to { scale: 1; opacity: 1; } }
   /* The head is a bud that swells as it rides. Position comes from SVG motion, size from here. */
-  .kmHead { scale: .05; animation: kmBud var(--grow, 80s) cubic-bezier(.3,.6,.4,1) forwards; }
-  @keyframes kmBud { 0% { scale: .05; } 72% { scale: .3; } 100% { scale: 1; } }
+  .kmHead { scale: .05; animation: kmBud calc(var(--grow, 80s) * .8) cubic-bezier(.3,.6,.4,1) forwards; }
+  @keyframes kmBud { 0% { scale: .05; } 55% { scale: .3; } 100% { scale: 1; } }
   .kmHeart { scale: 0; animation: kmHeart calc(var(--grow, 80s) * .16) cubic-bezier(.2,.8,.3,1) var(--cd, 0s) forwards; }
   @keyframes kmHeart { to { scale: 1; } }
   /* A leaf drifting across */
@@ -1164,7 +1201,8 @@
               <span class="sep"></span>
               <button data-cmd="undo">Undo</button>
               <button data-cmd="redo">Redo</button>
-              <button id="wNew">New</button>
+              <button id="wFx" title="Hot-stamped letters and falling deletions">Effects</button>
+          <button id="wNew">New</button>
               <button id="wOpen">Open</button>
               <button id="wSave">Save</button>
               <input type="file" id="wFile" accept=".html,.htm,.txt,text/plain,text/html" hidden>
@@ -1293,7 +1331,7 @@
       <section class="panel" id="status" aria-label="Status">
         <span id="stClock"><span id="sysTime">--</span> / <span id="footprint">--</span></span>
         <span id="stDock" aria-label="Closed panels"></span>
-        <span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
+        <span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Force winter on every panel, for testing" hidden>Winter</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
     </div>
@@ -2230,7 +2268,14 @@ var Sys = (function () {
   function changed() {
     updateCount();
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(function () { store.set(KEY, ed.innerHTML); }, 400);
+    saveTimer = setTimeout(function () {
+      var tmp = ed.cloneNode(true);
+      tmp.querySelectorAll('.wpStamp').forEach(function (sp) {   // never store the cooling markup
+        sp.replaceWith(document.createTextNode(sp.textContent));
+      });
+      tmp.normalize();
+      store.set(KEY, tmp.innerHTML);
+    }, 400);
   }
 
   bar.querySelectorAll('[data-cmd]').forEach(function (b) {
@@ -2268,7 +2313,57 @@ var Sys = (function () {
     setTimeout(function () { el.remove(); }, fall + 80);
   }
 
+  // The writing effects can be switched off from the toolbar.
+  var fxOn = store.get('ws.wordFx', true), fxBtn = $('wFx');
+  function setFx(v) {
+    fxOn = !!v;
+    fxBtn.classList.toggle('on', fxOn);
+    fxBtn.setAttribute('aria-pressed', String(fxOn));
+    store.set('ws.wordFx', fxOn);
+  }
+  fxBtn.onclick = function () {
+    setFx(!fxOn);
+    Sys.toast(fxOn ? 'Writing effects on.' : 'Writing effects off.', { ms: 2200 });
+  };
+  setFx(fxOn);
+
+  // Every character arrives hot, cools through yellow, then settles into the text.
+  // An overlay copy, sat exactly on top of the real glyph: same font, same box, same baseline,
+  // so there is never a second letter showing through.
+  function stampChar() {
+    var sel = getSelection();
+    if (!sel.rangeCount || !sel.isCollapsed) return;
+    var r = sel.getRangeAt(0).cloneRange();
+    try { r.setStart(r.startContainer, Math.max(0, r.startOffset - 1)); } catch (x) { return; }
+    var ch = r.toString();
+    if (ch.length !== 1 || !ch.trim()) return;
+    var box = r.getBoundingClientRect();
+    if (!box.width && !box.height) return;
+    var cs = getComputedStyle(ed), el = document.createElement('span');
+    el.className = 'wpStamp';
+    el.textContent = ch;
+    el.style.font = cs.font;
+    el.style.fontKerning = 'none';
+    el.style.letterSpacing = cs.letterSpacing;
+    el.style.left = box.left + 'px';
+    el.style.top = box.top + 'px';
+    el.style.width = box.width + 'px';
+    el.style.height = box.height + 'px';
+    el.style.lineHeight = box.height + 'px';     // match the line box, so the baselines line up
+    el.style.setProperty('--cool', cs.color);
+    var heat = rr(900, 1400);
+    el.style.setProperty('--heat', Math.round(heat) + 'ms');
+    document.body.appendChild(el);
+    setTimeout(function () { el.remove(); }, heat + 60);
+  }
+  ed.addEventListener('input', function (e) {
+    if (!fxOn) return;
+    if (e.inputType && e.inputType.indexOf('delete') === 0) return;
+    stampChar();
+  });
+
   ed.addEventListener('keydown', function (e) {
+    if (!fxOn) return;
     if (e.key !== 'Backspace' && e.key !== 'Delete') return;
     var sel = getSelection();
     if (!sel.rangeCount || !sel.isCollapsed) return;         // only single-character deletes
@@ -4662,8 +4757,10 @@ var Blur = (function () {
    Each flower is drawn as SVG and animated by CSS: the stem rises, leaves unfurl, the bud
    swells and opens, then the whole thing sways. Test mode runs the same growth ~20x faster. */
 var Garden = (function () {
-  var ui = store.get('ws.ui', {}), btn = $('kmBtn'), testBtn = $('kmTest'), rangeBtn = $('kmRange');
+  var ui = store.get('ws.ui', {}), btn = $('kmBtn'), testBtn = $('kmTest'), rangeBtn = $('kmRange'), winterBtn = $('kmWinter');
   var on = false, test = false, saver = false, timers = [], gardens = {};
+  var season = {}, seasonTimers = {}, forceWinter = false;
+  function isWinter(pid) { return season[pid] === 'winter'; }
   // Every scheduled job is recorded so it can be cancelled, but the record itself must not
   // grow without end. Trim the ids that have already fired.
   function track(list, id) {
@@ -4729,7 +4826,7 @@ var Garden = (function () {
     // Families: 'single' grows one bloom at the tip, 'spike' carries several up the stem,
     // 'fern' is leaves only, 'bud' never opens.
     var KINDS = ['daisy', 'round', 'tulip', 'petal', 'star', 'bell', 'poppy', 'cosmos',
-                 'rose', 'sunflower', 'cluster', 'spike', 'fern', 'bud'];
+                 'rose', 'sunflower', 'fern', 'bud'];   // spike and cluster drew as several heads on one stem
     var kind = pick(KINDS);
     var family = kind === 'spike' ? 'spike' : kind === 'fern' ? 'fern' : kind === 'bud' ? 'bud' : 'single';
     var rings = kind === 'rose' ? 4 : kind === 'sunflower' ? 2 : kind === 'cluster' ? 3 : 1;
@@ -4789,7 +4886,10 @@ var Garden = (function () {
 
     // Leaves unfurl as the stem passes them, so each one waits its turn
     for (var i = 0; i < leafCount; i++) {
-      var t = rnd(0.22, 0.78), side = i % 2 ? -1 : 1, ls = rnd(0.75, 1.25) * (0.7 + scale * 0.4);
+      var lo = family === 'fern' ? 0.12 : 0.22, hi = family === 'fern' ? 0.92 : 0.8;
+      var step = (hi - lo) / leafCount;
+      var t = lo + step * (i + rnd(0.15, 0.85));   // evenly spaced up the stem, never stacked
+      var side = i % 2 ? -1 : 1, ls = rnd(0.75, 1.25) * (0.7 + scale * 0.4);
       var jp = onStem(t), lx = jp[0], ly = jp[1];   // exactly on the stem curve
       // Outer group places the leaf on the stem; inner group scales it open from that exact
       // point (0,0 in its own space), so a leaf can never drift away from where it joins.
@@ -4822,7 +4922,7 @@ var Garden = (function () {
            ' C ' + (r * 0.5) + ' ' + (-r * 1.3) + ', ' + (r * 0.6) + ' ' + (-r * 0.3) + ', 0 0 Z',
         fill: pal[0], stroke: pal[1], 'stroke-width': '.8'
       });
-      bud.style.setProperty('--pd', (grow * 0.7) + 'ms');
+      bud.style.setProperty('--pd', (grow * 0.5) + 'ms');
       head.appendChild(bud);
       for (var bi = 0; bi < 3; bi++) {   // little green sepals hugging the bud
         var sep = svg('path', {
@@ -4831,7 +4931,7 @@ var Garden = (function () {
              ' C ' + (r * 0.35) + ' ' + (-r * 0.8) + ', ' + (r * 0.4) + ' ' + (-r * 0.2) + ', 0 0 Z',
           transform: 'rotate(' + (bi * 120) + ')'
         });
-        sep.style.setProperty('--pd', (grow * 0.66) + 'ms');
+        sep.style.setProperty('--pd', (grow * 0.46) + 'ms');
         head.appendChild(sep);
       }
     }
@@ -4852,7 +4952,7 @@ var Garden = (function () {
       attrs.transform = 'rotate(' + (a + ring * (180 / petals)) + ')';
       attrs.class = 'kmPetal';
       var pel = svg(shape.tag, attrs);
-      pel.style.setProperty('--pd', (grow * (0.74 + (j / petals) * 0.14 + ring * 0.03)) + 'ms');
+      pel.style.setProperty('--pd', (grow * (0.5 + (j / petals) * 0.12 + ring * 0.03)) + 'ms');
       head.appendChild(pel);
     }
     }
@@ -4867,7 +4967,7 @@ var Garden = (function () {
         iat.transform = 'rotate(' + ia + ')';
         iat.class = 'kmPetal';
         var ip = svg(inner.tag, iat);
-        ip.style.setProperty('--pd', (grow * (0.8 + (m / petals) * 0.1)) + 'ms');
+        ip.style.setProperty('--pd', (grow * (0.56 + (m / petals) * 0.1)) + 'ms');
         head.appendChild(ip);
       }
     }
@@ -4875,7 +4975,7 @@ var Garden = (function () {
       var hr = kind === 'tulip' || kind === 'bell' ? r * 0.18 : kind === 'poppy' ? r * 0.42
              : kind === 'sunflower' ? r * 0.5 : kind === 'rose' ? r * 0.16 : r * 0.34;
       var heart = svg('circle', { r: hr.toFixed(1), fill: pal[2], class: 'kmHeart' });
-      heart.style.setProperty('--cd', (grow * 0.9) + 'ms');
+      heart.style.setProperty('--cd', (grow * 0.68) + 'ms');
       head.appendChild(heart);
     }
     g.appendChild(head);
@@ -5094,11 +5194,13 @@ var Garden = (function () {
     if (!W || !H) return;
     if (HIDDEN()) return;                                   // nothing to see, so nothing to build
     if (host.querySelectorAll('.kmDrift').length >= (saver ? 18 : MAX_LEAVES)) return;
+    var pnl = host.parentElement;
+    if (pnl && isWinter(pnl.id)) return;   // no leaves blowing in the dead of winter
     opts = opts || {};
     var size = rnd(12, 34) * (opts.small ? 0.65 : 1);
     var fast = opts.fast || anyRain();
-    var dur = (fast ? rnd(2800, 6500) : rnd(5000, 12000)) * rnd(0.85, 1.15);
-    if (test) dur *= 0.3;
+    var speed = (fast ? rnd(230, 420) : rnd(120, 260)) * (test ? 3 : 1);   // px per second
+    var dur = 0;   // set once the distance is known, so no leaf ever crawls
 
     var wrap = document.createElement('div');
     wrap.className = 'kmDrift';
@@ -5126,6 +5228,7 @@ var Garden = (function () {
     bob.style.setProperty('--bobX', Math.round(rnd(2, 12)) + 'px');
     bob.style.setProperty('--bob', rnd(1.4, 3.6).toFixed(2) + 's');
     bob.style.setProperty('--bobDelay', (-rnd(0, 3)).toFixed(2) + 's');
+    dur = Math.abs(x4 - x0) / speed * 1000;
     wrap.style.setProperty('--dur', Math.round(dur) + 'ms');
     // Most ride the wind at a steady clip. A few come in hard and ease off, or start slow
     // and get carried away — that is where the variety should come from, not mid-path stalls.
@@ -5217,6 +5320,7 @@ var Garden = (function () {
   function plant(id) {
     var g = gardens[id];
     if (!g || g.count >= g.max) return;
+    if (isWinter(id)) return;   // nothing grows in the cold
     var host = hostFor(id);
     if (!host.clientWidth) return;
     var x = rnd(host.clientWidth * 0.06, host.clientWidth * 0.94);
@@ -5269,6 +5373,53 @@ var Garden = (function () {
     var p = $(id), l = p.querySelector('.kmRain');
     if (!l) { l = document.createElement('div'); l.className = 'kmRain'; p.appendChild(l); }
     return l;
+  }
+
+  // Snow falls slowly, wanders on its way down, and settles along the bottom of the panel.
+  function buildSnow(id) {
+    var layer = rainLayer(id), W = layer.clientWidth, H = layer.clientHeight;
+    if (!W || !H) return;
+    layer.innerHTML = '';
+    var heavy = (typeof wet[id] === 'number' ? wet[id] : 1) * (test ? 1.3 : 1);
+    var drift = rnd(180, 620) * (Math.random() < 0.5 ? -1 : 1);   // snow blows sideways on the wind
+    var count = Math.min(220, Math.round(W / 12 * heavy));
+    for (var i = 0; i < count; i++) {
+      var near = Math.random();                               // depth: near flakes are bigger and quicker
+      var size = near < 0.25 ? rnd(2.6, 4.2) : near < 0.6 ? rnd(1.6, 2.6) : rnd(0.9, 1.6);
+      var dur = near < 0.25 ? rnd(5, 8.5) : near < 0.6 ? rnd(8, 13) : rnd(13, 22);
+      var f = document.createElement('div');
+      f.className = 'kmFlake';
+      f.style.width = size.toFixed(1) + 'px';
+      f.style.height = size.toFixed(1) + 'px';
+      f.style.setProperty('--x', rnd(-30, W + 30) + 'px');
+      f.style.setProperty('--drift', (drift * (0.45 + near * 1.3)) + 'px');
+      f.style.setProperty('--fallTo', (H + 30) + 'px');
+      f.style.setProperty('--a', (near < 0.25 ? rnd(0.8, 1) : near < 0.6 ? rnd(0.45, 0.75) : rnd(0.2, 0.45)).toFixed(2));
+      f.style.setProperty('--blurPx', (near < 0.25 ? rnd(0, 0.3) : near < 0.6 ? rnd(0.3, 0.7) : rnd(0.7, 1.3)).toFixed(2) + 'px');
+      f.style.setProperty('--dur', dur.toFixed(2) + 's');
+      f.style.setProperty('--delay', (-rnd(0, dur)).toFixed(2) + 's');
+      var inner = document.createElement('div');
+      inner.className = 'kmFlakeSway';
+      inner.style.setProperty('--swa', rnd(6, 26).toFixed(1) + 'px');
+      inner.style.setProperty('--sw', rnd(2, 5).toFixed(2) + 's');
+      inner.style.setProperty('--swd', (-rnd(0, 4)).toFixed(2) + 's');
+      f.appendChild(inner);
+      layer.appendChild(f);
+    }
+    // Snow gathers as the storm goes on, and a few flakes melt into runs of water.
+    var pile = document.createElement('div');
+    pile.className = 'kmPile';
+    layer.appendChild(pile);
+    var depth = rnd(2, 5), cap = Math.min(H * 0.3, rnd(26, 80) * Math.max(0.6, heavy));
+    pile.style.height = depth.toFixed(1) + 'px';
+    var grow = setInterval(function () {
+      if (!wet[id] || !layer.isConnected) { clearInterval(grow); return; }
+      depth = Math.min(cap, depth + rnd(0.6, 2.2) * Math.max(0.5, heavy));
+      pile.style.height = depth.toFixed(1) + 'px';
+      // flakes landing on the glass melt and run down it
+      for (var k = 0; k < Math.round(rnd(1, 3)); k++) addBead(layer, id, W, H * 0.7, rnd(0, 1800));
+    }, test ? 2200 : 9000);
+    track(rainTimers[id] = rainTimers[id] || [], grow);
   }
 
   function buildRain(id) {
@@ -5387,7 +5538,26 @@ var Garden = (function () {
     }
     weatherTimers[pid].push(setTimeout(function () { scheduleWeather(pid); }, win + 500));
   }
+  // In the screensaver every panel turns through the year, each on its own clock.
+  function cycleSeason(pid) {
+    if (!on || !gardens[pid]) return;
+    var len = test ? rnd(12000, 30000) : rnd(3, 9) * 60000;
+    seasonTimers[pid] = setTimeout(function () {
+      if (!on || !gardens[pid]) return;
+      if (wet[pid]) stopRain(pid);                       // let the old weather clear first
+      season[pid] = isWinter(pid) ? 'summer' : 'winter';
+      if (isWinter(pid)) {                               // winter takes the garden back
+        hostFor(pid).querySelectorAll('.kmFlower').forEach(function (f) { clip(f); });
+        gardens[pid].count = 0;
+      }
+      cycleSeason(pid);
+    }, len);
+    track(timers, seasonTimers[pid]);
+  }
+
   function stopWeather() {
+    Object.keys(seasonTimers).forEach(function (pid) { clearTimeout(seasonTimers[pid]); });
+    seasonTimers = {};
     Object.keys(weatherTimers).forEach(function (pid) {
       (weatherTimers[pid] || []).forEach(clearTimeout);
       weatherTimers[pid] = [];
@@ -5437,10 +5607,10 @@ var Garden = (function () {
              : ir < 0.72 ? rnd(0.7, 1.15)    // steady rain
              : ir < 0.93 ? rnd(1.4, 2.1)     // heavy
              : rnd(2.4, 3.4);                // a downpour
-    stormy[pid] = Math.random() < 0.45;                      // some storms are just rain
+    stormy[pid] = !isWinter(pid) && Math.random() < 0.45;    // no thunder in a snowstorm
     if (stormy[pid]) track(boltTimers[pid] = boltTimers[pid] || [],
       setTimeout(function () { strike(pid); }, test ? rnd(800, 4000) : rnd(4000, 40000)));
-    buildRain(pid);
+    if (isWinter(pid)) buildSnow(pid); else buildRain(pid);
     hostFor(pid).classList.add('raining');
   }
   function stopRain(pid) {
@@ -5462,12 +5632,17 @@ var Garden = (function () {
     stop(true);
     on = true;
     var chosen = choosePanels();
+    // Seasons. With only one garden there is no winter — you always get summer. With more
+    // than one, any panel may turn. In the screensaver the panels keep turning over time.
+    season = {};
+    chosen.forEach(function (id) { season[id] = forceWinter ? 'winter' : 'summer'; });
     chosen.forEach(function (id) {
       gardens[id] = { count: 0, max: Math.round(saver ? rnd(9, 15) : rnd(3, 9)) };
       plant(id);            // one straight away, so something is always happening
       schedule(id);
     });
     Object.keys(gardens).forEach(scheduleWeather);
+    if (!forceWinter) Object.keys(gardens).forEach(cycleSeason);   // the year turns in every panel
     startGrime();
     Object.keys(gardens).forEach(function (id) {
       windTimers[id] = windTimers[id] || [];
@@ -5503,6 +5678,8 @@ var Garden = (function () {
   function setBtns() {
     btn.classList.toggle('on', on);
     btn.setAttribute('aria-pressed', String(on));
+    winterBtn.hidden = !on;
+    winterBtn.classList.toggle('on', forceWinter);
     rangeBtn.hidden = !on;
     rangeBtn.textContent = '1–' + RANGES[rangeIdx] + ' min';
     rangeBtn.title = 'Each plant takes a random time between one minute and ' + RANGES[rangeIdx] + ' minutes. Click to change.';
@@ -5524,6 +5701,12 @@ var Garden = (function () {
     btn.title = g ? 'Katy Mae — grow a garden in the workspace' : 'Katy Mae mode needs the glass theme';
     if (!g && on) { stop(true); setBtns(); }
   }, 700);
+  winterBtn.onclick = function () {
+    forceWinter = !forceWinter;
+    setBtns();
+    start();
+    Sys.toast(forceWinter ? 'Winter, everywhere.' : 'Back to the ordinary run of seasons.', { ms: 3000 });
+  };
   rangeBtn.onclick = function () {
     rangeIdx = (rangeIdx + 1) % RANGES.length;
     setBtns();
@@ -5555,13 +5738,15 @@ var Garden = (function () {
       var s = pick(all);
       if (!s || s.dataset.cut) continue;
       var d = (ms || rnd(180, 700)) * rnd(0.6, 1.5);       // each takes a different amount
-      try { s.setCurrentTime(s.getCurrentTime() + d / 1000); } catch (e) {}   // stem, head and leaves
-      if (s.getAnimations) {                                                   // petals, bud and heart
+      var now = 0;
+      try {
+        s.setCurrentTime(s.getCurrentTime() + d / 1000);   // stem, head travel and leaves
+        now = s.getCurrentTime() * 1000;                   // one clock for the whole plant
+      } catch (e) { now = 0; }
+      if (now && s.getAnimations) {                        // petals, bud and heart follow it exactly
         s.getAnimations({ subtree: true }).forEach(function (a) {
-          var nm = a.animationName || (a.effect && a.effect.getKeyframes && '');
-          if (/^km(Petal|Bud|Heart)$/.test(a.animationName || '')) {
-            try { a.currentTime = (a.currentTime || 0) + d; } catch (e) {}
-          }
+          if (!/^km(Petal|Bud|Heart)$/.test(a.animationName || '')) return;
+          try { a.currentTime = now; } catch (e) {}
         });
       }
       var sw = s.querySelector('.kmSway');
