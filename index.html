@@ -933,6 +933,32 @@
   .body.panZoom { overflow: auto !important; cursor: grab; }
   .body.panZoom.panning { cursor: grabbing; user-select: none; }
 
+  /* Password vault */
+  #vList li { align-items: baseline; }
+  #vList .vSite { font-weight: bold; min-width: 90px; }
+  #vList .vUser { opacity: .8; min-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #vList .vPw { font: 12px Consolas, "Courier New", monospace; letter-spacing: .06em; }
+  #vList .vDue { font-size: 11px; opacity: .7; white-space: nowrap; }
+  #vList li.overdue .vDue { color: #e0572f; opacity: 1; font-weight: bold; }
+  #vSite, #vUser, #vPass { width: 130px; }
+  #vShow.on { background: #000; color: #fff; border-color: #000; }
+  body.glass #vShow.on { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
+
+  /* Trash bin — a proper panel for the full text, in the theme */
+  #tbPeek { position: fixed; z-index: 1200; max-width: min(560px, 70vw); max-height: 40vh; overflow: auto;
+            padding: 10px 12px; font: 13px/1.55 Arial, Helvetica, sans-serif; white-space: pre-wrap;
+            overflow-wrap: anywhere; background: #fff; color: #000; border: 1px solid #777;
+            box-shadow: 0 10px 30px rgba(0,0,0,.35); display: none; pointer-events: none; }
+  #tbPeek.on { display: block; }
+  #tbPeek .tbPeekHead { font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+                        opacity: .6; margin-bottom: 6px; }
+  body.glass #tbPeek { background: rgba(18,25,48,.94); color: #eef2ff; border: 1px solid rgba(255,255,255,.2);
+                       border-radius: 14px; -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+                       box-shadow: 0 18px 50px rgba(0,0,0,.55); }
+
+  /* Trash bin */
+  #tbList .tbKind { font-size: 11px; opacity: .65; min-width: 74px; }
+  #tbList .tbWhen { font-size: 11px; opacity: .6; white-space: nowrap; }
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
@@ -1165,6 +1191,14 @@
             <input type="file" id="fvFileInput" multiple hidden>
             <input type="file" id="fvDirInput" webkitdirectory directory multiple hidden>
           </div>
+        <div class="face" data-face="trash" id="trashFace" tabindex="-1">
+          <div class="bar"><span class="seg"></span><span class="sep"></span>
+            <span id="tbCount"></span>
+            <button id="tbEmpty">Empty the bin</button>
+    <button id="tbAll">Delete all</button>
+          </div>
+          <div class="body"><ul id="tbList" class="clist" aria-label="Trash"></ul></div>
+        </div>
         </div>
       </section>
 
@@ -1459,6 +1493,18 @@
             <span id="cmPick"></span></div>
           <div class="body"><div id="cmGrid"></div></div>
         </div>
+        <div class="face" data-face="vault" id="vaultFace" tabindex="-1">
+          <div class="bar"><span class="seg"></span><span class="sep"></span>
+            <input type="text" id="vSite" placeholder="Site or service" aria-label="Site">
+            <input type="text" id="vUser" placeholder="Username or email" aria-label="Username">
+            <input type="text" id="vPass" placeholder="Password" aria-label="Password">
+            <label>Remind in <select id="vMonths" aria-label="Reminder"><option>3</option><option selected>6</option><option>12</option><option>24</option></select> months</label>
+            <button id="vAdd">Save to vault</button>
+            <input type="text" id="vFind" class="grow" placeholder="Search the vault" aria-label="Search vault">
+            <button id="vShow">Reveal</button>
+          </div>
+          <div class="body"><ul id="vList" class="clist" aria-label="Password vault"></ul></div>
+        </div>
         </div>
       </section>
 
@@ -1505,6 +1551,7 @@
   </div>
 </div>
 <div id="saverHint">move to wake</div>
+<div id="tbPeek"><div class="tbPeekHead"></div><div class="tbPeekBody"></div></div>
 <div id="toasts" aria-live="polite"></div>
 <script>
 (function () {
@@ -1656,7 +1703,8 @@ var Layout = (function () {
               ['word', 'Word processor'], ['sheet', 'Spreadsheet'], ['code', 'Code playground'], ['notes', 'Notes'],
               ['media', 'Media player'], ['rec', 'Recorder'],
               ['sticky', 'Sticky notes'], ['clip', 'Clipboard history'], ['units', 'Unit converter'],
-              ['pass', 'Password generator'], ['chars', 'Character map']];
+              ['pass', 'Password generator'], ['chars', 'Character map'],
+              ['vault', 'Password vault'], ['trash', 'Trash bin']];
   var HOME = {};   // where each app started out
   document.querySelectorAll('.face').forEach(function (f) {
     var p = f.closest('.panel');
@@ -1701,7 +1749,8 @@ var Layout = (function () {
     var short = { web: 'Web', tasks: 'Tasks', paint: 'Paint', gallery: 'Gallery', pdf: 'PDF', files: 'Files',
                   calendar: 'Calendar', calc: 'Calc', clock: 'Clock', time: 'Time', word: 'Word', sheet: 'Sheet',
                   code: 'Code', notes: 'Notes', media: 'Media', rec: 'Recorder',
-                  sticky: 'Sticky', clip: 'Clipboard', units: 'Units', pass: 'Password', chars: 'Chars' };
+                  sticky: 'Sticky', clip: 'Clipboard', units: 'Units', pass: 'Password', chars: 'Chars',
+                  vault: 'Vault', trash: 'Trash' };
     document.querySelectorAll('.card').forEach(function (card) {
       var names = [].filter.call(card.querySelectorAll('.face'), function (f) { return !f.classList.contains('faceOff'); })
                     .map(function (f) { return f.dataset.face; });
@@ -2577,6 +2626,26 @@ var Sys = (function () {
     stampChar();
   });
 
+  // Anything you delete from the document is kept in the bin.
+  ed.addEventListener('keydown', function (e) {
+    if (e.key !== 'Backspace' && e.key !== 'Delete' && !((e.ctrlKey || e.metaKey) && e.key === 'x')) return;
+    var sel = getSelection();
+    if (!sel.rangeCount) return;
+    if (sel.isCollapsed) {                       // one character, either direction
+      var r = sel.getRangeAt(0).cloneRange();
+      try {
+        if (e.key === 'Backspace') r.setStart(r.startContainer, Math.max(0, r.startOffset - 1));
+        else if (e.key === 'Delete') r.setEnd(r.endContainer, r.endOffset + 1);
+        else return;
+      } catch (x) { return; }
+      var ch = r.toString();
+      if (ch) Trash.addText(ch);
+      return;
+    }
+    var gone = String(sel);
+    if (gone.length) Trash.addText(gone);
+  });
+
   ed.addEventListener('keydown', function (e) {
     if (!fxOn) return;
     if (e.key !== 'Backspace' && e.key !== 'Delete') return;
@@ -3010,6 +3079,7 @@ var Sys = (function () {
     var i = find(id); if (i < 0) return;
     var t = tasks.splice(i, 1)[0];
     save(); render();
+    Trash.add('Task', t.text, t);
     Sys.toast('Task deleted.', { ms: 5000, actions: [{ label: 'Undo', fn: function () { tasks.splice(Math.min(i, tasks.length), 0, t); save(); render(); } }] });
   }
   function edit(t, tx, el) {
@@ -3055,12 +3125,14 @@ var Sys = (function () {
     input.value = '';
     save(); render();
   }
+  Sys.restoreTask = function (t) { tasks.push(t); save(); render(); };
   $('tAdd').onclick = add;
   input.addEventListener('keydown', function (e) { if (e.key === 'Enter') add(); });
   $('tClearDone').onclick = function () {
     var n = tasks.filter(function (t) { return t.col === 'done'; }).length;
     if (!n) return;
     var old = tasks.slice();
+    old.filter(function (t) { return t.col === 'done'; }).forEach(function (t) { Trash.add('Task', t.text, t); });
     tasks = tasks.filter(function (t) { return t.col !== 'done'; });
     save(); render();
     Sys.toast(n + ' done ' + (n === 1 ? 'task' : 'tasks') + ' cleared.', { ms: 5000, actions: [{ label: 'Undo', fn: function () { tasks = old; save(); render(); } }] });
@@ -3520,7 +3592,19 @@ var Sys = (function () {
   $('sRedo').onclick = redoIt;
   $('sClear').onclick = function () {
     var ch = Object.keys(data).map(function (id) { return { id: id, before: data[id], after: '' }; });
-    if (ch.length) { apply(ch); note('Sheet cleared. Undo restores it.'); }
+    if (!ch.length) return;
+    var snapshot = {};
+    ch.forEach(function (c) { snapshot[c.id] = c.before; });
+    apply(ch);
+    Trash.add('Sheet cells', ch.length + (ch.length === 1 ? ' cell' : ' cells') + ' cleared', snapshot);
+    note('Sheet cleared. Undo restores it, and it is in the bin.');
+  };
+  Sys.restoreCells = function (snapshot) {
+    var ch = [];
+    Object.keys(snapshot || {}).forEach(function (id) {
+      if ((data[id] || '') !== snapshot[id]) ch.push({ id: id, before: data[id] || '', after: snapshot[id] });
+    });
+    if (ch.length) apply(ch);
   };
 
   function csvCell(s) { return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
@@ -6167,7 +6251,9 @@ var Garden = (function () {
     clip: function () { return any('#cbList li:not(.empty)'); },
     units: function () { return false; },
     pass: function () { return any('#pwHist li:not(.empty)'); },
-    chars: function () { return false; }
+    chars: function () { return false; },
+    vault: function () { return any('#vList li:not(.empty)'); },
+    trash: function () { return any('#tbList li:not(.empty)'); }
   };
   function update() {
     Object.keys(CHECK).forEach(function (k) {
@@ -6197,7 +6283,9 @@ var Garden = (function () {
     { k: 'clip', name: 'Clipboard history', panel: 'browser', key: 'ws.clipboard' },
     { k: 'units', name: 'Unit converter', panel: 'calendar', note: 'Not saved' },
     { k: 'pass', name: 'Password generator', panel: 'media', note: 'Not saved' },
-    { k: 'chars', name: 'Character map', panel: 'media', note: 'Not saved' }
+    { k: 'chars', name: 'Character map', panel: 'media', note: 'Not saved' },
+    { k: 'vault', name: 'Password vault', panel: 'media', key: 'ws.vault' },
+    { k: 'trash', name: 'Trash bin', panel: 'paint', key: 'ws.trash' }
   ];
   function bytes(n) { if (n < 1024) return n + ' B'; if (n < 1048576) return (n / 1024).toFixed(1) + ' KB'; if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB'; return (n / 1073741824).toFixed(2) + ' GB'; }
   function kvSize(key) { var v = store.get(key); return v === undefined ? 0 : new Blob([JSON.stringify(v)]).size; }
@@ -6361,6 +6449,7 @@ var Garden = (function () {
     el.querySelector('.nsKill').onclick = function () {
       notes = notes.filter(function (x) { return x !== n; });
       el.remove(); save(); count();
+      Trash.add('Sticky note', (n.t || '').slice(0, 60) || 'Empty note', n);
       Sys.toast('Note removed.', { ms: 4000, actions: [{ label: 'Undo', fn: function () { notes.push(n); surface().appendChild(draw(n)); save(); count(); } }] });
     };
     el.addEventListener('pointerdown', function (e) {
@@ -6395,6 +6484,7 @@ var Garden = (function () {
     var t = board.lastChild.querySelector('.nsTxt');
     if (t) t.focus();
   };
+  Sys.restoreSticky = function (n) { notes.push(n); surface().appendChild(draw(n)); save(); count(); };
   notes.forEach(function (n) { surface().appendChild(draw(n)); });
   count();
 })();
@@ -6548,6 +6638,7 @@ var Garden = (function () {
     out.textContent = s;
     strength(s, p.length);
     recent.unshift(s); recent = recent.slice(0, 8);
+    if (typeof Vault !== 'undefined' && Vault.keep) Vault.keep(s);   // every one goes to the vault
     hist.innerHTML = '';
     recent.forEach(function (x) {
       var li = document.createElement('li');
@@ -6616,6 +6707,209 @@ var Garden = (function () {
   sel.onchange = render;
   find.addEventListener('input', render);
   render();
+})();
+
+/* ================= Trash bin =================
+   Anything thrown away in the workspace lands here, and can be put back. */
+var Trash = (function () {
+  var KEY = 'ws.trash', list = $('tbList'), items = store.get(KEY, []), restorers = {};
+  function save() { store.set(KEY, items); }
+  function when(ts) {
+    var d = new Date(ts), now = new Date();
+    return d.toDateString() === now.toDateString()
+      ? d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      : d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+  function render() {
+    list.innerHTML = '';
+    $('tbCount').textContent = items.length ? items.length + (items.length === 1 ? ' item' : ' items') : '';
+    if (!items.length) {
+      var e = document.createElement('li'); e.className = 'empty';
+      e.textContent = 'Nothing in the bin. Anything you delete lands here first.';
+      list.appendChild(e); return;
+    }
+    items.slice().reverse().forEach(function (it) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="tbKind"></span><span class="grow1"></span><span class="tbWhen"></span>' +
+                     '<button>Put back</button><button class="x">×</button>';
+      li.children[0].textContent = it.kind;
+      li.children[1].textContent = it.count > 1 ? it.label + '  (' + it.count + ' characters)' : it.label;
+      if (typeof it.data === 'string' && it.data.length) {
+        li.children[1].addEventListener('pointerenter', function (ev) { peek(ev, it); });
+        li.children[1].addEventListener('pointermove', function (ev) { place(ev); });
+        li.children[1].addEventListener('pointerleave', hide);
+      }
+      li.children[2].textContent = when(it.at);
+      li.children[3].onclick = function () {
+        var back = restorers[it.kind];
+        items = items.filter(function (x) { return x !== it; });
+        save(); render();
+        if (back) back(it.data);
+        Sys.toast(back ? 'Put back.' : 'That app is not open to receive it.', { ms: 2500 });
+      };
+      li.children[4].onclick = function () {
+        items = items.filter(function (x) { return x !== it; }); save(); render();
+      };
+      list.appendChild(li);
+    });
+  }
+  // The whole of a deleted passage, shown in a panel that matches the workspace.
+  var peekEl = $('tbPeek');
+  function place(ev) {
+    var w = peekEl.offsetWidth, h = peekEl.offsetHeight;
+    var x = Math.min(innerWidth - w - 12, ev.clientX + 16);
+    var y = ev.clientY + 18 + h > innerHeight ? ev.clientY - h - 14 : ev.clientY + 18;
+    peekEl.style.left = Math.max(8, x) + 'px';
+    peekEl.style.top = Math.max(8, y) + 'px';
+  }
+  function peek(ev, it) {
+    peekEl.querySelector('.tbPeekHead').textContent =
+      it.kind + (it.count > 1 ? ' · ' + it.count + ' characters' : '');
+    peekEl.querySelector('.tbPeekBody').textContent = it.data;
+    peekEl.classList.add('on');
+    place(ev);
+  }
+  function hide() { peekEl.classList.remove('on'); }
+
+  $('tbAll').onclick = function () {
+    if (!items.length) return;
+    hide();
+    var n = items.length;
+    items = []; save(); render();
+    Sys.toast(n + (n === 1 ? ' item' : ' items') + ' deleted.', { ms: 2500 });
+  };
+  $('tbEmpty').onclick = function () {
+    if (!items.length) return;
+    var n = items.length, old = items.slice();
+    Sys.toast('Empty the bin? ' + n + (n === 1 ? ' item' : ' items') + ' will be gone for good.', { sticky: true, actions: [
+      { label: 'Empty it', fn: function () { items = []; save(); render(); Sys.toast('Bin emptied.', { ms: 2500 }); } },
+      { label: 'Cancel' }
+    ] });
+  };
+  render();
+  return {
+    // apps register how to put their own things back
+    handler: function (kind, fn) { restorers[kind] = fn; },
+    // Held-down backspace produces a stream of single characters. Gather anything deleted
+    // within a moment of the last into one entry rather than fifty.
+    addText: (function () {
+      var run = null, timer = null;
+      return function (ch) {
+        if (run && Date.now() - run.at < 900) {
+          run.text = ch + run.text;                 // backspace runs backwards
+          run.at = Date.now();
+          var it = items[items.length - 1];
+          if (it && it.id === run.id) {
+            it.data = run.text;
+            it.label = run.text.length > 60 ? run.text.slice(0, 60) + '…' : run.text;
+            it.count = run.text.length;
+            save(); render();
+          }
+          clearTimeout(timer);
+          timer = setTimeout(function () { run = null; }, 900);
+          return;
+        }
+        var id = uid();
+        run = { id: id, text: ch, at: Date.now() };
+        items.push({ id: id, kind: 'Text', label: ch, data: ch, count: ch.length, at: Date.now() });
+        if (items.length > 200) items = items.slice(-200);
+        save(); render();
+        clearTimeout(timer);
+        timer = setTimeout(function () { run = null; }, 900);
+      };
+    })(),
+    add: function (kind, label, data) {
+      items.push({ id: uid(), kind: kind, label: String(label || '').slice(0, 200), data: data, at: Date.now() });
+      if (items.length > 200) items = items.slice(-200);
+      save(); render();
+    }
+  };
+})();
+
+/* ================= Password vault ================= */
+var Vault = (function () {
+  var KEY = 'ws.vault', list = $('vList'), entries = store.get(KEY, []), reveal = false;
+  function save() { store.set(KEY, entries); }
+  function fmt(ts) { return new Date(ts).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' }); }
+  function due(e) { var d = new Date(e.created); d.setMonth(d.getMonth() + (e.months || 6)); return d.getTime(); }
+  function copy(t, what) {
+    var done = function () { Sys.toast(what + ' copied.', { ms: 1600 }); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, done);
+    else done();
+  }
+  function render() {
+    var q = $('vFind').value.trim().toLowerCase();
+    list.innerHTML = '';
+    var show = entries.filter(function (e) {
+      return !q || (e.site + ' ' + e.user).toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) { return due(a) - due(b); });
+    if (!show.length) {
+      var el = document.createElement('li'); el.className = 'empty';
+      el.textContent = entries.length ? 'Nothing matches.' : 'Nothing saved yet. Passwords you generate are kept here too.';
+      list.appendChild(el); return;
+    }
+    var now = Date.now();
+    show.forEach(function (e) {
+      var li = document.createElement('li'), overdue = due(e) < now;
+      if (overdue) li.className = 'overdue';
+      li.innerHTML = '<span class="vSite"></span><span class="vUser"></span><span class="vPw grow1"></span>' +
+                     '<span class="vDue"></span><button>User</button><button>Copy</button><button class="x">×</button>';
+      li.children[0].textContent = e.site;
+      li.children[0].contentEditable = 'true';
+      li.children[0].title = 'Click to rename';
+      li.children[0].addEventListener('blur', function () {
+        e.site = this.textContent.trim() || 'Untitled'; this.textContent = e.site; save();
+      });
+      li.children[1].textContent = e.user || 'add a username';
+      li.children[1].contentEditable = 'true';
+      li.children[1].title = 'Click to set the username';
+      li.children[1].addEventListener('focus', function () { if (!e.user) this.textContent = ''; });
+      li.children[1].addEventListener('blur', function () {
+        e.user = this.textContent.trim(); this.textContent = e.user || 'add a username'; save();
+      });
+      [li.children[0], li.children[1]].forEach(function (c) {
+        c.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); this.blur(); } });
+      });
+      li.children[2].textContent = reveal ? e.pw : '•'.repeat(Math.min(18, e.pw.length));
+      li.children[3].textContent = (overdue ? 'update due ' : 'renew ') + fmt(due(e)) + ' · added ' + fmt(e.created);
+      li.children[4].onclick = function () { copy(e.user || '', 'Username'); };
+      li.children[5].onclick = function () { copy(e.pw, 'Password'); };
+      li.children[6].onclick = function () {
+        entries = entries.filter(function (x) { return x !== e; });
+        save(); render();
+        Trash.add('Vault', e.site + (e.user ? ' — ' + e.user : ''), e);
+        Sys.toast('Moved to the bin.', { ms: 2500 });
+      };
+      list.appendChild(li);
+    });
+  }
+  function add(site, user, pw, months) {
+    if (!pw) return;
+    entries.push({ id: uid(), site: site || 'Untitled', user: user || '', pw: pw,
+                   months: +months || 6, created: Date.now() });
+    save(); render();
+  }
+  $('vAdd').onclick = function () {
+    if (!$('vPass').value) { $('vPass').focus(); return; }
+    add($('vSite').value.trim(), $('vUser').value.trim(), $('vPass').value, $('vMonths').value);
+    $('vSite').value = $('vUser').value = $('vPass').value = '';
+    Sys.toast('Saved to the vault.', { ms: 2000 });
+  };
+  $('vFind').addEventListener('input', render);
+  $('vShow').onclick = function () { reveal = !reveal; this.classList.toggle('on', reveal); render(); };
+  Trash.handler('Vault', function (e) { entries.push(e); save(); render(); });
+  Trash.handler('Sticky note', function (n) { if (Sys.restoreSticky) Sys.restoreSticky(n); });
+  Trash.handler('Task', function (t) { if (Sys.restoreTask) Sys.restoreTask(t); });
+  Trash.handler('Sheet cells', function (snap) { if (Sys.restoreCells) Sys.restoreCells(snap); });
+  Trash.handler('Text', function (t) {
+    var done = function () { Sys.toast('Text copied — paste it back where you want it.', { ms: 3000 }); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, done);
+    else done();
+  });
+  render();
+  return { add: add, keep: function (pw) {
+    add('New password ' + new Date().toLocaleDateString([], { month: 'short', day: 'numeric' }), '', pw, 6);
+  } };
 })();
 
 /* ================= Status bar ================= */
