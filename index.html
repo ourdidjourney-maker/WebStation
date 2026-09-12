@@ -781,6 +781,19 @@
     100% { translate: 0 0; scale: 1; }
   }
 
+  /* Deleted letters get tossed off the panel */
+  .wpDrop { position: fixed; z-index: 200; pointer-events: none; white-space: pre;
+            animation: wpDrop var(--fall, 1400ms) linear forwards; }
+  @keyframes wpDrop {
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 1;
+           animation-timing-function: cubic-bezier(.05,.85,.3,1); }
+    20%  { transform: translate(calc(var(--dx, 40px) * .25), calc(var(--up, 70px) * -1))
+                      rotate(calc(var(--spin, 400deg) * .22)); opacity: 1;
+           animation-timing-function: cubic-bezier(.3,0,.85,.4); }
+    80%  { opacity: 1; }
+    100% { transform: translate(var(--dx, 40px), var(--dy, 500px)) rotate(var(--spin, 400deg)); opacity: 0; }
+  }
+
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
@@ -2216,6 +2229,47 @@ var Sys = (function () {
   $('wHilite').oninput = function () { exec('hiliteColor', this.value); };
   ed.addEventListener('input', changed);
   // Typing here feeds the garden — a few random plants edge forward with every keystroke.
+  // Toss the character that is about to be deleted off the screen.
+  function rr(a, b) { return a + Math.random() * (b - a); }
+  function tossChar(ch, rect) {
+    if (!ch || !ch.trim() || !rect) return;
+    var el = document.createElement('span');
+    el.className = 'wpDrop';
+    el.textContent = ch;
+    var cs = getComputedStyle(ed);
+    el.style.font = cs.font;
+    el.style.color = cs.color;
+    el.style.left = rect.left + 'px';
+    el.style.top = rect.top + 'px';
+    var dir = Math.random() < 0.5 ? -1 : 1;
+    var sr = Math.random();
+    var spin = sr < 0.25 ? rr(90, 260) : sr < 0.7 ? rr(320, 800) : rr(900, 2000);
+    var fall = rr(1100, 1700);
+    el.style.setProperty('--fall', Math.round(fall) + 'ms');
+    el.style.setProperty('--up', Math.round(rr(50, 170)) + 'px');
+    el.style.setProperty('--dx', Math.round(dir * rr(30, 160)) + 'px');
+    el.style.setProperty('--dy', Math.round(innerHeight - rect.top + 120) + 'px');
+    el.style.setProperty('--spin', Math.round(dir * spin) + 'deg');
+    document.body.appendChild(el);
+    setTimeout(function () { el.remove(); }, fall + 80);
+  }
+
+  ed.addEventListener('keydown', function (e) {
+    if (e.key !== 'Backspace' && e.key !== 'Delete') return;
+    var sel = getSelection();
+    if (!sel.rangeCount || !sel.isCollapsed) return;         // only single-character deletes
+    var r = sel.getRangeAt(0).cloneRange();
+    try {
+      if (e.key === 'Backspace') r.setStart(r.startContainer, Math.max(0, r.startOffset - 1));
+      else r.setEnd(r.endContainer, r.endOffset + 1);
+    } catch (x) { return; }
+    var ch = r.toString();
+    if (ch.length !== 1) return;
+    var box = r.getBoundingClientRect();
+    if (!box.width && !box.height) return;
+    tossChar(ch, box);
+  });
+
   ed.addEventListener('keydown', function (e) {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (typeof Garden !== 'undefined' && Garden.nudge) Garden.nudge();
@@ -4782,7 +4836,7 @@ var Garden = (function () {
     }
     }
     if (layered && family !== 'spike' && family !== 'fern' && family !== 'bud') {   // an inner ring, rotated between the outer petals
-      var ir = r * rnd(0.5, 0.68), inner = petalShape(kind === 'bell' ? 'petal' : kind, ir);
+      var ir = r * rnd(0.5, 0.68), inner = petalShape(kind, ir);   // the inner ring must match the outer
       for (var m = 0; m < petals; m++) {
         var ia = (360 / petals) * m + (180 / petals);
         var iat = {};
