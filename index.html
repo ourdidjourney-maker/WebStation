@@ -796,6 +796,21 @@
     100% { opacity: 0; color: var(--cool, #fff); }
   }
 
+  /* Molten slag: droplets shed by a hot letter, cooling as they fall */
+  .wpSlag { position: fixed; z-index: 198; pointer-events: none; border-radius: 50%;
+            animation: wpSlag var(--life, 1200ms) cubic-bezier(.3,0,.8,.45) var(--sdelay, 0s) forwards; }
+  @keyframes wpSlag {
+    0%   { opacity: 0; transform: translate(0, 0) scale(1);
+           background: #fffde0; box-shadow: 0 0 9px 2px rgba(255,240,140,1); }
+    6%   { opacity: 1; }
+    26%  { background: #ffe600; box-shadow: 0 0 9px 2px rgba(255,230,60,1); }
+    48%  { background: #ffd21e; box-shadow: 0 0 8px 2px rgba(255,205,40,.95); }
+    68%  { background: #ffa412; box-shadow: 0 0 6px 1px rgba(255,140,20,.8); }
+    88%  { background: #f0590c; box-shadow: 0 0 4px 1px rgba(220,70,0,.55); }
+    100% { opacity: 0; transform: translate(var(--sx, 8px), var(--sy, 300px)) scale(.7);
+           background: #7a1f05; box-shadow: none; }
+  }
+
   /* Deleted letters get tossed off the panel */
   .wpDrop { position: fixed; z-index: 200; pointer-events: none; white-space: pre;
             animation: wpDrop var(--fall, 1400ms) linear forwards; }
@@ -2355,6 +2370,27 @@ var Sys = (function () {
     el.style.setProperty('--heat', Math.round(heat) + 'ms');
     document.body.appendChild(el);
     setTimeout(function () { el.remove(); }, heat + 60);
+
+    // Hot metal sheds slag: a few glowing beads run off the letter and fall away.
+    var panel = ed.closest('.panel'), pr = panel ? panel.getBoundingClientRect() : null;
+    var drops = Math.round(rr(2, 4));
+    for (var k = 0; k < drops; k++) {
+      var d = document.createElement('span');
+      d.className = 'wpSlag';
+      var sz = rr(1.4, 3.4);
+      d.style.width = sz.toFixed(1) + 'px';
+      d.style.height = sz.toFixed(1) + 'px';
+      d.style.left = (box.left + rr(0, Math.max(2, box.width))) + 'px';
+      d.style.top = (box.top + box.height * rr(0.5, 0.95)) + 'px';
+      var floor = pr ? Math.max(40, pr.bottom - box.top - box.height) : 320;
+      var life = rr(1800, 3400);
+      d.style.setProperty('--sy', Math.round(floor) + 'px');
+      d.style.setProperty('--sx', Math.round(rr(-26, 26)) + 'px');
+      d.style.setProperty('--life', Math.round(life) + 'ms');
+      d.style.setProperty('--sdelay', Math.round(rr(0, 260)) + 'ms');
+      document.body.appendChild(d);
+      (function (node, ms) { setTimeout(function () { node.remove(); }, ms); })(d, life + 320);
+    }
   }
   ed.addEventListener('input', function (e) {
     if (!fxOn) return;
