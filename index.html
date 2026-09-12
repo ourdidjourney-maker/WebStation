@@ -660,10 +660,81 @@
   #proxBtn.on { background: #000; color: #fff; border-color: #000; }
   @media (prefers-reduced-motion: reduce) { .panel.blurred .card { transition: none; } }
 
+  /* Rain: three depth layers of streaks, beads clinging to the glass, and splashes */
+  .kmRain { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 41; border-radius: inherit; }
+  .kmRain.fading { opacity: 0; transition: opacity 1.6s ease; }
+
+  /* A streak is a soft gradient, not a hard line — that is what reads as motion blur */
+  .kmStreak {
+    position: absolute; top: 0; left: 0; border-radius: 2px;
+    background: linear-gradient(to bottom, rgba(210,230,255,0) 0%, rgba(215,235,255,var(--a,.3)) 45%, rgba(235,245,255,var(--a,.3)) 75%, rgba(210,230,255,0) 100%);
+    animation: kmRainFall var(--dur, .8s) linear var(--delay, 0s) infinite;
+    will-change: transform;
+  }
+  @keyframes kmRainFall {
+    from { transform: translate3d(var(--x), -140px, 0) rotate(var(--tilt, 12deg)); }
+    to   { transform: translate3d(calc(var(--x) + var(--drift, 60px)), var(--fallTo, 900px), 0) rotate(var(--tilt, 12deg)); }
+  }
+
+  /* Splash where a drop lands: a flat ring that spreads and vanishes */
+  .kmSplash {
+    position: absolute; border: 1px solid rgba(220,240,255,.5); border-radius: 50%;
+    width: 10px; height: 3px; opacity: 0;
+    animation: kmSplash var(--sdur, 620ms) ease-out var(--delay, 0s) infinite;
+  }
+  @keyframes kmSplash {
+    0%   { opacity: 0; transform: scale(.2, .4); }
+    12%  { opacity: .75; }
+    100% { opacity: 0; transform: scale(2.6, 1.5); }
+  }
+
+  /* A bead sitting on the glass: bright highlight top-left, dark refracted edge bottom-right */
+  .kmBead {
+    position: absolute; border-radius: 50%;
+    background:
+      radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0%, rgba(255,255,255,.35) 18%, rgba(255,255,255,.06) 38%, rgba(255,255,255,0) 60%),
+      radial-gradient(circle at 68% 78%, rgba(255,255,255,.5) 0%, rgba(255,255,255,0) 42%),
+      radial-gradient(circle at 50% 50%, rgba(190,215,240,.22) 0%, rgba(160,190,220,.1) 70%, rgba(255,255,255,0) 100%);
+    box-shadow: inset 0 -1px 2px rgba(255,255,255,.4), inset 0 1px 2px rgba(90,120,160,.35), 0 1px 2px rgba(0,0,0,.18);
+    -webkit-backdrop-filter: blur(.7px) brightness(1.06);
+    backdrop-filter: blur(.7px) brightness(1.06);
+    opacity: 0;
+    animation: kmBeadIn 700ms ease-out var(--delay, 0s) forwards;
+    will-change: transform;
+  }
+  @keyframes kmBeadIn { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
+
+  /* Once it releases, it runs down the glass, stretching as it accelerates */
+  .kmBead.rolling { animation: kmRoll var(--rdur, 2.4s) cubic-bezier(.42,0,.85,.55) forwards; }
+  @keyframes kmRoll {
+    0%   { transform: translate(0, 0) scaleY(1); opacity: 1; }
+    8%   { transform: translate(0, 4px) scaleY(1.25); }
+    55%  { transform: translate(var(--wob, 3px), calc(var(--rdist, 300px) * .55)) scaleY(1.5); opacity: 1; }
+    100% { transform: translate(0, var(--rdist, 300px)) scaleY(1.7); opacity: .85; }
+  }
+  /* The wet trail it leaves behind, thinning as it dries */
+  .kmTrail {
+    position: absolute; width: 2px; border-radius: 2px; transform-origin: 50% 0;
+    background: linear-gradient(to bottom, rgba(200,225,250,.32), rgba(200,225,250,.12) 55%, rgba(200,225,250,0));
+    opacity: 0; animation: kmTrail var(--rdur, 2.4s) linear forwards;
+  }
+  @keyframes kmTrail { 0% { opacity: 0; transform: scaleY(0); } 12% { opacity: .9; } 100% { opacity: 0; transform: scaleY(1); } }
+
+  /* Plants move more in the wind and wet */
+  .kmHost.raining .kmSway { animation-duration: calc(var(--sway, 6s) * .5); }
+  #kmRain.on { background: linear-gradient(180deg, #bcd9f5, #8fb9e8); color: #0b2238; border-color: #a8cdf0; box-shadow: none; }
+  @media (prefers-reduced-motion: reduce) { .kmStreak, .kmSplash, .kmBead, .kmTrail { animation: none; opacity: .25; } }
+
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
-  .kmFlower { position: absolute; overflow: visible; transform-origin: 50% 100%; pointer-events: none; }
+  .kmFlower { position: absolute; overflow: visible; transform-origin: 50% 100%; pointer-events: none;
+              animation: kmSway2 var(--sway2, 11s) ease-in-out var(--sway2Delay, 0s) infinite alternate; }
+  @keyframes kmSway2 { from { transform: rotate(calc(var(--sway2Deg, 1.2deg) * -1)); } to { transform: rotate(var(--sway2Deg, 1.2deg)); } }
+  /* A gust leans everything over and speeds the sway up while it passes */
+  .kmHost.gusting .kmSway { animation-duration: calc(var(--sway, 6s) * .38); }
+  .kmHost.gusting .kmFlower { animation-duration: calc(var(--sway2, 11s) * .45); --sway2Deg: var(--gustDeg, 5deg); }
+  .kmHost .kmFlower, .kmHost .kmSway { transition: none; }
   .kmFlower path, .kmFlower ellipse, .kmFlower circle { pointer-events: auto; cursor: pointer; }
   .kmFlower.kmCut { pointer-events: none; animation: kmFall var(--fall, 1200ms) cubic-bezier(.36,.02,.86,.54) forwards; }
   .kmFlower.kmCut path, .kmFlower.kmCut ellipse, .kmFlower.kmCut circle { pointer-events: none; cursor: default; }
@@ -692,13 +763,27 @@
   .kmHeart { scale: 0; animation: kmHeart calc(var(--grow, 80s) * .16) cubic-bezier(.2,.8,.3,1) var(--cd, 0s) forwards; }
   @keyframes kmHeart { to { scale: 1; } }
   /* A leaf drifting across */
-  .kmDrift { position: absolute; left: 0; top: 0; overflow: visible; opacity: 0;
-             animation: kmDrift var(--dur, 14s) linear forwards; }
+  /* The path the leaf travels: five waypoints, so it rides the air instead of sliding in a line */
+  .kmDrift { position: absolute; left: 0; top: 0; opacity: 0; will-change: transform;
+             animation: kmDrift var(--dur, 14s) cubic-bezier(.4,.05,.6,.95) forwards; }
   @keyframes kmDrift {
-    0%   { opacity: 0; transform: translate(var(--x0), var(--y0)) rotate(0deg); }
-    12%  { opacity: .85; }
-    88%  { opacity: .85; }
-    100% { opacity: 0; transform: translate(var(--x1), var(--y1)) rotate(var(--spin, 360deg)); }
+    0%   { opacity: 0; transform: translate(var(--x0), var(--y0)); }
+    8%   { opacity: var(--op, .85); }
+    25%  { transform: translate(var(--x1), var(--y1)); }
+    50%  { transform: translate(var(--x2), var(--y2)); }
+    75%  { transform: translate(var(--x3), var(--y3)); }
+    92%  { opacity: var(--op, .85); }
+    100% { opacity: 0; transform: translate(var(--x4), var(--y4)); }
+  }
+  /* Tumbling is its own animation, so spin never has to match the path */
+  .kmDriftSpin { display: block; overflow: visible; transform-origin: 50% 50%;
+                 animation: kmTumble var(--tdur, 2s) linear infinite; }
+  @keyframes kmTumble {
+    0%   { transform: rotate(var(--r0, 0deg)) scaleX(1) scaleY(1); }
+    25%  { transform: rotate(calc(var(--r0, 0deg) + var(--rq, 90deg))) scaleX(.25) scaleY(.94); }
+    50%  { transform: rotate(calc(var(--r0, 0deg) + var(--rq, 90deg) * 2)) scaleX(-1) scaleY(1); }
+    75%  { transform: rotate(calc(var(--r0, 0deg) + var(--rq, 90deg) * 3)) scaleX(-.25) scaleY(.94); }
+    100% { transform: rotate(calc(var(--r0, 0deg) + var(--rq, 90deg) * 4)) scaleX(1) scaleY(1); }
   }
   body.glass .kmFlower { filter: drop-shadow(0 3px 10px rgba(0,0,0,.35)); }
   #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff87b6); color: #3d1026; border-color: #ff9ec4; box-shadow: none; }
@@ -4425,6 +4510,10 @@ var Garden = (function () {
     s.style.setProperty('--sway', rnd(4, 9).toFixed(2) + 's');
     s.style.setProperty('--swayDeg', rnd(1.2, 3.8).toFixed(2) + 'deg');
     s.style.setProperty('--swayDelay', (-rnd(0, 4)).toFixed(2) + 's');   // so plants don't sway in unison
+    s.style.setProperty('--sway2', rnd(9, 17).toFixed(2) + 's');          // a second, slower rhythm
+    s.style.setProperty('--sway2Delay', (-rnd(0, 9)).toFixed(2) + 's');
+    s.style.setProperty('--sway2Deg', rnd(0.6, 2.2).toFixed(2) + 'deg');
+    s.style.setProperty('--gustDeg', rnd(3.5, 8).toFixed(2) + 'deg');
 
     var g = svg('g', { class: 'kmSway' });
     s.appendChild(g);
@@ -4612,26 +4701,81 @@ var Garden = (function () {
   }
 
   /* --- A leaf drifting across a panel --------------------------------- */
-  function drift(host) {
+  // Leaf tints: fresh greens through to dry autumn colours
+  var LEAF_TINTS = ['#5fbf7d', '#4aa76a', '#6fcf8e', '#3f9a63', '#8fd39f',
+                   '#c9d96b', '#e0c169', '#d9a45c', '#cf9b5a', '#b87333'];
+
+  function drift(host, opts) {
     var W = host.clientWidth, H = host.clientHeight;
     if (!W || !H) return;
-    var box = 26, dur = test ? rnd(2600, 4200) : rnd(11000, 19000);
-    var l = svg('svg', { class: 'kmDrift', viewBox: '0 0 24 16', width: box, height: box * 0.7, 'aria-hidden': 'true' });
-    l.appendChild(svg('path', {
-      d: 'M1 8 C 7 0, 17 0, 23 8 C 17 16, 7 16, 1 8 Z',
-      fill: pick(GREENS), opacity: '.75'
-    }));
-    l.appendChild(svg('path', { d: 'M1 8 L23 8', stroke: 'rgba(255,255,255,.5)', 'stroke-width': '.8' }));
-    var fromLeft = Math.random() < 0.5;
-    l.style.setProperty('--x0', (fromLeft ? -40 : W + 40) + 'px');
-    l.style.setProperty('--x1', (fromLeft ? W + 40 : -40) + 'px');
-    l.style.setProperty('--y0', rnd(H * 0.1, H * 0.55) + 'px');
-    l.style.setProperty('--y1', rnd(H * 0.45, H * 0.92) + 'px');
-    l.style.setProperty('--spin', (fromLeft ? 1 : -1) * rnd(220, 540) + 'deg');
-    l.style.setProperty('--dur', dur + 'ms');
-    host.appendChild(l);
-    setTimeout(function () { l.remove(); }, dur + 200);
+    opts = opts || {};
+    var size = rnd(12, 34) * (opts.small ? 0.65 : 1);
+    var fast = opts.fast || raining;
+    var dur = (fast ? rnd(3500, 9000) : rnd(9000, 26000)) * rnd(0.8, 1.25);
+    if (test) dur *= 0.3;
+
+    var wrap = document.createElement('div');
+    wrap.className = 'kmDrift';
+    var l = svg('svg', { class: 'kmDriftSpin', viewBox: '0 0 24 16', width: size, height: size * 0.7, 'aria-hidden': 'true' });
+    var tint = pick(LEAF_TINTS);
+    l.appendChild(svg('path', { d: 'M1 8 C 7 0, 17 0, 23 8 C 17 16, 7 16, 1 8 Z', fill: tint }));
+    l.appendChild(svg('path', { d: 'M1 8 L23 8', stroke: 'rgba(255,255,255,.45)', 'stroke-width': '.8' }));
+    l.appendChild(svg('path', { d: 'M7 8 L10 5 M12 8 L15 5 M7 8 L10 11 M12 8 L15 11', stroke: 'rgba(255,255,255,.22)', 'stroke-width': '.5', fill: 'none' }));
+    wrap.appendChild(l);
+
+    // Path: mostly sideways on the wind, with a slow sink and a wave through the middle
+    var fromLeft = Math.random() < 0.5, dir = fromLeft ? 1 : -1;
+    var x0 = fromLeft ? -60 : W + 60, x4 = fromLeft ? W + 60 : -60;
+    var y0 = rnd(-30, H * 0.7), y4 = Math.min(H + 40, y0 + rnd(H * 0.05, H * 0.75));
+    var wave = rnd(H * 0.04, H * 0.18) * (Math.random() < 0.5 ? -1 : 1);
+    for (var k = 0; k <= 4; k++) {
+      var t = k / 4;
+      var x = x0 + (x4 - x0) * t + (k > 0 && k < 4 ? dir * rnd(-W * 0.06, W * 0.06) : 0);
+      var y = y0 + (y4 - y0) * t + (k > 0 && k < 4 ? Math.sin(t * Math.PI * rnd(1, 2.4)) * wave : 0);
+      wrap.style.setProperty('--x' + k, Math.round(x) + 'px');
+      wrap.style.setProperty('--y' + k, Math.round(y) + 'px');
+    }
+    wrap.style.setProperty('--dur', Math.round(dur) + 'ms');
+    wrap.style.setProperty('--op', rnd(0.45, 0.95).toFixed(2));
+    // Small, far-off leaves tumble slowly; big near ones flip fast
+    l.style.setProperty('--tdur', (rnd(900, 3400) * (size / 22)).toFixed(0) + 'ms');
+    l.style.setProperty('--r0', Math.round(rnd(0, 360)) + 'deg');
+    l.style.setProperty('--rq', Math.round(dir * rnd(60, 140)) + 'deg');
+    host.appendChild(wrap);
+    setTimeout(function () { wrap.remove(); }, dur + 300);
   }
+
+  // Wind comes in gusts: long calm stretches, then a scatter, and now and then a real flurry.
+  function gust() {
+    var ids = Object.keys(gardens);
+    if (!on || !ids.length) return;
+    var roll = Math.random();
+    var count = roll < 0.42 ? Math.round(rnd(1, 3))      // a stray leaf or two
+              : roll < 0.82 ? Math.round(rnd(4, 10))     // a decent scatter
+              : Math.round(rnd(12, 26));                 // a real flurry
+    if (raining) count = Math.round(count * 1.5);        // wind picks up in the wet
+    var spread = count > 11 ? rnd(900, 2600) : rnd(300, 1800);
+    for (var i = 0; i < count; i++) {
+      (function () {
+        var t = setTimeout(function () {
+          if (!on) return;
+          var id = pick(Object.keys(gardens));
+          if (id) drift(hostFor(id), { small: Math.random() < 0.45, fast: count > 11 });
+        }, rnd(0, spread));
+        timers.push(t);
+      })();
+    }
+    // the plants lean into the same gust that carries the leaves
+    Object.keys(gardens).forEach(function (gid) {
+      var h = hostFor(gid);
+      h.classList.add('gusting');
+      timers.push(setTimeout(function () { h.classList.remove('gusting'); }, spread + rnd(1500, 5000)));
+    });
+    var gap = test ? rnd(900, 4000) : (count > 11 ? rnd(20000, 70000) : rnd(6000, 34000));
+    leafTimer = setTimeout(gust, gap);
+    timers.push(leafTimer);
+  }
+
 
   /* --- Planting ------------------------------------------------------- */
   function hostFor(id) {
@@ -4673,6 +4817,151 @@ var Garden = (function () {
     return shuffled.slice(0, Math.min(n, open.length));
   }
 
+  /* --- Rain ------------------------------------------------------------
+     Three depth layers of streaks give parallax; beads cling to the glass and
+     release at random, rolling down with a wet trail behind them. */
+  var raining = false, rainTimers = [];
+
+  function rainLayer(id) {
+    var p = $(id), l = p.querySelector('.kmRain');
+    if (!l) { l = document.createElement('div'); l.className = 'kmRain'; p.appendChild(l); }
+    return l;
+  }
+
+  function buildRain(id) {
+    var layer = rainLayer(id), W = layer.clientWidth, H = layer.clientHeight;
+    if (!W || !H) return;
+    layer.innerHTML = '';
+    var tilt = rnd(8, 15) * (Math.random() < 0.5 ? -1 : 1);   // one wind direction per panel
+    var heavy = test ? 1.6 : 1;
+
+    // Depth layers: near drops are longer, faster and brighter; far ones are faint and slow.
+    var DEPTHS = [
+      { n: Math.round(W / 26 * heavy), w: 2,   len: [70, 130], dur: [0.42, 0.65], a: [0.30, 0.45] },
+      { n: Math.round(W / 20 * heavy), w: 1.5, len: [45, 85],  dur: [0.65, 0.95], a: [0.18, 0.30] },
+      { n: Math.round(W / 16 * heavy), w: 1,   len: [26, 50],  dur: [1.0, 1.6],   a: [0.09, 0.18] }
+    ];
+    DEPTHS.forEach(function (D) {
+      for (var i = 0; i < D.n; i++) {
+        var st = document.createElement('div'), dur = rnd(D.dur[0], D.dur[1]);
+        st.className = 'kmStreak';
+        st.style.width = D.w + 'px';
+        st.style.height = rnd(D.len[0], D.len[1]) + 'px';
+        st.style.setProperty('--x', rnd(-40, W + 40) + 'px');
+        st.style.setProperty('--tilt', tilt + 'deg');
+        st.style.setProperty('--drift', (Math.tan(tilt * Math.PI / 180) * (H + 200)) + 'px');
+        st.style.setProperty('--fallTo', (H + 160) + 'px');
+        st.style.setProperty('--a', rnd(D.a[0], D.a[1]).toFixed(2));
+        st.style.setProperty('--dur', dur + 's');
+        st.style.setProperty('--delay', (-rnd(0, dur)) + 's');   // negative delay: already mid-fall
+        layer.appendChild(st);
+      }
+    });
+
+    // Splashes along the floor of the panel
+    for (var k = 0; k < Math.round(W / 70 * heavy); k++) {
+      var sp = document.createElement('div');
+      sp.className = 'kmSplash';
+      sp.style.left = rnd(0, W) + 'px';
+      sp.style.top = (H - rnd(2, 10)) + 'px';
+      sp.style.setProperty('--sdur', rnd(500, 800) + 'ms');
+      sp.style.setProperty('--delay', (-rnd(0, 1.2)) + 's');
+      layer.appendChild(sp);
+    }
+
+    // Beads on the glass
+    var beads = Math.round(Math.min(16, W / 90) * (test ? 1.5 : 1));
+    for (var m = 0; m < beads; m++) addBead(layer, W, H, rnd(0, test ? 2000 : 9000));
+  }
+
+  function addBead(layer, W, H, delay) {
+    if (!layer.isConnected) return;
+    var size = rnd(4, 13), b = document.createElement('div');
+    b.className = 'kmBead';
+    b.style.width = size + 'px';
+    b.style.height = (size * rnd(0.92, 1.06)) + 'px';
+    b.style.left = rnd(6, W - 12) + 'px';
+    b.style.top = rnd(4, H * 0.75) + 'px';
+    b.style.setProperty('--delay', delay + 'ms');
+    layer.appendChild(b);
+
+    // Bigger beads get heavy sooner; smaller ones can cling for a long time.
+    var cling = delay + (test ? rnd(600, 3000) : rnd(2500, 14000)) * (1 - Math.min(0.6, size / 22));
+    var t = setTimeout(function () { roll(b, layer, W, H, size); }, cling);
+    rainTimers.push(t);
+  }
+
+  function roll(b, layer, W, H, size) {
+    if (!b.isConnected || !raining) return;
+    var top = parseFloat(b.style.top), left = parseFloat(b.style.left);
+    var dist = H - top + 30, dur = (test ? rnd(900, 1800) : rnd(1600, 3400)) * (1.4 - Math.min(0.7, size / 16));
+    // The trail sits behind the bead and stretches as it runs
+    var tr = document.createElement('div');
+    tr.className = 'kmTrail';
+    tr.style.left = (left + size / 2 - 1) + 'px';
+    tr.style.top = (top + size / 2) + 'px';
+    tr.style.height = dist + 'px';
+    tr.style.setProperty('--rdur', dur + 'ms');
+    layer.insertBefore(tr, b);
+    b.style.setProperty('--rdist', dist + 'px');
+    b.style.setProperty('--rdur', dur + 'ms');
+    b.style.setProperty('--wob', (rnd(-5, 5)).toFixed(1) + 'px');
+    b.classList.add('rolling');
+    var t = setTimeout(function () {
+      b.remove(); tr.remove();
+      if (raining && layer.isConnected) addBead(layer, W, H, rnd(200, test ? 1500 : 6000));   // a new bead forms
+    }, dur + 60);
+    rainTimers.push(t);
+  }
+
+  // Weather runs itself. Each window (the same span as the chosen grow range) gets one to
+  // three showers, dropped at random points inside it, each lasting a random stretch.
+  var weatherTimers = [];
+  function scheduleWeather() {
+    weatherTimers.forEach(clearTimeout);
+    weatherTimers = [];
+    if (!on) return;
+    var window = test ? 30000 : RANGES[rangeIdx] * 60000;
+    var roll = Math.random();
+    var events = roll < 0.6 ? 1 : roll < 0.9 ? 2 : 3;   // usually one shower, sometimes two, rarely three
+    var slot = window / events;
+    for (var i = 0; i < events; i++) {
+      var at = i * slot + rnd(slot * 0.05, slot * 0.75);
+      var len = test ? rnd(5000, 12000) : rnd(window * 0.06, window * 0.3);
+      (function (at, len) {
+        weatherTimers.push(setTimeout(function () {
+          if (!on) return;
+          startRain();
+          weatherTimers.push(setTimeout(function () { if (raining) stopRain(); }, len));
+        }, at));
+      })(at, len);
+    }
+    weatherTimers.push(setTimeout(scheduleWeather, window + 500));   // next window
+  }
+  function stopWeather() {
+    weatherTimers.forEach(clearTimeout);
+    weatherTimers = [];
+    if (raining) stopRain();
+  }
+
+  function startRain() {
+    raining = true;
+    Object.keys(gardens).forEach(function (id) {
+      buildRain(id);
+      hostFor(id).classList.add('raining');
+    });
+  }
+  function stopRain(quiet) {
+    raining = false;
+    rainTimers.forEach(clearTimeout);
+    rainTimers = [];
+    document.querySelectorAll('.kmRain').forEach(function (l) {
+      l.classList.add('fading');
+      setTimeout(function () { l.remove(); }, 1700);
+    });
+    document.querySelectorAll('.kmHost.raining').forEach(function (h) { h.classList.remove('raining'); });
+  }
+
   function start() {
     stop(true);
     on = true;
@@ -4682,16 +4971,15 @@ var Garden = (function () {
       plant(id);            // one straight away, so something is always happening
       schedule(id);
     });
-    leafTimer = setInterval(function () {
-      var ids = Object.keys(gardens);
-      if (!ids.length) return;
-      drift(hostFor(pick(ids)));
-    }, test ? 900 : 6500);
+    if (raining) Object.keys(gardens).forEach(function (id) { buildRain(id); hostFor(id).classList.add('raining'); });
+    scheduleWeather();
+    leafTimer = setTimeout(gust, test ? 600 : rnd(3000, 12000));
     timers.push(leafTimer);
     Sys.toast(chosen.length === Panels.ids.length ? 'Everything is blooming for Katy Mae.'
       : 'A garden is growing for Katy Mae in ' + chosen.length + (chosen.length === 1 ? ' panel.' : ' panels.'), { ms: 4000 });
   }
   function stop(quiet) {
+    stopWeather();
     on = false;
     timers.forEach(clearTimeout);
     timers.forEach(clearInterval);
@@ -4720,6 +5008,7 @@ var Garden = (function () {
   rangeBtn.onclick = function () {
     rangeIdx = (rangeIdx + 1) % RANGES.length;
     setBtns();
+    if (on) scheduleWeather();   // weather follows the same window
     Sys.toast('Plants will now take between one minute and ' + RANGES[rangeIdx] + ' minutes to grow.', { ms: 3000 });
   };
   testBtn.onclick = function () {
