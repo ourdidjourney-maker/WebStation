@@ -815,13 +815,16 @@
   .wpDrop { position: fixed; z-index: 200; pointer-events: none; white-space: pre;
             animation: wpDrop var(--fall, 1400ms) linear forwards; }
   @keyframes wpDrop {
-    0%   { transform: translate(0, 0) rotate(0deg); opacity: 1;
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; color: var(--cool, #fff);
            animation-timing-function: cubic-bezier(.05,.85,.3,1); }
     20%  { transform: translate(calc(var(--dx, 40px) * .25), calc(var(--up, 70px) * -1))
-                      rotate(calc(var(--spin, 400deg) * .22)); opacity: 1;
+                      rotate(calc(var(--spin, 400deg) * .22)); opacity: 1; color: #ff7a10;
            animation-timing-function: cubic-bezier(.3,0,.85,.4); }
-    80%  { opacity: 1; }
-    100% { transform: translate(var(--dx, 40px), var(--dy, 500px)) rotate(var(--spin, 400deg)); opacity: 0; }
+    45%  { color: #ffb300; }
+    68%  { color: #ffe600; }
+    88%  { opacity: 1; color: #fff9a8; }
+    100% { transform: translate(var(--dx, 40px), var(--dy, 500px)) rotate(var(--spin, 400deg));
+           opacity: 0; color: #fffde8; }
   }
 
   /* Screensaver: every toolbar and document fades away, leaving the panels and the garden */
@@ -2312,6 +2315,7 @@ var Sys = (function () {
     el.textContent = ch;
     var cs = getComputedStyle(ed);
     el.style.font = cs.font;
+    el.style.setProperty('--cool', cs.color);
     el.style.color = cs.color;
     el.style.left = rect.left + 'px';
     el.style.top = rect.top + 'px';
