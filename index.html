@@ -4341,7 +4341,12 @@ var Garden = (function () {
     ['#fff1c9', '#ffd27a', '#ffb1a0'],   // butter
     ['#ffdcd1', '#ff9e86', '#ffe6b0'],   // coral
     ['#d8f0ff', '#8fc9f7', '#fff2c4'],   // sky
-    ['#ffffff', '#e7e0ff', '#ffdd8f']    // daisy
+    ['#ffffff', '#e7e0ff', '#ffdd8f'],   // daisy
+    ['#ffe2ef', '#ff8fb1', '#b5476d'],   // rose
+    ['#ffe07a', '#f5a623', '#5a3a12'],   // sunflower
+    ['#cfe9ff', '#7fb3e8', '#ffd166'],   // cornflower
+    ['#f3d9ff', '#b784e0', '#7a4fa3'],   // orchid
+    ['#fff6d6', '#ffd98a', '#e07a5f']    // cream
   ];
   var GREENS = ['#5fbf7d', '#4aa76a', '#6fcf8e', '#3f9a63'];
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
@@ -4363,6 +4368,11 @@ var Garden = (function () {
                                                     ' C ' + (r * 0.9) + ' ' + (-r * 1.15) + ', ' + (r * 0.95) + ' ' + (-r * 0.35) + ', 0 0 Z' } };
     if (kind === 'bell')   return { tag: 'path', a: { d: 'M0 0 C ' + (-r * 0.7) + ' ' + (r * 0.25) + ', ' + (-r * 0.55) + ' ' + (r * 1.0) + ', 0 ' + (r * 1.15) +
                                                     ' C ' + (r * 0.55) + ' ' + (r * 1.0) + ', ' + (r * 0.7) + ' ' + (r * 0.25) + ', 0 0 Z' } };
+    if (kind === 'rose')   return { tag: 'path', a: { d: 'M0 0 C ' + (-r * 0.8) + ' ' + (-r * 0.25) + ', ' + (-r * 0.7) + ' ' + (-r * 0.95) + ', 0 ' + (-r) +
+                                                    ' C ' + (r * 0.7) + ' ' + (-r * 0.95) + ', ' + (r * 0.8) + ' ' + (-r * 0.25) + ', 0 0 Z' } };
+    if (kind === 'sunflower') return { tag: 'path', a: { d: 'M0 ' + (-r * 0.3) + ' C ' + (-r * 0.3) + ' ' + (-r * 0.75) + ', ' + (-r * 0.22) + ' ' + (-r * 1.2) + ', 0 ' + (-r * 1.35) +
+                                                       ' C ' + (r * 0.22) + ' ' + (-r * 1.2) + ', ' + (r * 0.3) + ' ' + (-r * 0.75) + ', 0 ' + (-r * 0.3) + ' Z' } };
+    if (kind === 'cluster') return { tag: 'circle', a: { cx: 0, cy: -r * 0.62, r: r * 0.3 } };
     if (kind === 'round')  return { tag: 'ellipse', a: { cx: 0, cy: -r * 0.72, rx: r * 0.52, ry: r * 0.74 } };
     if (kind === 'tulip')  return { tag: 'path', a: { d: 'M0 0 C ' + (-r * 0.55) + ' ' + (-r * 0.5) + ', ' + (-r * 0.42) + ' ' + (-r * 1.25) + ', 0 ' + (-r * 1.5) +
                                                     ' C ' + (r * 0.42) + ' ' + (-r * 1.25) + ', ' + (r * 0.55) + ' ' + (-r * 0.5) + ', 0 0 Z' } };
@@ -4376,13 +4386,21 @@ var Garden = (function () {
     if (!H || !W) return;
 
     // Species decides petal shape, count and proportions; every plant also gets its own size.
-    var KINDS = ['daisy', 'round', 'tulip', 'petal', 'star', 'bell', 'poppy', 'cosmos'];
+    // Families: 'single' grows one bloom at the tip, 'spike' carries several up the stem,
+    // 'fern' is leaves only, 'bud' never opens.
+    var KINDS = ['daisy', 'round', 'tulip', 'petal', 'star', 'bell', 'poppy', 'cosmos',
+                 'rose', 'sunflower', 'cluster', 'spike', 'fern', 'bud'];
     var kind = pick(KINDS);
-    var layered = (kind === 'poppy' || kind === 'cosmos' || Math.random() < 0.3);   // a second, smaller ring inside
+    var family = kind === 'spike' ? 'spike' : kind === 'fern' ? 'fern' : kind === 'bud' ? 'bud' : 'single';
+    var rings = kind === 'rose' ? 4 : kind === 'sunflower' ? 2 : kind === 'cluster' ? 3 : 1;
+    var layered = rings === 1 && (kind === 'poppy' || kind === 'cosmos' || Math.random() < 0.3);
     var scale = rnd(0.55, 1.5);                                  // overall plant size
     var height = Math.min(H * 0.72, rnd(H * 0.14, H * 0.5) * scale);
     var pal = pick(PALETTES), green = pick(GREENS);
-    var petals = kind === 'tulip' ? Math.round(rnd(3, 5))
+    var petals = kind === 'rose' ? Math.round(rnd(5, 7))
+               : kind === 'sunflower' ? Math.round(rnd(14, 20))
+               : kind === 'cluster' ? Math.round(rnd(7, 10))
+               : kind === 'tulip' ? Math.round(rnd(3, 5))
                : kind === 'bell' ? Math.round(rnd(4, 6))
                : kind === 'daisy' ? Math.round(rnd(10, 16))
                : kind === 'star' ? Math.round(rnd(5, 8))
@@ -4390,9 +4408,11 @@ var Garden = (function () {
                : kind === 'poppy' ? Math.round(rnd(4, 6))
                : Math.round(rnd(5, 9));
     var r = (kind === 'daisy' ? rnd(13, 20) : kind === 'tulip' ? rnd(9, 14) : kind === 'bell' ? rnd(8, 13)
-             : kind === 'poppy' ? rnd(14, 21) : kind === 'star' ? rnd(12, 18) : rnd(11, 18)) * (0.75 + scale * 0.3);
+             : kind === 'poppy' ? rnd(14, 21) : kind === 'star' ? rnd(12, 18) : kind === 'sunflower' ? rnd(16, 24)
+             : kind === 'rose' ? rnd(10, 15) : kind === 'cluster' ? rnd(12, 17) : rnd(11, 18)) * (0.75 + scale * 0.3);
+    if (family === 'spike') r = rnd(4, 7) * (0.75 + scale * 0.3);
     var lean = rnd(-20, 20);
-    var leafCount = Math.round(rnd(2, 4));
+    var leafCount = family === 'fern' ? Math.round(rnd(8, 14)) : Math.round(rnd(2, 4));
     var box = 120, x0 = box / 2, y0 = box, y1 = box - 60;
 
     var s = svg('svg', { class: 'kmFlower', viewBox: '0 0 ' + box + ' ' + box, 'aria-hidden': 'true' });
@@ -4450,19 +4470,48 @@ var Garden = (function () {
     var head = svg('g', { class: 'kmHead' });
     head.setAttribute('transform', 'translate(' + x0 + ' ' + y0 + ')');   // starts at the ground, at the stem's base
 
+    // A closed bud: one teardrop, never opens
+    if (family === 'bud') {
+      var bud = svg('path', {
+        class: 'kmPetal',
+        d: 'M0 0 C ' + (-r * 0.6) + ' ' + (-r * 0.3) + ', ' + (-r * 0.5) + ' ' + (-r * 1.3) + ', 0 ' + (-r * 1.6) +
+           ' C ' + (r * 0.5) + ' ' + (-r * 1.3) + ', ' + (r * 0.6) + ' ' + (-r * 0.3) + ', 0 0 Z',
+        fill: pal[0], stroke: pal[1], 'stroke-width': '.8'
+      });
+      bud.style.setProperty('--pd', (grow * 0.7) + 'ms');
+      head.appendChild(bud);
+      for (var bi = 0; bi < 3; bi++) {   // little green sepals hugging the bud
+        var sep = svg('path', {
+          class: 'kmPetal', fill: green, opacity: '.9',
+          d: 'M0 0 C ' + (-r * 0.4) + ' ' + (-r * 0.2) + ', ' + (-r * 0.35) + ' ' + (-r * 0.8) + ', 0 ' + (-r * 0.95) +
+             ' C ' + (r * 0.35) + ' ' + (-r * 0.8) + ', ' + (r * 0.4) + ' ' + (-r * 0.2) + ', 0 0 Z',
+          transform: 'rotate(' + (bi * 120) + ')'
+        });
+        sep.style.setProperty('--pd', (grow * 0.66) + 'ms');
+        head.appendChild(sep);
+      }
+    }
+    // Greenery only: no bloom at all
+    else if (family === 'fern') { /* leaves carry this plant */ }
+    else {
     var shape = petalShape(kind, r);
+    for (var ring = rings - 1; ring >= 0; ring--) {
+    var rr = r * (1 - ring * (kind === 'rose' ? 0.22 : kind === 'cluster' ? 0.3 : 0.28));
+    shape = petalShape(kind, rr);
     for (var j = 0; j < petals; j++) {
       var a = (360 / petals) * j;
       var attrs = {};
       for (var k in shape.a) attrs[k] = shape.a[k];
-      attrs.fill = pal[0];
+      attrs.fill = ring ? pal[1] : pal[0];
       attrs.stroke = pal[1];
       attrs['stroke-width'] = '.7';
-      attrs.transform = 'rotate(' + a + ')';
+      attrs.transform = 'rotate(' + (a + ring * (180 / petals)) + ')';
       attrs.class = 'kmPetal';
       var pel = svg(shape.tag, attrs);
-      pel.style.setProperty('--pd', (grow * (0.74 + (j / petals) * 0.14)) + 'ms');
+      pel.style.setProperty('--pd', (grow * (0.74 + (j / petals) * 0.14 + ring * 0.03)) + 'ms');
       head.appendChild(pel);
+    }
+    }
     }
     if (layered) {   // an inner ring, rotated between the outer petals
       var ir = r * rnd(0.5, 0.68), inner = petalShape(kind === 'bell' ? 'petal' : kind, ir);
@@ -4478,10 +4527,39 @@ var Garden = (function () {
         head.appendChild(ip);
       }
     }
-    var heart = svg('circle', { r: (kind === 'tulip' || kind === 'bell' ? r * 0.18 : kind === 'poppy' ? r * 0.42 : r * 0.34).toFixed(1), fill: pal[2], class: 'kmHeart' });
-    heart.style.setProperty('--cd', (grow * 0.9) + 'ms');
-    head.appendChild(heart);
+    if (family !== 'fern' && family !== 'bud') {
+      var hr = kind === 'tulip' || kind === 'bell' ? r * 0.18 : kind === 'poppy' ? r * 0.42
+             : kind === 'sunflower' ? r * 0.5 : kind === 'rose' ? r * 0.16 : r * 0.34;
+      var heart = svg('circle', { r: hr.toFixed(1), fill: pal[2], class: 'kmHeart' });
+      heart.style.setProperty('--cd', (grow * 0.9) + 'ms');
+      head.appendChild(heart);
+    }
     g.appendChild(head);
+
+    if (family === 'spike') {
+      var blooms = Math.round(rnd(5, 9));
+      for (var q2 = 0; q2 < blooms; q2++) {
+        var bt = 0.42 + (q2 / blooms) * 0.56, bp = onStem(bt);
+        var bg = svg('g', { transform: 'translate(' + bp[0] + ' ' + bp[1] + ')' });
+        var bin = svg('g', { transform: 'scale(0)' });
+        var bn = Math.round(rnd(4, 6));
+        for (var q3 = 0; q3 < bn; q3++) {
+          bin.appendChild(svg('ellipse', {
+            cx: 0, cy: -r * 0.8, rx: r * 0.42, ry: r * 0.85,
+            fill: pal[0], stroke: pal[1], 'stroke-width': '.4',
+            transform: 'rotate(' + ((360 / bn) * q3) + ')'
+          }));
+        }
+        bin.appendChild(svg('circle', { r: r * 0.3, fill: pal[2] }));
+        bin.appendChild(svg('animateTransform', {
+          attributeName: 'transform', type: 'scale', from: '0', to: '1',
+          begin: (grow * bt * 0.95 / 1000) + 's', dur: (grow * 0.14 / 1000) + 's',
+          calcMode: 'spline', keyTimes: '0;1', keySplines: '.2 .8 .3 1', fill: 'freeze'
+        }));
+        bg.appendChild(bin);
+        g.appendChild(bg);
+      }
+    }
 
     s.addEventListener('pointerdown', function (e) { e.preventDefault(); clip(s); });
     host.appendChild(s);
