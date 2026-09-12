@@ -1527,7 +1527,7 @@ var Layout = (function () {
   });
 
   var saved = {};
-  try { saved = JSON.parse(localStorage.getItem('ws.layout') || '{}') || {}; } catch (e) {}
+  try { saved = JSON.parse(localStorage.getItem('webstation.layout') || '{}') || {}; } catch (e) {}
 
   function faceEl(name) { return document.querySelector('.face[data-face="' + name + '"]'); }
 
@@ -1598,11 +1598,11 @@ var Layout = (function () {
         counts[sel.value] = (counts[sel.value] || 0) + 1;
       });
       if (!Object.keys(counts).length) return;
-      try { localStorage.setItem('ws.layout', JSON.stringify(next)); } catch (e) {}
+      try { localStorage.setItem('webstation.layout', JSON.stringify(next)); } catch (e) {}
       location.reload();
     };
     document.getElementById('lyReset').onclick = function () {
-      try { localStorage.removeItem('ws.layout'); } catch (e) {}
+      try { localStorage.removeItem('webstation.layout'); } catch (e) {}
       location.reload();
     };
   })();
