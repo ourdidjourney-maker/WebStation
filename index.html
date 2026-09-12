@@ -4436,7 +4436,7 @@ var Blur = (function () {
    swells and opens, then the whole thing sways. Test mode runs the same growth ~20x faster. */
 var Garden = (function () {
   var ui = store.get('ws.ui', {}), btn = $('kmBtn'), testBtn = $('kmTest'), rangeBtn = $('kmRange');
-  var on = false, test = false, timers = [], gardens = {}, leafTimer = null;
+  var on = false, test = false, timers = [], gardens = {};
   var RANGES = [10, 20, 30, 60], rangeIdx = 0;   // minutes: the longest a plant may take to grow
 
   // Soft palettes: petal, petal edge, heart
@@ -4766,36 +4766,43 @@ var Garden = (function () {
   }
 
   // Wind comes in gusts: long calm stretches, then a scatter, and now and then a real flurry.
-  function gust() {
-    var ids = Object.keys(gardens);
-    if (!on || !ids.length) return;
-    var roll = Math.random();
-    var count = roll < 0.26 ? Math.round(rnd(2, 6))      // a stray few
-              : roll < 0.62 ? Math.round(rnd(10, 24))    // a good scatter
-              : roll < 0.89 ? Math.round(rnd(30, 55))    // a real flurry
-              : Math.round(rnd(65, 110));                // a storm of them
-    if (anyRain()) count = Math.round(count * 1.6);      // wind picks up in the wet
-    var spread = count > 28 ? rnd(1200, 3400) : rnd(300, 1800);
+  // Wind is local: each panel gets its own gusts, at its own times, of its own strength.
+  var windTimers = {};
+  function gust(pid) {
+    if (!on || !gardens[pid]) return;
+    var host = hostFor(pid), roll = Math.random();
+    var count = roll < 0.30 ? Math.round(rnd(1, 4))      // a stray leaf or two
+              : roll < 0.66 ? Math.round(rnd(5, 12))     // a scatter
+              : roll < 0.91 ? Math.round(rnd(14, 26))    // a flurry
+              : Math.round(rnd(30, 48));                 // a real blow
+    if (wet[pid]) count = Math.round(count * 1.5);       // the wind picks up in the wet
+    var spread = count > 13 ? rnd(1200, 3400) : rnd(300, 1800);
     for (var i = 0; i < count; i++) {
       (function () {
         var t = setTimeout(function () {
-          if (!on) return;
-          var id = pick(Object.keys(gardens));
-          if (id) drift(hostFor(id), { small: Math.random() < 0.45, fast: count > 11 });
+          if (on && gardens[pid]) drift(host, { small: Math.random() < 0.45, fast: count > 13 });
         }, rnd(0, spread));
-        timers.push(t);
+        (windTimers[pid] = windTimers[pid] || []).push(t);
       })();
     }
-    // the plants lean into the same gust that carries the leaves
-    Object.keys(gardens).forEach(function (gid) {
-      var h = hostFor(gid);
-      h.classList.add('gusting');
-      timers.push(setTimeout(function () { h.classList.remove('gusting'); }, spread + rnd(1500, 5000)));
-    });
-    var gap = test ? rnd(600, 3000) : (count > 28 ? rnd(14000, 50000) : rnd(2500, 20000));
-    leafTimer = setTimeout(gust, gap);
-    timers.push(leafTimer);
+    // the plants in THIS panel lean into it
+    host.classList.add('gusting');
+    (windTimers[pid] = windTimers[pid] || []).push(
+      setTimeout(function () { host.classList.remove('gusting'); }, spread + rnd(1500, 5000)));
+    // Every calm is its own length: a breath, a lull, or a long still stretch.
+    var r2 = Math.random();
+    var gap = test ? rnd(500, 4000) * rnd(0.6, 1.9)
+            : (r2 < 0.3 ? rnd(1500, 7000) : r2 < 0.7 ? rnd(8000, 26000) : r2 < 0.92 ? rnd(28000, 70000) : rnd(75000, 150000));
+    windTimers[pid].push(setTimeout(function () { gust(pid); }, gap));
   }
+  function stopWind() {
+    Object.keys(windTimers).forEach(function (pid) {
+      (windTimers[pid] || []).forEach(clearTimeout);
+      windTimers[pid] = [];
+    });
+    document.querySelectorAll('.kmHost.gusting').forEach(function (h) { h.classList.remove('gusting'); });
+  }
+
 
 
   /* --- Planting ------------------------------------------------------- */
@@ -5038,23 +5045,25 @@ var Garden = (function () {
     on = true;
     var chosen = choosePanels();
     chosen.forEach(function (id) {
-      gardens[id] = { count: 0, max: Math.round(rnd(7, 16)) };   // a fuller garden
+      gardens[id] = { count: 0, max: Math.round(rnd(3, 9)) };   // lighter on each panel
       plant(id);            // one straight away, so something is always happening
       schedule(id);
     });
     Object.keys(gardens).forEach(scheduleWeather);
-    leafTimer = setTimeout(gust, test ? 600 : rnd(3000, 12000));
-    timers.push(leafTimer);
+    Object.keys(gardens).forEach(function (id) {
+      (windTimers[id] = windTimers[id] || []).push(
+        setTimeout(function () { gust(id); }, test ? rnd(300, 2500) : rnd(2000, 30000)));
+    });
     Sys.toast(chosen.length === Panels.ids.length ? 'Everything is blooming for Katy Mae.'
       : 'A garden is growing for Katy Mae in ' + chosen.length + (chosen.length === 1 ? ' panel.' : ' panels.'), { ms: 4000 });
   }
   function stop(quiet) {
     stopWeather();
+    stopWind();
     on = false;
     timers.forEach(clearTimeout);
     timers.forEach(clearInterval);
     timers = [];
-    clearInterval(leafTimer); leafTimer = null;
     gardens = {};
     document.querySelectorAll('.kmHost').forEach(function (h) {
       h.classList.add('fading');
