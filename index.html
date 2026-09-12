@@ -794,6 +794,19 @@
     100% { transform: translate(var(--dx, 40px), var(--dy, 500px)) rotate(var(--spin, 400deg)); opacity: 0; }
   }
 
+  /* Screensaver: every toolbar and document fades away, leaving the panels and the garden */
+  body.saver .card { opacity: 0; pointer-events: none; transition: opacity 2.2s ease; }
+  body.saver #ticker, body.saver #status, body.saver #mnav,
+  body.saver .unblurChip, body.saver #toasts { opacity: 0; pointer-events: none; transition: opacity 2.2s ease; }
+  body.saver .panel { border-color: rgba(255,255,255,.1); }
+  body.saver #splitH { display: none; }
+  .card, #ticker, #status { transition: opacity 1.4s ease; }
+  #saverHint { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 1500;
+               font: 12px Arial, Helvetica, sans-serif; color: rgba(255,255,255,.45); letter-spacing: .08em;
+               pointer-events: none; opacity: 0; transition: opacity 1.6s ease; }
+  body.saver #saverHint { opacity: 1; animation: saverBreathe 5s ease-in-out infinite; }
+  @keyframes saverBreathe { 0%, 100% { opacity: .2; } 50% { opacity: .55; } }
+
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
@@ -1318,6 +1331,7 @@
     </div>
   </div>
 </div>
+<div id="saverHint">move to wake</div>
 <div id="toasts" aria-live="polite"></div>
 <script>
 (function () {
@@ -4649,7 +4663,15 @@ var Blur = (function () {
    swells and opens, then the whole thing sways. Test mode runs the same growth ~20x faster. */
 var Garden = (function () {
   var ui = store.get('ws.ui', {}), btn = $('kmBtn'), testBtn = $('kmTest'), rangeBtn = $('kmRange');
-  var on = false, test = false, timers = [], gardens = {};
+  var on = false, test = false, saver = false, timers = [], gardens = {};
+  // Every scheduled job is recorded so it can be cancelled, but the record itself must not
+  // grow without end. Trim the ids that have already fired.
+  function track(list, id) {
+    list.push(id);
+    if (list.length > 240) list.splice(0, list.length - 160);
+    return id;
+  }
+  var HIDDEN = function () { return document.hidden; };
   var RANGES = [10, 20, 30, 60], rangeIdx = 0;   // minutes: the longest a plant may take to grow
 
   // Soft palettes: petal, petal edge, heart
@@ -5066,9 +5088,12 @@ var Garden = (function () {
   var LEAF_TINTS = ['#5fbf7d', '#4aa76a', '#6fcf8e', '#3f9a63', '#8fd39f',
                    '#c9d96b', '#e0c169', '#d9a45c', '#cf9b5a', '#b87333'];
 
+  var MAX_LEAVES = 70;   // per panel, a hard ceiling (lower while the screensaver runs)
   function drift(host, opts) {
     var W = host.clientWidth, H = host.clientHeight;
     if (!W || !H) return;
+    if (HIDDEN()) return;                                   // nothing to see, so nothing to build
+    if (host.querySelectorAll('.kmDrift').length >= (saver ? 18 : MAX_LEAVES)) return;
     opts = opts || {};
     var size = rnd(12, 34) * (opts.small ? 0.65 : 1);
     var fast = opts.fast || anyRain();
@@ -5119,6 +5144,10 @@ var Garden = (function () {
   var windTimers = {};
   function gust(pid) {
     if (!on || !gardens[pid]) return;
+    if (HIDDEN()) {   // asleep in a background tab: come back later instead of piling up work
+      track(windTimers[pid] = windTimers[pid] || [], setTimeout(function () { gust(pid); }, 4000));
+      return;
+    }
     var host = hostFor(pid), roll = Math.random();
     // The wind holds its direction, and only turns around between gusts, now and then.
     if (!host.dataset.wind) host.dataset.wind = Math.random() < 0.5 ? 'r' : 'l';
@@ -5129,6 +5158,7 @@ var Garden = (function () {
               : roll < 0.92 ? Math.round(rnd(9, 17))     // a flurry
               : Math.round(rnd(20, 32));                 // a real blow
     if (wet[pid]) count = Math.round(count * 1.5);       // the wind picks up in the wet
+    if (saver) count = Math.max(1, Math.round(count * 0.3));   // calmer while the screensaver runs
     var spread = count > 13 ? rnd(2500, 6500) : rnd(800, 4200);
     // Uneven spacing inside the gust: leaves arrive in ones and twos, not as a block.
     var at = 0;
@@ -5138,7 +5168,7 @@ var Garden = (function () {
         var t = setTimeout(function () {
           if (on && gardens[pid]) drift(host, { small: Math.random() < 0.45, fast: count > 13 });
         }, d);
-        (windTimers[pid] = windTimers[pid] || []).push(t);
+        track(windTimers[pid] = windTimers[pid] || [], t);
       })(at);
     }
     // the plants in THIS panel lean into it
@@ -5148,7 +5178,7 @@ var Garden = (function () {
       // The wind lean is deliberately not applied to plants: switching the lean on and off
       // mid-sway made them snap. The leaves carry the wind instead.
     }
-    (windTimers[pid] = windTimers[pid] || []).push(
+    track(windTimers[pid] = windTimers[pid] || [],
       setTimeout(function () {
         host._gusts = Math.max(0, (host._gusts || 1) - 1);
         if (!host._gusts) host.classList.remove('gusting');   // only when every stream has passed
@@ -5157,15 +5187,15 @@ var Garden = (function () {
     var r2 = Math.random();
     var gap = test ? rnd(500, 4000) * rnd(0.6, 1.9)
             : (r2 < 0.3 ? rnd(1500, 7000) : r2 < 0.7 ? rnd(8000, 26000) : r2 < 0.92 ? rnd(28000, 70000) : rnd(75000, 150000));
-    windTimers[pid].push(setTimeout(function () { gust(pid); }, gap));
+    track(windTimers[pid], setTimeout(function () { gust(pid); }, gap));
   }
   // A steady background of single leaves, always going, independent of any gust.
   function trickle(pid) {
     if (!on || !gardens[pid]) return;
     var host = hostFor(pid);
-    if (Math.random() < 0.82) drift(host, { small: Math.random() < 0.6 });   // sometimes it skips one
+    if (!HIDDEN() && Math.random() < 0.82) drift(host, { small: Math.random() < 0.6 });   // sometimes it skips one
     var gap = test ? rnd(400, 3000) : (wet[pid] ? rnd(900, 5000) : rnd(1800, 11000));
-    (windTimers[pid] = windTimers[pid] || []).push(setTimeout(function () { trickle(pid); }, gap));
+    track(windTimers[pid] = windTimers[pid] || [], setTimeout(function () { trickle(pid); }, gap));
   }
 
   function stopWind() {
@@ -5211,16 +5241,17 @@ var Garden = (function () {
       // now and then a little cluster comes up together
       var burst = Math.random() < 0.18 ? Math.round(rnd(2, 4)) : 1;
       for (var k = 0; k < burst; k++) {
-        (function (d) { timers.push(setTimeout(function () { if (on) plant(id); }, d)); })(k * rnd(120, 900));
+        (function (d) { track(timers, setTimeout(function () { if (on) plant(id); }, d)); })(k * rnd(120, 900));
       }
       if (gardens[id] && gardens[id].count < gardens[id].max) schedule(id);
     }, wait);
-    timers.push(g.timer);
+    track(timers, g.timer);
   }
 
   function choosePanels() {
     var open = Panels.ids.filter(Panels.isOpen);
     if (!open.length) return [];
+    if (saver) return open;   // the screensaver plants everywhere
     var roll = Math.random();
     // Sometimes one panel, sometimes a few, sometimes the whole workspace blooms.
     var n = roll < 0.28 ? 1 : roll < 0.58 ? 2 : roll < 0.82 ? 3 : open.length;
@@ -5243,6 +5274,7 @@ var Garden = (function () {
   function buildRain(id) {
     var layer = rainLayer(id), W = layer.clientWidth, H = layer.clientHeight;
     if (!W || !H) return;
+    var CAP = 300;   // most streaks any one panel may hold
     layer.innerHTML = '';
     var tilt = rnd(8, 15) * (Math.random() < 0.5 ? -1 : 1);   // one wind direction per panel
     var heavy = (typeof wet[id] === 'number' ? wet[id] : 1) * (test ? 1.4 : 1);
@@ -5254,8 +5286,11 @@ var Garden = (function () {
       { n: Math.round(W / 20 * heavy), w: 1.5 * soft, len: [45 * soft, 85 * soft],  dur: [0.65, 0.95], a: [0.18 * soft, 0.30 * soft] },
       { n: Math.round(W / 16 * heavy), w: 1 * soft,   len: [26 * soft, 50 * soft],  dur: [1.0, 1.6],   a: [0.09 * soft, 0.18 * soft] }
     ];
+    var budget = CAP;
     DEPTHS.forEach(function (D) {
-      for (var i = 0; i < D.n; i++) {
+      var want = Math.min(D.n, budget);
+      budget -= want;
+      for (var i = 0; i < want; i++) {
         var st = document.createElement('div'), dur = rnd(D.dur[0], D.dur[1]);
         st.className = 'kmStreak';
         st.style.width = D.w + 'px';
@@ -5301,7 +5336,7 @@ var Garden = (function () {
     // Bigger beads get heavy sooner; smaller ones can cling for a long time.
     var cling = delay + (test ? rnd(600, 3000) : rnd(2500, 14000)) * (1 - Math.min(0.6, size / 22));
     var t = setTimeout(function () { roll(b, layer, pid, W, H, size); }, cling);
-    (rainTimers[pid] = rainTimers[pid] || []).push(t);
+    track(rainTimers[pid] = rainTimers[pid] || [], t);
   }
 
   function roll(b, layer, pid, W, H, size) {
@@ -5324,7 +5359,7 @@ var Garden = (function () {
       b.remove(); tr.remove();
       if (wet[pid] && layer.isConnected) addBead(layer, pid, W, H, rnd(200, test ? 1500 : 6000));   // a new bead forms
     }, dur + 60);
-    (rainTimers[pid] = rainTimers[pid] || []).push(t);
+    track(rainTimers[pid] = rainTimers[pid] || [], t);
   }
 
   // Weather runs itself. Each window (the same span as the chosen grow range) gets one to
@@ -5363,7 +5398,7 @@ var Garden = (function () {
   // Not every storm has lightning, and the strikes that come are never evenly spaced.
   var boltTimers = {}, stormy = {};
   function strike(pid) {
-    if (!wet[pid] || !stormy[pid]) return;
+    if (!wet[pid] || !stormy[pid] || HIDDEN()) return;
     var ang = Math.round(rnd(110, 250)) + 'deg';          // which side the light comes from
     var br = Math.random();                                 // how close the strike is
     var i = br < 0.34 ? rnd(0.08, 0.22)                     // far off — a faint glow on the horizon
@@ -5384,7 +5419,7 @@ var Garden = (function () {
     });
     // Strikes cluster: a close one is often followed quickly by another.
     var next = Math.random() < 0.35 ? rnd(400, 1800) : (test ? rnd(1500, 6000) : rnd(5000, 26000));
-    (boltTimers[pid] = boltTimers[pid] || []).push(setTimeout(function () { strike(pid); }, next));
+    track(boltTimers[pid] = boltTimers[pid] || [], setTimeout(function () { strike(pid); }, next));
   }
   function stopBolts(pid) {
     (boltTimers[pid] || []).forEach(clearTimeout);
@@ -5396,13 +5431,14 @@ var Garden = (function () {
 
   function startRain(pid) {
     if (!gardens[pid] || wet[pid]) return;
+    if (saver && anyRain()) return;   // in the screensaver, one storm at a time
     var ir = Math.random();
     wet[pid] = ir < 0.3 ? rnd(0.25, 0.5)     // barely spitting
              : ir < 0.72 ? rnd(0.7, 1.15)    // steady rain
              : ir < 0.93 ? rnd(1.4, 2.1)     // heavy
              : rnd(2.4, 3.4);                // a downpour
     stormy[pid] = Math.random() < 0.45;                      // some storms are just rain
-    if (stormy[pid]) (boltTimers[pid] = boltTimers[pid] || []).push(
+    if (stormy[pid]) track(boltTimers[pid] = boltTimers[pid] || [],
       setTimeout(function () { strike(pid); }, test ? rnd(800, 4000) : rnd(4000, 40000)));
     buildRain(pid);
     hostFor(pid).classList.add('raining');
@@ -5427,7 +5463,7 @@ var Garden = (function () {
     on = true;
     var chosen = choosePanels();
     chosen.forEach(function (id) {
-      gardens[id] = { count: 0, max: Math.round(rnd(3, 9)) };   // lighter on each panel
+      gardens[id] = { count: 0, max: Math.round(saver ? rnd(9, 15) : rnd(3, 9)) };
       plant(id);            // one straight away, so something is always happening
       schedule(id);
     });
@@ -5541,7 +5577,14 @@ var Garden = (function () {
     return fed;
   }
 
-  return { isOn: function () { return on; }, nudge: nudge };
+  // The screensaver runs the garden in its own way: every panel planted, fuller, quieter.
+  function setSaver(v) {
+    saver = !!v;
+    if (saver) { start(); }
+    else { stop(true); if (ui.km) start(); }
+    setBtns();
+  }
+  return { isOn: function () { return on; }, nudge: nudge, saver: setSaver };
 })();
 
 /* ================= Per-panel zoom ================= */
@@ -5732,6 +5775,40 @@ var Garden = (function () {
   $('tmClose').onclick = closeTM;
   ov.addEventListener('click', function (e) { if (e.target === ov) closeTM(); });
   ov.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); closeTM(); } });
+})();
+
+/* ================= Screensaver =================
+   After a minute of stillness the interface fades out and the garden takes the screen.
+   It runs in its own mode: every panel planted, fuller, fewer leaves, one storm at a time. */
+(function () {
+  var IDLE = 60000, timer = null, active = false, wasOn = false;
+
+  function enter() {
+    if (active) return;
+    active = true;
+    wasOn = Garden.isOn();
+    document.body.classList.add('saver');
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    Garden.saver(true);
+  }
+  function leave() {
+    if (!active) return;
+    active = false;
+    document.body.classList.remove('saver');
+    Garden.saver(false);
+  }
+  function poke() {
+    if (active) leave();
+    clearTimeout(timer);
+    timer = setTimeout(enter, IDLE);
+  }
+
+  ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'].forEach(function (ev) {
+    document.addEventListener(ev, poke, { passive: true, capture: true });
+  });
+  window.addEventListener('focus', poke);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) poke(); });
+  poke();
 })();
 
 /* ================= Status bar ================= */
