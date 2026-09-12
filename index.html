@@ -754,6 +754,15 @@
   .kmGrime { position: absolute; inset: 0; pointer-events: none; z-index: 39; border-radius: inherit; opacity: 0; transition: opacity 25s ease; }
   .kmGrime.on { opacity: .62; }
 
+  /* A keystroke feeds the garden: the plant twitches as it takes the growth */
+  .kmFlower .kmSway.kmNudge { animation: kmNudge 260ms cubic-bezier(.3,.8,.4,1); }
+  @keyframes kmNudge {
+    0%   { transform: rotate(0deg) translateY(0); }
+    30%  { transform: rotate(var(--nd, .7deg)) translateY(-.6px); }
+    65%  { transform: rotate(calc(var(--nd, .7deg) * -.6)) translateY(0); }
+    100% { transform: rotate(0deg) translateY(0); }
+  }
+
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
@@ -762,20 +771,21 @@
   @keyframes kmSway2 { from { transform: rotate(calc(var(--sway2Deg, 1.2deg) * -1)); } to { transform: rotate(var(--sway2Deg, 1.2deg)); } }
   /* A gust leans everything over and speeds the sway up while it passes */
   .kmHost.gusting .kmSway { animation-duration: calc(var(--sway, 6s) * .38); }
-  .kmHost.gusting .kmFlower { animation-duration: calc(var(--sway2, 11s) * .45); --sway2Deg: var(--gustDeg, 5deg); }
+  .kmHost.gusting .kmFlower:not(.kmCut) { animation-duration: calc(var(--sway2, 11s) * .45); --sway2Deg: var(--gustDeg, 5deg); }
   .kmHost .kmFlower, .kmHost .kmSway { transition: none; }
   .kmFlower path, .kmFlower ellipse, .kmFlower circle { pointer-events: auto; cursor: pointer; }
   .kmFlower.kmCut { pointer-events: none; animation: kmFall var(--fall, 1600ms) linear forwards; }
   .kmFlower.kmCut path, .kmFlower.kmCut ellipse, .kmFlower.kmCut circle { pointer-events: none; cursor: default; }
-  /* Cut free, it springs up off the stem, turns over at the top of its arc, then falls away. */
+  /* Cut free: thrown off the stem, over the top quickly, then it drops like it has weight.
+     It fades only in the last stretch, well past the panel edge, so it never blinks out mid-air. */
   @keyframes kmFall {
     0%   { transform: translate(0, 0) rotate(0deg); opacity: 1;
-           animation-timing-function: cubic-bezier(.12,.7,.35,1); }            /* the snap upward */
-    30%  { transform: translate(calc(var(--dx, 40px) * .28), calc(var(--up, 90px) * -1))
-                      rotate(calc(var(--spin, 200deg) * .3)); opacity: 1;
-           animation-timing-function: cubic-bezier(.5,0,.9,.55); }             /* hangs, then gravity wins */
-    88%  { opacity: 1; }
-    100% { transform: translate(var(--dx, 40px), var(--dy, 400px)) rotate(var(--spin, 200deg)); opacity: .9; }
+           animation-timing-function: cubic-bezier(.05,.85,.3,1); }            /* the throw */
+    18%  { transform: translate(calc(var(--dx, 60px) * .2), calc(var(--up, 110px) * -1))
+                      rotate(calc(var(--spin, 500deg) * .22)); opacity: 1;
+           animation-timing-function: cubic-bezier(.3,0,.85,.4); }             /* over the top, gravity takes it */
+    82%  { opacity: 1; }
+    100% { transform: translate(var(--dx, 60px), var(--dy, 600px)) rotate(var(--spin, 500deg)); opacity: 0; }
   }
   .kmFlower.kmCut .kmSway { animation: none; }
   .kmSway { transform-origin: 50% 100%; animation: kmSway var(--sway, 6s) ease-in-out var(--swayDelay, 0s) infinite alternate; }
@@ -2077,6 +2087,11 @@ var Sys = (function () {
   $('wColor').oninput = function () { exec('foreColor', this.value); };
   $('wHilite').oninput = function () { exec('hiliteColor', this.value); };
   ed.addEventListener('input', changed);
+  // Typing here feeds the garden — a few random plants edge forward with every keystroke.
+  ed.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (typeof Garden !== 'undefined' && Garden.nudge) Garden.nudge();
+  });
 
   function replaceAll(html) {   // goes through execCommand so it stays undoable
     ed.focus();
@@ -4839,17 +4854,23 @@ var Garden = (function () {
     try { s.pauseAnimations(); } catch (e) {}          // freeze growth at the moment of the cut
     var host = s.parentElement, panel = s.closest('.panel');
     var id = panel && panel.id;
-    var fall = rnd(1400, 2100), rect = s.getBoundingClientRect();
-    var below = host ? (host.getBoundingClientRect().bottom - rect.top) + 120 : 500;
+    var fall = rnd(1150, 1650);
+    // Always clear the whole panel plus the plant's own height: this cannot compute to zero.
+    var hostH = (host && host.clientHeight) || 400;
+    var plantH = parseFloat(s.style.height) || 120;
+    var below = hostH + plantH + 220;
     var dir = Math.random() < 0.5 ? -1 : 1;
     s.style.setProperty('--fall', fall + 'ms');
     s.style.setProperty('--dy', Math.round(below) + 'px');
-    s.style.setProperty('--dx', Math.round(dir * rnd(25, 130)) + 'px');
-    s.style.setProperty('--up', Math.round(rnd(45, 150)) + 'px');       // how high it is thrown
-    s.style.setProperty('--spin', Math.round(dir * rnd(160, 720)) + 'deg');   // anything from a lazy turn to cartwheels
+    s.style.setProperty('--dx', Math.round(dir * rnd(40, 190)) + 'px');
+    s.style.setProperty('--up', Math.round(rnd(90, 240)) + 'px');        // thrown clear of the stem
+    // Some barely turn over, some go end over end many times.
+    var sr = Math.random();
+    var spin = sr < 0.25 ? rnd(120, 300) : sr < 0.7 ? rnd(360, 900) : rnd(1000, 2200);
+    s.style.setProperty('--spin', Math.round(dir * spin) + 'deg');
     s.classList.add('kmCut');
     setTimeout(function () {
-      s.remove();
+      s.remove();   // only after the animation has fully played out
       var g = gardens[id];
       if (!on || !g) return;
       g.count = Math.max(0, g.count - 1);
@@ -5258,7 +5279,41 @@ var Garden = (function () {
   rangeIdx = Math.min(RANGES.length - 1, Math.max(0, ui.kmRange | 0));
   if (wasOn) start();
   setBtns();
-  return { isOn: function () { return on; } };
+  // Work done in the workspace feeds the garden. Each call pushes a few random plants
+  // a little further along their own growth, wherever they happen to be in it.
+  function nudge(ms) {
+    if (!on) return 0;
+    var all = [].slice.call(document.querySelectorAll('.kmFlower:not(.kmCut)'));
+    if (!all.length) return 0;
+    var n = Math.min(all.length, Math.round(rnd(1, 3)));   // a few plants feel it, not all
+    var fed = 0;
+    for (var i = 0; i < n; i++) {
+      var s = pick(all);
+      if (!s || s.dataset.cut) continue;
+      var d = (ms || rnd(180, 700)) * rnd(0.6, 1.5);       // each takes a different amount
+      try { s.setCurrentTime(s.getCurrentTime() + d / 1000); } catch (e) {}   // stem, head and leaves
+      if (s.getAnimations) {                                                   // petals, bud and heart
+        s.getAnimations({ subtree: true }).forEach(function (a) {
+          var nm = a.animationName || (a.effect && a.effect.getKeyframes && '');
+          if (/^km(Petal|Bud|Heart)$/.test(a.animationName || '')) {
+            try { a.currentTime = (a.currentTime || 0) + d; } catch (e) {}
+          }
+        });
+      }
+      var sw = s.querySelector('.kmSway');
+      if (sw) {                                            // the little shudder
+        sw.style.setProperty('--nd', (rnd(0.4, 1.1) * (Math.random() < 0.5 ? -1 : 1)).toFixed(2) + 'deg');
+        sw.classList.remove('kmNudge');
+        void sw.offsetWidth;
+        sw.classList.add('kmNudge');
+        setTimeout(function (el) { return function () { el.classList.remove('kmNudge'); }; }(sw), 300);
+      }
+      fed++;
+    }
+    return fed;
+  }
+
+  return { isOn: function () { return on; }, nudge: nudge };
 })();
 
 /* ================= Per-panel zoom ================= */
