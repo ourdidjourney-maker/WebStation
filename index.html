@@ -325,6 +325,11 @@
 
   .faceOff { display: none !important; }
 
+  .webGrab { position: absolute; inset: 0; z-index: 30; cursor: grab; display: none; }
+  .webGrab.on { display: block; }
+  .webGrab.dragging { cursor: grabbing; }
+  #webHold { margin-left: 3px; }
+
   /* Layout chooser */
   #lyOverlay { position: fixed; inset: 0; z-index: 901; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 12px; }
   #lyOverlay[hidden] { display: none; }
@@ -341,6 +346,7 @@
   body.glass #lyTable select { background: rgba(255,255,255,.08); color: #eef2ff; border: 1px solid rgba(255,255,255,.16); border-radius: 7px; }
   body.glass #lyTable select option { background: #141b33; }
   #lyTable td.lyAct { text-align: right; }
+  .lyZoom { margin-right: 4px; }
   .lyHide { font: 11px Arial, Helvetica, sans-serif; height: 22px; padding: 0 10px; border: 1px solid #777;
             background: #fff; color: #000; cursor: pointer; }
   .lyHide.on { background: #000; color: #fff; border-color: #000; }
@@ -1659,6 +1665,8 @@ var Layout = (function () {
 
   var saved = {};
   try { saved = JSON.parse(localStorage.getItem('webstation.layout') || '{}') || {}; } catch (e) {}
+  var noZoom = {};
+  try { (JSON.parse(localStorage.getItem('webstation.nozoom') || '[]') || []).forEach(function (k) { noZoom[k] = 1; }); } catch (e) {}
 
   function faceEl(name) { return document.querySelector('.face[data-face="' + name + '"]'); }
 
@@ -1744,6 +1752,20 @@ var Layout = (function () {
       };
       tr.classList.toggle('lyGone', hidden);
       tr.children[1].appendChild(sel);
+      var zoomOff = !!noZoom[a[0]];
+      var zb = document.createElement('button');
+      zb.className = 'lyHide lyZoom' + (zoomOff ? '' : ' on');
+      zb.dataset.app = a[0];
+      zb.dataset.off = zoomOff ? '1' : '0';
+      zb.textContent = zoomOff ? 'Zoom off' : 'Zoom on';
+      zb.title = 'Whether this app can be zoomed and panned';
+      zb.onclick = function () {
+        var off = zb.dataset.off === '1';
+        zb.dataset.off = off ? '0' : '1';
+        zb.textContent = off ? 'Zoom on' : 'Zoom off';
+        zb.classList.toggle('on', off);
+      };
+      tr.children[2].appendChild(zb);
       tr.children[2].appendChild(hide);
       body.appendChild(tr);
     });
@@ -1764,17 +1786,22 @@ var Layout = (function () {
       });
       var left = Object.keys(next).filter(function (k) { return next[k] !== 'off'; }).length;
       if (!left) { Sys.toast('At least one app has to stay.', { ms: 3000 }); return; }
-      try { localStorage.setItem('webstation.layout', JSON.stringify(next)); } catch (e) {}
+      var nz = [];
+      document.querySelectorAll('.lyZoom').forEach(function (z) { if (z.dataset.off === '1') nz.push(z.dataset.app); });
+      try {
+        localStorage.setItem('webstation.layout', JSON.stringify(next));
+        localStorage.setItem('webstation.nozoom', JSON.stringify(nz));
+      } catch (e) {}
       location.reload();
     };
     document.getElementById('lyReset').onclick = function () {
-      try { localStorage.removeItem('webstation.layout'); } catch (e) {}
+      try { localStorage.removeItem('webstation.layout'); localStorage.removeItem('webstation.nozoom'); } catch (e) {}
       location.reload();
     };
   })();
 
   apply();
-  return { apply: apply };
+  return { apply: apply, noZoom: function (name) { return !!noZoom[name]; } };
 })();
 
 var Flip = (function () {
@@ -5967,6 +5994,44 @@ var Garden = (function () {
   return { isOn: function () { return on; }, nudge: nudge, saver: setSaver };
 })();
 
+/* ================= Panning the embedded page ================= */
+(function () {
+  var face = document.querySelector('.face[data-face="web"]');
+  if (!face) return;
+  var body = face.querySelector('.body');
+  var grab = document.createElement('div');
+  grab.className = 'webGrab';
+  grab.title = 'Drag to move the page. Use the page itself at 100%.';
+  body.appendChild(grab);
+
+  var drag = null;
+  grab.addEventListener('pointerdown', function (e) {
+    drag = { x: e.clientX, y: e.clientY, sl: body.scrollLeft, st: body.scrollTop };
+    grab.classList.add('dragging');
+    grab.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  grab.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    body.scrollLeft = drag.sl - (e.clientX - drag.x);
+    body.scrollTop = drag.st - (e.clientY - drag.y);
+  });
+  ['pointerup', 'pointercancel'].forEach(function (ev) {
+    grab.addEventListener(ev, function () { drag = null; grab.classList.remove('dragging'); });
+  });
+  // the wheel over the layer zooms the panel, as it does everywhere else
+  grab.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var btn = face.querySelector('.zoomCtl button[aria-label="Zoom ' + (e.deltaY < 0 ? 'in' : 'out') + '"]');
+    if (btn) btn.click();
+  }, { passive: false });
+
+  // It only covers the page while the panel is zoomed in, so at 100% the page is fully usable.
+  setInterval(function () {
+    grab.classList.toggle('on', body.classList.contains('panZoom'));
+  }, 300);
+})();
+
 /* ================= Drag to pan a zoomed panel ================= */
 (function () {
   var drag = null;
@@ -6010,8 +6075,15 @@ var Garden = (function () {
         if (!content) return;
         // Paint and the embedded views scroll themselves; everything else gets a wrapper
         // that grows with the zoom so the body has something to scroll around.
+        if (Layout.noZoom(face.dataset.face)) {   // the user switched zoom off for this app
+          content.classList.remove('panZoom');
+          var w = content.querySelector(':scope > .zoomInner');
+          if (w) { w.style.zoom = ''; w.style.width = '100%'; w.style.height = '100%'; }
+          content.style.zoom = '';
+          return;
+        }
         var own = content.id === 'paintBody' ||
-          ['web', 'media', 'pdf', 'code', 'files'].indexOf(face.dataset.face) >= 0;
+          ['media', 'pdf', 'code', 'files'].indexOf(face.dataset.face) >= 0;
         if (own) { content.style.zoom = z === 1 ? '' : String(z); return; }
         var inner = content.querySelector(':scope > .zoomInner');
         if (!inner) {
@@ -6035,6 +6107,7 @@ var Garden = (function () {
       c.children[0].onclick = function () { set(z - 0.1); };
       c.children[1].onclick = function () { set(1); };
       c.children[2].onclick = function () { set(z + 0.1); };
+      if (Layout.noZoom(face.dataset.face)) c.style.display = 'none';
       face.querySelector('.bar').appendChild(c);
       var x = document.createElement('button');   // close this panel (reopen from the status bar or Task Manager)
       x.className = 'pclose'; x.textContent = '×';
@@ -6049,6 +6122,8 @@ var Garden = (function () {
       ctls.push(c);
     });
     panel.addEventListener('wheel', function (e) {
+      var front = panel.querySelector('.face.front');
+      if (front && Layout.noZoom(front.dataset.face)) return;   // zoom is off for this app
       if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
         var n = e.target;
         while (n && n !== panel) {
