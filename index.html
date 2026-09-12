@@ -761,14 +761,17 @@
   .kmHost.gusting .kmFlower { animation-duration: calc(var(--sway2, 11s) * .45); --sway2Deg: var(--gustDeg, 5deg); }
   .kmHost .kmFlower, .kmHost .kmSway { transition: none; }
   .kmFlower path, .kmFlower ellipse, .kmFlower circle { pointer-events: auto; cursor: pointer; }
-  .kmFlower.kmCut { pointer-events: none; animation: kmFall var(--fall, 1200ms) cubic-bezier(.36,.02,.86,.54) forwards; }
+  .kmFlower.kmCut { pointer-events: none; animation: kmFall var(--fall, 1600ms) linear forwards; }
   .kmFlower.kmCut path, .kmFlower.kmCut ellipse, .kmFlower.kmCut circle { pointer-events: none; cursor: default; }
-  /* A clipped plant tips over, then drops away under the panel, tumbling as it goes. */
+  /* Cut free, it springs up off the stem, turns over at the top of its arc, then falls away. */
   @keyframes kmFall {
-    0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-    9%   { transform: translate(0, 2px) rotate(var(--tip, 8deg)); opacity: 1; }
-    85%  { opacity: 1; }
-    100% { transform: translate(var(--dx, 30px), var(--dy, 400px)) rotate(var(--spin, 120deg)); opacity: .9; }
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 1;
+           animation-timing-function: cubic-bezier(.12,.7,.35,1); }            /* the snap upward */
+    30%  { transform: translate(calc(var(--dx, 40px) * .28), calc(var(--up, 90px) * -1))
+                      rotate(calc(var(--spin, 200deg) * .3)); opacity: 1;
+           animation-timing-function: cubic-bezier(.5,0,.9,.55); }             /* hangs, then gravity wins */
+    88%  { opacity: 1; }
+    100% { transform: translate(var(--dx, 40px), var(--dy, 400px)) rotate(var(--spin, 200deg)); opacity: .9; }
   }
   .kmFlower.kmCut .kmSway { animation: none; }
   .kmSway { transform-origin: 50% 100%; animation: kmSway var(--sway, 6s) ease-in-out var(--swayDelay, 0s) infinite alternate; }
@@ -4832,14 +4835,14 @@ var Garden = (function () {
     try { s.pauseAnimations(); } catch (e) {}          // freeze growth at the moment of the cut
     var host = s.parentElement, panel = s.closest('.panel');
     var id = panel && panel.id;
-    var fall = rnd(1000, 1500), rect = s.getBoundingClientRect();
+    var fall = rnd(1400, 2100), rect = s.getBoundingClientRect();
     var below = host ? (host.getBoundingClientRect().bottom - rect.top) + 120 : 500;
     var dir = Math.random() < 0.5 ? -1 : 1;
     s.style.setProperty('--fall', fall + 'ms');
     s.style.setProperty('--dy', Math.round(below) + 'px');
-    s.style.setProperty('--dx', Math.round(dir * rnd(20, 90)) + 'px');
-    s.style.setProperty('--tip', (dir * rnd(6, 14)).toFixed(1) + 'deg');
-    s.style.setProperty('--spin', Math.round(dir * rnd(70, 220)) + 'deg');
+    s.style.setProperty('--dx', Math.round(dir * rnd(25, 130)) + 'px');
+    s.style.setProperty('--up', Math.round(rnd(45, 150)) + 'px');       // how high it is thrown
+    s.style.setProperty('--spin', Math.round(dir * rnd(160, 720)) + 'deg');   // anything from a lazy turn to cartwheels
     s.classList.add('kmCut');
     setTimeout(function () {
       s.remove();
