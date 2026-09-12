@@ -234,6 +234,7 @@
   #toasts { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; max-width: calc(100vw - 20px); }
   .toast { pointer-events: auto; background: #000; color: #fff; font-size: 13px; padding: 8px 12px; display: flex; gap: 8px; align-items: center; box-shadow: 0 4px 16px rgba(0,0,0,.35); }
   .toast button { font: 12px Arial, Helvetica, sans-serif; background: #fff; color: #000; border: 0; padding: 3px 8px; cursor: pointer; white-space: nowrap; }
+  .toast.out { opacity: 0; transform: translateY(-12px) scale(.96); transition: opacity .45s ease, transform .45s cubic-bezier(.3,0,.7,1); }
 
   /* Status bar buttons */
   #stBtns { display: flex; gap: 3px; flex: 0 0 auto; }
@@ -746,8 +747,8 @@
   @media (prefers-reduced-motion: reduce) { .kmFlash { display: none; } }
 
   /* Lens grime: what settles on a camera left out in a garden. Wipes away where you move. */
-  .kmGrime { position: absolute; inset: 0; pointer-events: none; z-index: 39; border-radius: inherit; opacity: 0; transition: opacity 2.5s ease; }
-  .kmGrime.on { opacity: 1; }
+  .kmGrime { position: absolute; inset: 0; pointer-events: none; z-index: 39; border-radius: inherit; opacity: 0; transition: opacity 25s ease; }
+  .kmGrime.on { opacity: .62; }
 
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
@@ -1515,7 +1516,11 @@ var Sys = (function () {
     var el = document.createElement('div'), sp = document.createElement('span'), ring = null, stopRing = null;
     el.className = 'toast'; el.setAttribute('role', opts.ring ? 'alert' : 'status');
     sp.textContent = text; el.appendChild(sp);
-    function close() { clearInterval(ring); clearTimeout(stopRing); el.remove(); }
+    function close() {
+      clearInterval(ring); clearTimeout(stopRing);
+      el.classList.add('out');                              // fade out rather than blink away
+      setTimeout(function () { el.remove(); }, 460);
+    }
     (opts.actions || []).forEach(function (a) {
       var b = document.createElement('button');
       b.textContent = a.label;
@@ -4716,7 +4721,7 @@ var Garden = (function () {
     var g = { c: c, x: x, W: W, H: H, level: 0 };
     grime[pid] = g;
     edgeGrowth(g);
-    for (var i = 0; i < 40; i++) speck(g);
+    for (var i = 0; i < 6; i++) speck(g);   // starts nearly clean
     requestAnimationFrame(function () { c.classList.add('on'); });
     return g;
   }
@@ -4726,18 +4731,18 @@ var Garden = (function () {
     var x = g.x, W = g.W, H = g.H;
     var v = x.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.32, W / 2, H / 2, Math.max(W, H) * 0.72);
     v.addColorStop(0, 'rgba(120,105,70,0)');
-    v.addColorStop(0.72, 'rgba(110,100,65,.05)');
-    v.addColorStop(1, 'rgba(86,84,54,.18)');
+    v.addColorStop(0.72, 'rgba(110,100,65,.025)');
+    v.addColorStop(1, 'rgba(86,84,54,.09)');
     x.fillStyle = v; x.fillRect(0, 0, W, H);
     // irregular blooms of dirt hugging the edges
-    for (var i = 0; i < 26; i++) {
+    for (var i = 0; i < 9; i++) {
       var side = Math.floor(rnd(0, 4));
       var px = side === 0 ? rnd(0, W) : side === 1 ? W - rnd(0, W * 0.14) : side === 2 ? rnd(0, W) : rnd(0, W * 0.14);
       var py = side === 0 ? rnd(0, H * 0.13) : side === 1 ? rnd(0, H) : side === 2 ? H - rnd(0, H * 0.13) : rnd(0, H);
       var rr = rnd(22, 90);
       var gr = x.createRadialGradient(px, py, 0, px, py, rr);
-      gr.addColorStop(0, 'rgba(96,92,58,.16)');
-      gr.addColorStop(0.6, 'rgba(96,92,58,.07)');
+      gr.addColorStop(0, 'rgba(96,92,58,.08)');
+      gr.addColorStop(0.6, 'rgba(96,92,58,.035)');
       gr.addColorStop(1, 'rgba(96,92,58,0)');
       x.fillStyle = gr; x.beginPath(); x.arc(px, py, rr, 0, 6.284); x.fill();
     }
@@ -4749,13 +4754,13 @@ var Garden = (function () {
     var px = rnd(0, W), py = rnd(0, H), col = pick(DUST);
     if (kind < 0.6) {                       // dust and pollen
       var r0 = rnd(0.6, 3.2), gr = x.createRadialGradient(px, py, 0, px, py, r0 * 2.4);
-      gr.addColorStop(0, col + 'cc'); gr.addColorStop(0.5, col + '55'); gr.addColorStop(1, col + '00');
+      gr.addColorStop(0, col + '99'); gr.addColorStop(0.5, col + '3a'); gr.addColorStop(1, col + '00');
       x.fillStyle = gr; x.beginPath(); x.arc(px, py, r0 * 2.4, 0, 6.284); x.fill();
     } else if (kind < 0.82) {               // a dried water spot: soft ring, clear middle
       var r1 = rnd(5, 17);
       var gr2 = x.createRadialGradient(px, py, r1 * 0.55, px, py, r1);
       gr2.addColorStop(0, 'rgba(210,205,180,0)');
-      gr2.addColorStop(0.75, 'rgba(190,185,160,.16)');
+      gr2.addColorStop(0.75, 'rgba(190,185,160,.10)');
       gr2.addColorStop(1, 'rgba(160,158,132,0)');
       x.fillStyle = gr2; x.beginPath(); x.arc(px, py, r1, 0, 6.284); x.fill();
     } else {                                 // a smear, as if brushed by a leaf
@@ -4763,7 +4768,7 @@ var Garden = (function () {
       x.translate(px, py); x.rotate(rnd(-1, 1));
       var w = rnd(18, 70), h = rnd(2.5, 7);
       var gr3 = x.createLinearGradient(-w / 2, 0, w / 2, 0);
-      gr3.addColorStop(0, col + '00'); gr3.addColorStop(0.45, col + '2e'); gr3.addColorStop(1, col + '00');
+      gr3.addColorStop(0, col + '00'); gr3.addColorStop(0.45, col + '1c'); gr3.addColorStop(1, col + '00');
       x.fillStyle = gr3;
       x.beginPath(); x.ellipse(0, 0, w / 2, h / 2, 0, 0, 6.284); x.fill();
       x.restore();
@@ -4785,18 +4790,20 @@ var Garden = (function () {
     x.restore();
   }
 
+  var GRIME_ENABLED = false;   // dirt/grime effects are parked for now — set true to bring them back
   function startGrime() {
+    if (!GRIME_ENABLED) return;
     Object.keys(gardens).forEach(function (pid) {
       if (!grime[pid]) makeGrime(pid);
       var tick = setInterval(function () {
         var g = grime[pid];
         if (!on || !g || !g.c.isConnected) { clearInterval(tick); return; }
         // it keeps settling; rain washes some of it away
-        var n = wet[pid] ? 1 : Math.round(rnd(2, 7));
+        var n = wet[pid] ? 0 : Math.round(rnd(1, 3));
         for (var i = 0; i < n; i++) speck(g);
         if (wet[pid]) for (var k = 0; k < 4; k++) wipe(pid, rnd(0, g.W), rnd(0, g.H));   // rain rinses patches
-        if (Math.random() < 0.25) edgeGrowth(g);
-      }, test ? rnd(900, 2500) : rnd(20000, 60000));
+        if (Math.random() < 0.08) edgeGrowth(g);
+      }, test ? rnd(3000, 7000) : rnd(90000, 300000));   // a slow, patient build
       timers.push(tick);
     });
   }
@@ -5115,7 +5122,11 @@ var Garden = (function () {
   function strike(pid) {
     if (!wet[pid] || !stormy[pid]) return;
     var ang = Math.round(rnd(110, 250)) + 'deg';          // which side the light comes from
-    var i = rnd(0.25, 0.95);                               // distant glow through to a close hit
+    var br = Math.random();                                 // how close the strike is
+    var i = br < 0.34 ? rnd(0.08, 0.22)                     // far off — a faint glow on the horizon
+          : br < 0.62 ? rnd(0.25, 0.48)                     // middle distance
+          : br < 0.88 ? rnd(0.5, 0.8)                       // close
+          : rnd(0.85, 1.15);                                // right overhead
     var name = pick(['kmFlashA', 'kmFlashB', 'kmFlashC']);
     var dur = Math.round(rnd(260, 850));
     var layer = $(pid) && $(pid).querySelector('.kmRain');
@@ -5208,7 +5219,19 @@ var Garden = (function () {
     testBtn.setAttribute('aria-pressed', String(test));
     ui.km = on; ui.kmTest = test; ui.kmRange = rangeIdx; store.set('ws.ui', ui);
   }
-  btn.onclick = function () { if (on) stop(); else start(); setBtns(); };
+  function glassOn() { return document.body.classList.contains('glass'); }
+  btn.onclick = function () {
+    if (!glassOn()) { Sys.toast('Katy Mae mode needs the glass theme. Switch to Glass first.', { ms: 4000 }); return; }
+    if (on) stop(); else start();
+    setBtns();
+  };
+  // If the theme goes plain, the garden closes for the night.
+  setInterval(function () {
+    var g = glassOn();
+    btn.disabled = !g;
+    btn.title = g ? 'Katy Mae — grow a garden in the workspace' : 'Katy Mae mode needs the glass theme';
+    if (!g && on) { stop(true); setBtns(); }
+  }, 700);
   rangeBtn.onclick = function () {
     rangeIdx = (rangeIdx + 1) % RANGES.length;
     setBtns();
