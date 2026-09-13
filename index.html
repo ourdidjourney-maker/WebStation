@@ -1099,6 +1099,32 @@
                                          border: 2px solid transparent; background-clip: padding-box; }
   body.glass ::-webkit-scrollbar-thumb:hover { background: rgba(126,170,255,.68); background-clip: padding-box; }
 
+  /* Handbook — every selector starts with .hb or #helpBody, so nothing can leak into the OS */
+  #helpBody { overflow: auto; }
+  .hb { padding: 6px 26px 70px; max-width: 900px; margin: 0 auto; font-size: 14.5px; line-height: 1.65; }
+  .hb section { margin: 46px 0; }
+  .hb section:first-child { margin-top: 18px; }
+  .hb h2 { font-size: 11.5px; letter-spacing: .26em; text-transform: uppercase; color: #7eaaff; margin: 0 0 6px; font-weight: 600; }
+  .hb h3 { font-size: 25px; margin: 0 0 14px; letter-spacing: -.01em; }
+  .hb h4 { font-size: 15px; margin: 22px 0 7px; }
+  .hb p { margin: 0 0 13px; color: rgba(215,226,255,.72); }
+  .hb ul { margin: 0 0 13px; padding-left: 20px; color: rgba(215,226,255,.72); }
+  .hb li { margin-bottom: 6px; }
+  .hb .hbCard { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 16px 18px; }
+  .hb .hbGrid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .hb table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 8px 0; }
+  .hb th { text-align: left; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: rgba(215,226,255,.45); padding: 6px 10px 6px 0; border-bottom: 1px solid rgba(255,255,255,.12); }
+  .hb td { padding: 7px 10px 7px 0; border-bottom: 1px solid rgba(255,255,255,.07); color: rgba(215,226,255,.72); vertical-align: top; }
+  .hb code { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: 5px; padding: 1px 5px; }
+  .hb pre { background: rgba(4,8,18,.55); border: 1px solid rgba(255,255,255,.12); border-radius: 11px; padding: 14px 16px; overflow-x: auto; font: 12.5px/1.6 ui-monospace, Consolas, monospace; color: #cfe0ff; }
+  .hb .hbNote { border-left: 3px solid #7eaaff; padding: 2px 0 2px 15px; margin: 16px 0; color: rgba(215,226,255,.72); }
+  .hb .hbNote.good { border-color: #5af0af; }
+  .hb .hbCaption { font-size: 12px; color: rgba(215,226,255,.45); margin-top: 7px; }
+  .hb mark { background: rgba(255,214,102,.35); border-radius: 3px; }
+  body:not(.glass) .hb p, body:not(.glass) .hb ul, body:not(.glass) .hb td { color: #333; }
+  body:not(.glass) .hb .hbCard { background: #f6f7fa; border-color: #ccc; }
+  body:not(.glass) .hb pre { background: #f2f3f7; color: #223; border-color: #ccc; }
+
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
@@ -1575,6 +1601,469 @@
             <ul id="slStrip"></ul>
           </div>
         </div>
+<div class="face" data-face="help" id="helpFace" tabindex="-1">
+  <div class="bar"><span class="seg"></span><span class="sep"></span>
+    <input type="text" id="helpFind" class="grow" placeholder="Search the handbook" aria-label="Search the handbook">
+    <select id="helpJump" aria-label="Jump to a section"></select>
+  </div>
+  <div class="body" id="helpBody"><div class="hb"><!-- ══════════════════════════════════ START ══════════════════════════════════ -->
+<section id="start">
+  <h2>Start here</h2>
+  <h3>Double-click the file. That is the installation.</h3>
+  <p>There is no setup, no build step, no package manager and no first-run wizard. WebStation is one
+     HTML document. Open it in any modern browser and the whole workspace is running: five panels,
+     twenty-six applications, and every piece of your work stored on your own machine.</p>
+
+  <div class="hbGrid">
+    <div class="hbCard">
+      <h4>Nothing to install</h4>
+      <p>No runtime, no framework, no CDN. Every line of it was written for this project.</p>
+    </div>
+    <div class="hbCard">
+      <h4>Nothing to sign into</h4>
+      <p>No account, no email, no token, no cookie. The file has no idea who you are.</p>
+    </div>
+    <div class="hbCard">
+      <h4>Nothing to lose</h4>
+      <p>Your work is saved in your browser and exported with one button. No lock-in, no service to pay.</p>
+    </div>
+  </div>
+
+  <div class="hbNote good">
+    <strong>Take it with you.</strong> Put the file on a USB stick and it runs on any machine you plug it into.
+    Your data stays in whichever browser you opened it in, and <strong>Backup</strong> writes everything —
+    documents, images, recordings and all — into a single JSON file you can carry alongside it.
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════ ARCHITECTURE ══════════════════════════════════ -->
+<section id="arch">
+  <h2>Architecture</h2>
+  <h3>Five panels, each holding a deck of applications</h3>
+  <p>The workspace is five <strong>panels</strong>. Each panel holds a <strong>card</strong>, and each card
+     holds several <strong>faces</strong>. A face is a complete application. Only one face is visible per panel
+     at a time — but every face stays alive in the background. A timer keeps counting, a recording keeps
+     recording, a video keeps playing and a garden keeps growing, whichever face happens to be showing.</p>
+
+  
+  <p class="hbCaption">Hover a panel to see its deck. This is the same layout the workspace boots with —
+     and every one of these apps can be moved to any other panel in the Layout editor.</p>
+
+  <h4>Why it is built this way</h4>
+  <p>Three decisions do most of the work, and they are the reason a brand new application can be added in
+     minutes rather than days:</p>
+  <ul>
+    <li><strong>A face is a black box.</strong> It owns its own markup, styling, state and storage key, and
+        never reaches into another app. Nothing is shared, so nothing can collide.</li>
+    <li><strong>The systems discover, they are not told.</strong> Flip, zoom, pan, blur, the garden, the
+        screensaver and the proximity focus all work from structure — <code>.panel</code> and
+        <code>.face</code> — not from a list of application names. A new app inherits every one of them at birth.</li>
+    <li><strong>One storage interface, one deletion interface.</strong> Which means new apps appear in the
+        Files browser, in Backup, in Restore, in the byte counts and in the Trash bin automatically.</li>
+  </ul>
+  <p>The proof: the checkers engine was lifted out of a 22,000-line application and became a fully
+     integrated WebStation app — saved, resizable, in the Task Manager and the Layout editor, blurring with
+     the weather and growing a garden over it — in a single pass.</p>
+</section>
+
+<!-- ══════════════════════════════════ FLIP ══════════════════════════════════ -->
+<section id="flip">
+  <h2>The flip system</h2>
+  <h3>Switching apps is a physical card turn</h3>
+  <p>Applications do not appear and disappear. The card <strong>rotates out</strong>, the faces swap at the
+     midpoint, and the card <strong>rotates back in</strong> — so the incoming app is never visible until the
+     card has turned past its own edge. The direction follows the order of the deck, which means the
+     arrangement is spatial and you build a memory of where things are.</p>
+
+  
+  <p class="hbCaption">Glass runs a 710&nbsp;ms turn with motion blur and a specular sheen sweeping across the face;
+     Performance mode runs a clean 500&nbsp;ms with no filters.</p>
+
+  <h4>Hover peek</h4>
+  <p>Hover any application button and that application appears <strong>live in place</strong>, framed in blue,
+     without committing to the flip. A 180&nbsp;ms delay stops it flickering as you move across the row, and the
+     peeked face is given its own solid frosted backing so two transparent apps never show through each other.</p>
+</section>
+
+<!-- ══════════════════════════════════ STORAGE ══════════════════════════════════ -->
+<section id="storage">
+  <h2>Storage</h2>
+  <h3>Three tiers, with automatic fallback</h3>
+  <p>Everything you do is saved locally through a single storage layer that degrades gracefully rather than
+     failing:</p>
+  <table>
+    <tr><th style="width:150px">Tier</th><th>Behaviour</th></tr>
+    <tr><td><b>IndexedDB</b></td><td>The default. Large quota, holds binary files — images, PDFs, recordings and your chosen folder handle.</td></tr>
+    <tr><td><b>localStorage</b></td><td>Automatic fallback if IndexedDB is blocked or unavailable.</td></tr>
+    <tr><td><b>Memory</b></td><td>Final fallback so the workspace still runs, with the Task Manager stating plainly that data is not being saved.</td></tr>
+  </table>
+  <p>All of it sits behind an in-memory cache, so every application reads synchronously after boot with no
+     waiting. <strong>21 storage keys</strong> hold the workspace, plus a separate binary store.</p>
+
+  <div class="hbNote">
+    <strong>Backup</strong> writes every key <em>and</em> every binary file, base64-encoded, into one dated JSON
+    file. <strong>Restore</strong> reads it back inside a single transaction that rolls back completely if
+    anything fails — so a bad restore can never leave you half-migrated.
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════ APPS ══════════════════════════════════ -->
+<section id="apps">
+  <h2>The applications</h2>
+  <h3>Twenty-six of them, and none are stubs</h3>
+  <p>Every one is a working tool, not a placeholder. Several are substantial pieces of engineering in their
+     own right — the spreadsheet, the calculator and the checkers engine were all written from scratch.</p>
+
+  <table>
+    <tr><th style="width:170px">Application</th><th>What it does</th></tr>
+    <tr><td><b>Web browser</b></td><td>Sandboxed frame with its own back, forward, reload and address bar, its own history, and it remembers the last page across reloads.</td></tr>
+    <tr><td><b>Tasks</b></td><td>Three-column kanban, drag and drop between columns, inline editing, deletions to the bin with undo.</td></tr>
+    <tr><td><b>Paint</b></td><td>Nine tools — brush, eraser, spray, line, rectangle, ellipse, flood fill, colour picker, text. Twelve swatches, opacity, 20-step undo, paste from clipboard, drag-drop images, save to PNG. The coordinate maths is zoom-aware, so the brush lands where the cursor is at any zoom.</td></tr>
+    <tr><td><b>Gallery</b></td><td>Multiple images, slideshow with an adjustable pace, thumbnail strip, Delete all, and Send to Paint which flips the panel and imports the picture.</td></tr>
+    <tr><td><b>PDF viewer</b></td><td>The browser's own PDF engine, stored in IndexedDB, lazily loaded.</td></tr>
+    <tr><td><b>Files</b></td><td>Two columns: everything stored in the workspace on the left, <em>your actual disk</em> on the right.</td></tr>
+    <tr><td><b>Trash bin</b></td><td>Everything deleted, with timed deletion and restore. See below.</td></tr>
+    <tr><td><b>Calendar</b></td><td>Month grid, events with optional times, midnight rollover.</td></tr>
+    <tr><td><b>Calculator</b></td><td>Hand-built tokenizer, recursive-descent parser and AST evaluator. SUM, AVERAGE, MIN, MAX, COUNT, ROUND, ABS, SQRT and a lazily-evaluated IF, with a full error taxonomy.</td></tr>
+    <tr><td><b>Clock</b></td><td>World clocks across IANA zones, countdown timer that flashes the whole interface, stopwatch with centisecond laps, Pomodoro and alarms — all five driven by one ticker, every sound synthesised with Web Audio.</td></tr>
+    <tr><td><b>Time tracker</b></td><td>Per-project start and stop, today and total, CSV export.</td></tr>
+    <tr><td><b>Unit converter</b></td><td>Length, weight, volume, speed, data, time, area, and temperature with proper Celsius/Fahrenheit/Kelvin conversion rather than ratios.</td></tr>
+    <tr><td><b>Word processor</b></td><td>Rich text, HTML and plain-text import with sanitisation, autosave, and the writing effects described below.</td></tr>
+    <tr><td><b>Spreadsheet</b></td><td>26 × 100 cells, hand-built formula engine, circular-reference detection, 100-step undo, drag-resizable columns and rows with auto-fit, CSV import and export.</td></tr>
+    <tr><td><b>Code playground</b></td><td>HTML, CSS and JS tabs, sandboxed live preview, console forwarding including unhandled promise rejections, auto-run and export.</td></tr>
+    <tr><td><b>Notes</b></td><td>Live full-text search, automatic titling, implicit save, undo on delete, .txt export.</td></tr>
+    <tr><td><b>Slides</b></td><td>Title and body edited directly on the slide, thumbnail strip, and a Present mode that takes the full screen with arrow-key navigation.</td></tr>
+    <tr><td><b>Media player</b></td><td>Direct URLs, YouTube in five link formats, local files, drag-drop, with speed, loop and fullscreen.</td></tr>
+    <tr><td><b>Recorder</b></td><td>Voice with a live waveform meter, screen capture, and camera with snapshot-to-Gallery. Codec negotiation, recordings stored locally, and Play hands off to the media player.</td></tr>
+    <tr><td><b>Sticky notes</b></td><td>Draggable notes on a board, six colour schemes, each pinned at a slight angle with a curled corner — and they peel off and fall when deleted.</td></tr>
+    <tr><td><b>Clipboard history</b></td><td>Anything copied anywhere in the workspace, last 40 items, searchable, click to copy back.</td></tr>
+    <tr><td><b>Bookmarks</b></td><td>Saved addresses, searchable, and Open loads the page into the browser panel and flips you there.</td></tr>
+    <tr><td><b>Password generator</b></td><td>Cryptographically random, 6 to 64 characters, character-set toggles, look-alike avoidance, and a live entropy readout in bits.</td></tr>
+    <tr><td><b>Password vault</b></td><td>Every generated password is filed here automatically; add your own too. Renewal periods, sorted by what is due soonest, overdue entries in red, masked by default.</td></tr>
+    <tr><td><b>Character map</b></td><td>Nine categories, click to copy, shows the Unicode code point.</td></tr>
+    <tr><td><b>Checkers</b></td><td>A real engine — forced captures, multi-jump chains, kings, and minimax search with alpha-beta pruning at three depths.</td></tr>
+  </table>
+
+  <h4>Two file systems at once</h4>
+  <p>The <strong>Files</strong> app is worth singling out. The left column lists everything stored in the
+     workspace with live byte sizes and previews. The right column reads <strong>a real folder from your
+     disk</strong>, recursively, building the full tree — and it reads <strong>metadata only</strong>. No file
+     content is touched until you click something. Depth is capped at twelve levels and it yields control every
+     200 files so the interface never freezes on a huge directory. The folder handle is remembered, so your
+     folder is still there next time without re-picking it.</p>
+  <div class="hbNote good"><strong>Nothing is uploaded. Nothing leaves the machine.</strong> There is no server to upload to.</div>
+</section>
+
+<!-- ══════════════════════════════════ TRASH ══════════════════════════════════ -->
+<section id="trash">
+  <h2>Trash &amp; Safe Delete</h2>
+  <h3>Nothing disappears without your consent</h3>
+  <p>Everything deleted goes to the bin first — vault entries, sticky notes, tasks, cleared spreadsheet
+     cells, bookmarks, slides, gallery images, and <strong>every character deleted from the word
+     processor</strong>.</p>
+
+  <h4>Capturing deleted text</h4>
+  <p>The browser keeps no record of a deleted character, so the keystroke is intercepted <em>before</em> the
+     deletion happens: a one-character range is built behind or in front of the cursor and read. Holding
+     backspace would then produce hundreds of single-letter entries, so deletions within
+     <strong>900 milliseconds</strong> of each other merge into one, each character prepended to the front —
+     because backspace eats backwards — which rebuilds the passage in its original order.</p>
+  <pre>held backspace through a sentence
+  →  one entry:  "uick brown fox jumps  (20 characters)"
+
+paused, then deleted again
+  →  a second, separate entry</pre>
+  <p>Hovering an entry shows the whole passage in a themed panel that follows your cursor.</p>
+
+  <h4>Safe Delete</h4>
+  <p>Each item has its own button that cycles through a hold time:</p>
+  <pre>Safe delete → 1 min → 30 min → 1 hour → 12 hours → 24 hours → 48 hours → Safe delete</pre>
+  <p>With a time set, pressing <code>×</code> does not delete. The item greys out and starts a
+     <strong>live countdown in hours, minutes and seconds</strong>. The <code>×</code> becomes a
+     <code>↺</code> so you can call it back at any moment, and when the clock reaches zero it is permanently flushed.</p>
+
+  <h4>The warning</h4>
+  <p>Twenty seconds before a permanent deletion, a notice rises gently into the corner — wherever you are and
+     whatever you are doing. <strong>The entire workspace blurs behind it</strong>: every panel, the garden, the
+     weather and the ticker all soften and dim, leaving the notice as the only sharp thing on screen. Nothing
+     is blocked and nothing is frozen.</p>
+  
+  <p class="hbCaption"><b>Continue</b> lets it go · <b>Go to bin</b> sharpens just the Trash panel and highlights
+     that one item · <b>Stop</b> halts the clock and leaves the Trash button pulsing until you have looked at it.</p>
+</section>
+
+
+<!-- ══════════════════════════════════ BIOME ══════════════════════════════════ -->
+<section id="biome">
+  <h2>The living biome</h2>
+  <h3>A garden grows inside the panels you work in</h3>
+  <p>This is not decoration laid over the top. The plants grow <em>inside</em> the panels, behind your
+     documents and spreadsheets, and they are drawn as live vector art — no images, no sprites.</p>
+
+  
+  <p class="hbCaption">Daisy · round · tulip · petal · star · bell · poppy · cosmos · rose · sunflower · bud —
+     every one assembled from paths at run time.</p>
+
+  <h4>Vector correctness</h4>
+  <p>This was the hard part, and most of the bugs in the project lived here. Flower heads ride the stem using
+     motion along <strong>the actual stem path</strong>. Leaves are positioned by evaluating the stem's cubic
+     bezier rather than interpolating in a straight line, and they scale from their join point rather than
+     from a bounding box. Leaves are assigned <strong>evenly spaced slots</strong> along the stem so they can
+     never stack on top of each other.</p>
+  <div class="hbNote">Measured worst gap between a leaf and its stem across 54 leaves: <strong>0.5 SVG units</strong>.</div>
+
+  <h4>Growth is unpredictable by design</h4>
+  <p>Each plant takes between one and sixty minutes depending on the range you choose, and every gap between
+     sprouts rolls its own character rather than using a fixed interval:</p>
+  <table>
+    <tr><th style="width:110px">Chance</th><th>Gap</th></tr>
+    <tr><td><b>22%</b></td><td>one right after another</td></tr>
+    <tr><td><b>33%</b></td><td>fairly brisk</td></tr>
+    <tr><td><b>27%</b></td><td>taking its time</td></tr>
+    <tr><td><b>13%</b></td><td>a long quiet stretch</td></tr>
+    <tr><td><b>5%</b></td><td>nothing for ages</td></tr>
+  </table>
+  <p>Every chosen gap is then multiplied by a further random factor, and 18% of the time a cluster of two to
+     four plants comes up together. The result has no rhythm you can spot.</p>
+
+  <h4>Clipping</h4>
+  <p>Click any painted part of a plant and it is cut. Growth freezes at the instant of the cut, the plant
+     springs up off the stem, turns over at the top of its arc and falls away — spinning anywhere from 120°
+     to 2,200°. A new plant comes up elsewhere in that panel some seconds later.</p>
+</section>
+
+<!-- ══════════════════════════════════ WEATHER ══════════════════════════════════ -->
+<section id="weather">
+  <h2>Weather</h2>
+  <h3>Every panel has its own sky</h3>
+  <p>Rain, snow, wind and lightning are tracked <strong>per panel</strong>. One panel can be in a thunderstorm
+     while the panel beside it sits in calm sunlight.</p>
+
+  
+
+  <div class="hbGrid" style="margin-top:14px">
+    <div class="hbCard">
+      <h4>Rain</h4>
+      <p>Three depth layers give parallax — near drops long, fast and bright, far ones hairline and faint.
+         Every streak is a soft gradient rather than a hard line, which is what reads as motion blur. Each
+         shower rolls its own weight: <b>30%</b> barely spitting, <b>42%</b> steady, <b>21%</b> heavy,
+         <b>7%</b> a downpour — and light rain uses thinner, shorter, fainter streaks rather than simply
+         fewer of them.</p>
+    </div>
+    <div class="hbCard">
+      <h4>Water on the glass</h4>
+      <p>Beads are built from three layered gradients — a bright highlight top-left, a secondary bounce
+         bottom-right, and a cool refracted body — and they blur and brighten what is behind them. They cling
+         for a random stretch, heavier ones releasing sooner, then stretch as they accelerate, wobble off
+         course and leave a wet trail that thins and dries.</p>
+    </div>
+    <div class="hbCard">
+      <h4>Lightning</h4>
+      <p>Only <b>45%</b> of storms carry it. Three multi-stroke flicker patterns — one bright stroke with a
+         weaker return, a dim leader before the main strike, and a stuttering multi-stroke — with brightness
+         banded into four distances from a faint horizon glow to a blinding overhead hit. The light falls
+         directionally and uses screen blending, so it lights the flowers, the rain and the leaves together
+         rather than washing the screen white.</p>
+    </div>
+    <div class="hbCard">
+      <h4>Wind</h4>
+      <p>Each panel runs two or three independent gust streams plus a constant background trickle, so bursts
+         overlap and never form a repeating rhythm. The <em>panel</em> owns the wind direction, so leaves never
+         cross in opposite directions, and the wind only turns around when the air is clear. Leaves travel at a
+         capped <b>speed</b> rather than a capped time, so no leaf ever crawls regardless of panel width.</p>
+    </div>
+  </div>
+
+  <h4>The seasons</h4>
+  <p>Every panel with a garden turns through the year, and <strong>the season scales with the grow time you
+     choose</strong> — 1.6 to 2.8 times the grow range — so a plant is never cut down before it has had time
+     to bloom. Each panel rolls its own, so they never march in step.</p>
+  <table>
+    <tr><th style="width:190px">Grow range</th><th>Season length</th></tr>
+    <tr><td><b>1–10 min</b></td><td>16 to 28 minutes</td></tr>
+    <tr><td><b>1–20 min</b></td><td>32 to 56 minutes</td></tr>
+    <tr><td><b>1–30 min</b></td><td>48 to 84 minutes</td></tr>
+    <tr><td><b>1–60 min</b></td><td>96 to 168 minutes</td></tr>
+  </table>
+  <p>When winter arrives the snow begins in the same beat — the first flakes fall while the garden is still
+     going under, and the plants are clipped <strong>one at a time</strong> rather than all at once. Snow falls
+     in three depths with genuine <strong>blur-by-distance</strong>, wobbling as it descends over a strong
+     sideways drift, and <strong>it piles up</strong> along the bottom edge with an uneven drifted top. Flakes
+     landing on the glass melt into beads that run down.</p>
+  <div class="hbNote">Storms arrive and leave rather than switching. Snow drifts in over <b>nine seconds</b>;
+     when a storm passes the wind drops first, flakes already in the air finish their fall, the drift melts
+     away, and the whole layer eases out over <b>seven seconds</b>.</div>
+</section>
+
+
+<!-- ══════════════════════════════════ WEAR ══════════════════════════════════ -->
+<section id="wear">
+  <h2>Wear</h2>
+  <h3>The workspace remembers your hands</h3>
+  <p>Talk to a fighter pilot and they can tell you which switches get used without reading a label, because
+     the panel tells them. Thousands of thumb presses polish the finish, rub the legend away, thin the paint
+     and open it to bare aluminium. The switches nobody touches stay factory fresh for decades.</p>
+  <p>WebStation does the same thing. After a month of real use, your workspace shows you where your hands
+     live — and it is the most honest telemetry there is, because it never leaves your machine and it is
+     <em>for you</em>.</p>
+
+  
+  <p class="hbCaption">Accelerated heavily so you can see it in a few clicks. Press one spot repeatedly, then a
+     different spot, and watch the patches accumulate separately.</p>
+
+  <h4>It is a map, not a spot</h4>
+  <p>Each button's face is divided into a <strong>9 × 5 grid</strong>, and every press deposits wear into the
+     exact cell the pointer landed in, with roughly a quarter bleeding into the neighbouring cells. This is
+     the detail that makes it work. The first version tracked a single averaged contact point, which meant new
+     presses <em>moved</em> the smudge. Real wear never moves — it accumulates. Hit the left edge and later
+     the right edge, and you get two distinct worn patches, exactly as you would on metal.</p>
+
+  <h4>It ages in the right order</h4>
+  <table>
+    <tr><th style="width:130px">Stage</th><th>What happens</th></tr>
+    <tr><td><b>Polish</b></td><td>The finish goes glossy at the contact point. The button gets <em>shinier</em> before it gets damaged.</td></tr>
+    <tr><td><b>Legend</b></td><td>The silkscreened label begins to rub away — always the weakest layer on a real button.</td></tr>
+    <tr><td><b>Paint</b></td><td>The anodising thins and the substrate starts to show through.</td></tr>
+    <tr><td><b>Metal</b></td><td>Dull scuffed alloy, with a dark rim where the paint has lifted and a faint brushed grain across it.</td></tr>
+  </table>
+  <p>Each patch gets a steady jitter on its radius and offset derived from its own grid position, so no two
+     are the same shape and none are perfect circles — a circle reads as a graphic, an irregular blotch reads
+     as damage.</p>
+
+  <h4>The curve</h4>
+  <p>Depth is <strong>logarithmic</strong>. The first hundred presses barely register, the interesting range is
+     in the thousands, and it flattens out so nothing ever becomes unusable.</p>
+  <pre>   ~30 presses    nothing visible
+  ~150 presses    the finish starts to shine
+  ~400 presses    a clear polished patch
+~1,000 presses    the paint begins to open
+~1,800 presses    bare alloy showing
+~2,600 presses    fully worn through at that spot</pre>
+  <p>In real terms, a button you press twenty times a day starts to shine in about a week, shows obvious
+     polish in a month, and reaches bare metal at roughly four months.</p>
+
+  <div class="hbNote good"><strong>Legibility is sacred.</strong> The label is lifted into its own layer that sits
+     above every wear effect, so it can never be washed out or blended. <strong>Refinish</strong> restores the
+     whole panel to new — like sending it out for respray. Wear is off by default, and unavailable in
+     Performance mode.</div>
+</section>
+
+<!-- ══════════════════════════════════ WRITING ══════════════════════════════════ -->
+<section id="writing">
+  <h2>Writing effects</h2>
+  <h3>Letters arrive hot and burn up when deleted</h3>
+
+  
+
+  <div class="hbGrid" style="margin-top:14px">
+    <div class="hbCard">
+      <h4>The strike</h4>
+      <p>Each character lands in its normal colour first — so your eye reads the letter before the effect
+         starts — then heats through orange into blazing yellow and cools back to white over 900 to 1,400
+         milliseconds. Fast typing leaves a glowing wake behind the cursor with every letter at a different
+         temperature.</p>
+    </div>
+    <div class="hbCard">
+      <h4>Slag</h4>
+      <p>Every letter sheds two to four molten beads that run off it and fall under gravity, cooling from
+         white-yellow through gold and orange to dull red as they drift sideways and die out.</p>
+    </div>
+    <div class="hbCard">
+      <h4>Deletion</h4>
+      <p>Backspace throws the character off the screen — up, over and away — igniting orange and burning
+         through yellow to white as it tumbles, spinning anywhere from 90° to 2,000°.</p>
+    </div>
+    <div class="hbCard">
+      <h4>Sticky notes peel</h4>
+      <p>Deleting a note curls it away from its top-left corner like tape letting go, then tumbles it off the
+         board with its own direction, spin and distance.</p>
+    </div>
+  </div>
+  <p>All of it sits behind an <strong>Effects</strong> button in the word processor toolbar.</p>
+</section>
+
+<!-- ══════════════════════════════════ INTERFACE ══════════════════════════════════ -->
+<section id="interface">
+  <h2>Interface systems</h2>
+  <h3>The workspace is yours to arrange</h3>
+
+  <div class="hbGrid">
+    <div class="hbCard">
+      <h4>Layout editor</h4>
+      <p>Every one of the 26 applications can be <strong>moved to any panel</strong>, <strong>hidden
+         entirely</strong> with its own Hide App button, and have <strong>zoom switched off individually</strong>.
+         Switchers rebuild to match, empty panels close themselves, and Reset restores everything.</p>
+    </div>
+    <div class="hbCard">
+      <h4>Proximity blur</h4>
+      <p>Park any panel and it blurs, desaturates, dims and fades. With Proximity on it sharpens as your
+         pointer approaches. Reach is based on the panel's shorter side rather than its diagonal, so a
+         full-width panel does not clear from across the screen.</p>
+    </div>
+    <div class="hbCard">
+      <h4>Zoom and pan</h4>
+      <p>Every panel zooms with the wheel — but only when there is nothing genuinely scrollable under the
+         cursor, so lists and text areas still scroll normally. Past 100% the content grows inside a wrapper so
+         there is real space to move through, and you drag it with a grab cursor.</p>
+    </div>
+    <div class="hbCard">
+      <h4>The embedded page problem</h4>
+      <p>An embedded page swallows every mouse event, so the browser panel could not zoom or pan. A
+         transparent layer appears over it <strong>only while zoomed past 100%</strong>, catching the wheel as
+         zoom and drags as panning. Return to 100% and the layer removes itself entirely.</p>
+    </div>
+    <div class="hbCard">
+      <h4>Task Manager</h4>
+      <p><b>Running now</b> lists every live timer, stopwatch, Pomodoro, recording, camera, playing media,
+         tracked project, slideshow and pending deletion — each with a Stop. <b>Apps</b> lists all 26 with their
+         panel, whether they hold data and their exact byte usage. <b>System</b> reports uptime, storage engine,
+         quota, JS heap and button wear.</p>
+    </div>
+    <div class="hbCard">
+      <h4>Screensaver</h4>
+      <p>After 60 seconds of stillness the interface fades away over 2.2 seconds, leaving the glass panels and
+         the garden. Every panel gets planted, gardens run fuller, leaves thin out and only one storm may run
+         at a time. Any input brings everything back exactly as it was.</p>
+    </div>
+  </div>
+
+  <h4>Two themes</h4>
+  <p><strong>Glass</strong> gives frosted panels, drifting backdrop gradients, layered shadows, hover fades and
+     button lift with ripple. <strong>Performance</strong> strips all of it for older machines — and disables the
+     garden and the wear system entirely, so a tired computer gets a clean, fast workspace with no decorative
+     systems running at all. Both honour reduced-motion preferences.</p>
+</section>
+
+<!-- ══════════════════════════════════ PRIVACY ══════════════════════════════════ -->
+<section id="privacy">
+  <h2>Privacy</h2>
+  <h3>There is almost nothing to audit, and that is the point</h3>
+
+  <div class="hbGrid">
+    <div class="hbCard"><h4>No server</h4><p>Not a slow one, not a private one. Nothing to breach, leak, subpoena or go down.</p></div>
+    <div class="hbCard"><h4>No accounts</h4><p>No sign-up, no session, no cookie, no fingerprint, no analytics, no telemetry, no crash reporting.</p></div>
+    <div class="hbCard"><h4>No third-party code</h4><p>Not one line. <b>Zero supply-chain risk</b> — no dependency can be compromised upstream, because there are none.</p></div>
+    <div class="hbCard"><h4>No code execution</h4><p><code>eval</code> and <code>new Function</code> appear <b>zero times</b>. Nothing you paste, import or restore can become running code.</p></div>
+    <div class="hbCard"><h4>Sandboxed frames</h4><p>The browser and the code playground run with explicitly granted permissions and nothing more.</p></div>
+    <div class="hbCard"><h4>Files stay put</h4><p>The disk browser reads <b>metadata only</b>, and there is no upload path in the code because there is nowhere to upload to.</p></div>
+  </div>
+
+  <h4>The one outbound, and its switch</h4>
+  <p>The RSS ticker is the only feature that reaches the internet, and only for feeds you add yourself. If a
+     site refuses a direct request it falls back to a public proxy, and the app says so plainly on screen.
+     Feed content is parsed as inert XML and every headline is placed as <strong>text, never as markup</strong> —
+     a headline made of script tags renders as the visible characters <code>&lt;script&gt;</code>.</p>
+  <p>And there is a switch. Turning the ticker off <strong>aborts every request in flight</strong>, refuses new
+     ones at the source, and clears the cache. Verified: zero outside requests thereafter.</p>
+  <div class="hbNote good"><strong>Independently checked.</strong> Scanned with a privacy analyser, WebStation reports
+     <b>0 external connections · 0 trackers · 0 corporate owners</b> and an exposure score of <b>0/100</b> — a
+     single node with nothing attached to it.</div>
+</section>
+
+</div></div>
+</div>
         </div>
       </section>
 
@@ -1882,7 +2371,7 @@ var Layout = (function () {
               ['sticky', 'Sticky notes'], ['clip', 'Clipboard history'], ['units', 'Unit converter'],
               ['pass', 'Password generator'], ['chars', 'Character map'],
               ['vault', 'Password vault'], ['trash', 'Trash bin'],
-              ['marks', 'Bookmarks'], ['slides', 'Slides'], ['checkers', 'Checkers']];
+              ['marks', 'Bookmarks'], ['slides', 'Slides'], ['checkers', 'Checkers'], ['help', 'Handbook']];
   var HOME = {};   // where each app started out
   document.querySelectorAll('.face').forEach(function (f) {
     var p = f.closest('.panel');
@@ -1928,7 +2417,7 @@ var Layout = (function () {
                   calendar: 'Calendar', calc: 'Calc', clock: 'Clock', time: 'Time', word: 'Word', sheet: 'Sheet',
                   code: 'Code', notes: 'Notes', media: 'Media', rec: 'Recorder',
                   sticky: 'Sticky', clip: 'Clipboard', units: 'Units', pass: 'Password', chars: 'Chars',
-                  vault: 'Vault', trash: 'Trash', marks: 'Bookmarks', slides: 'Slides', checkers: 'Checkers' };
+                  vault: 'Vault', trash: 'Trash', marks: 'Bookmarks', slides: 'Slides', checkers: 'Checkers', help: 'Handbook' };
     document.querySelectorAll('.card').forEach(function (card) {
       var names = [].filter.call(card.querySelectorAll('.face'), function (f) { return !f.classList.contains('faceOff'); })
                     .map(function (f) { return f.dataset.face; });
@@ -6621,7 +7110,8 @@ var Garden = (function () {
     trash: function () { return any('#tbList li:not(.empty)'); },
     marks: function () { return any('#bmList li:not(.empty)'); },
     slides: function () { return any('#slStrip li'); },
-    checkers: function () { return !!store.get('ws.checkers', null); }
+    checkers: function () { return !!store.get('ws.checkers', null); },
+    help: function () { return false; }
   };
   function update() {
     Object.keys(CHECK).forEach(function (k) {
@@ -6656,7 +7146,8 @@ var Garden = (function () {
     { k: 'trash', name: 'Trash bin', panel: 'paint', key: 'ws.trash' },
     { k: 'marks', name: 'Bookmarks', panel: 'browser', key: 'ws.marks' },
     { k: 'slides', name: 'Slides', panel: 'word', key: 'ws.slides' },
-    { k: 'checkers', name: 'Checkers', panel: 'media', key: 'ws.checkers' }
+    { k: 'checkers', name: 'Checkers', panel: 'media', key: 'ws.checkers' },
+    { k: 'help', name: 'Handbook', panel: 'word', note: 'Built in' }
   ];
   function bytes(n) { if (n < 1024) return n + ' B'; if (n < 1048576) return (n / 1024).toFixed(1) + ' KB'; if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB'; return (n / 1073741824).toFixed(2) + ' GB'; }
   function kvSize(key) { var v = store.get(key); return v === undefined ? 0 : new Blob([JSON.stringify(v)]).size; }
@@ -8059,6 +8550,29 @@ var Wear = (function () {
   document.addEventListener('pointermove', function (e) { if (box.classList.contains('on')) place(e); }, true);
   ['pointerout', 'pointerdown', 'wheel', 'keydown'].forEach(function (ev) {
     document.addEventListener(ev, hide, true);
+  });
+})();
+
+/* ================= Handbook ================= */
+(function () {
+  var body = $('helpBody'), find = $('helpFind'), jump = $('helpJump');
+  var secs = [].slice.call(body.querySelectorAll('section'));
+  secs.forEach(function (sec) {
+    var h = sec.querySelector('h3'), o = document.createElement('option');
+    o.value = sec.id; o.textContent = h ? h.textContent.slice(0, 44) : sec.id;
+    jump.appendChild(o);
+  });
+  jump.onchange = function () {
+    var t = document.getElementById(this.value);
+    if (t) body.scrollTop = t.offsetTop - body.offsetTop - 8;
+  };
+  find.addEventListener('input', function () {
+    var q = find.value.trim().toLowerCase();
+    secs.forEach(function (sec) {
+      sec.style.display = (!q || sec.textContent.toLowerCase().indexOf(q) >= 0) ? '' : 'none';
+    });
+    if (q) { var f = secs.filter(function (x) { return x.style.display !== 'none'; })[0];
+             if (f) body.scrollTop = f.offsetTop - body.offsetTop - 8; }
   });
 })();
 
