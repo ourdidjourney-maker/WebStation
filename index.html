@@ -314,7 +314,7 @@
   .zoomCtl .zv { min-width: 44px; }
 
   /* Hover peek: the hovered app shows over the current one, non-interactive, with a blue frame */
-  .face.peek { visibility: visible; z-index: 5; pointer-events: none; background: #fff; }   /* opaque: never let the face underneath show through */
+  .face.peek { visibility: visible; z-index: 5; pointer-events: none; background: #fff; opacity: 1 !important; }   /* fully opaque from the first frame: the face underneath must never show through */
   .face.peek::before { content: ''; position: absolute; inset: 0; border: 3px solid #06f; z-index: 30; pointer-events: none; }
   .face.peek::after { content: 'Preview. Click the button to switch.'; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: #06f; color: #fff; font: 12px Arial, Helvetica, sans-serif; padding: 4px 10px; z-index: 31; pointer-events: none; white-space: nowrap; }
 
@@ -625,13 +625,13 @@
   body.glass #splitH::after { background: transparent; }
   body.glass #splitH:hover::after, body.glass #splitH:focus-visible::after { background: rgba(126, 170, 255, .85); box-shadow: 0 0 14px rgba(126, 170, 255, .7); }
   body.glass .face.peek {
-    background: rgba(17, 24, 46, .985);
+    background: #121a2e;
     -webkit-backdrop-filter: blur(26px) saturate(160%);
     backdrop-filter: blur(26px) saturate(160%);
     box-shadow: 0 0 60px rgba(0, 0, 0, .5);
     animation: gPeekIn .28s cubic-bezier(.2,.8,.3,1) both;
   }
-  @keyframes gPeekIn { from { opacity: 0; transform: scale(.995); } to { opacity: 1; transform: none; } }
+  @keyframes gPeekIn { from { transform: scale(.995); } to { transform: none; } }
   body.glass .face.peek::before { border-color: rgba(126, 170, 255, .9); border-radius: 16px; box-shadow: 0 0 40px rgba(126, 170, 255, .35) inset; }
   body.glass .face.peek::after { background: linear-gradient(90deg, rgba(126, 170, 255, .95), rgba(86, 128, 240, .95)); color: #071024; border-radius: 9px; }
 
