@@ -1056,6 +1056,49 @@
   #chkScore { font-size: 12px; opacity: .7; }
   #chkSound { min-width: 30px; }
 
+  /* ── Wear ──────────────────────────────────────────────────────────────
+     Wear accumulates in patches where the button is actually struck, it never moves.
+     The finish polishes, the legend burns off, and the paint opens to bright metal. */
+  body.wear .bar button, body.wear #stBtns button, body.wear .seg button { position: relative; overflow: hidden; }
+  .wearLayer {
+    position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 3;
+    mix-blend-mode: screen; opacity: .95;
+  }
+  .wearInk { position: relative; z-index: 6; }               /* the legend is never washed out */
+  body.wear button.wornDeep { color: #10151f !important; text-shadow: 0 1px 0 rgba(255,255,255,.45); }
+  .wearLayer.deep { mix-blend-mode: normal; opacity: .8; }
+  /* once the paint is gone the legend is dark ink on bare metal, so it stays readable */
+
+  .wearLayer.deep::after {                                    /* a faint brushed grain across the bare spots */
+    content: ''; position: absolute; inset: 0; border-radius: inherit; opacity: .5;
+    background: repeating-linear-gradient(92deg, rgba(255,255,255,.055) 0 1px, rgba(0,0,0,.045) 1px 2px);
+    mix-blend-mode: overlay;
+  }
+  #wearRate.on, #wearBtn.on { background: linear-gradient(180deg, #d8c9a8, #b8a179); color: #2a2114; border-color: #e2d6bb; }
+
+  /* Tooltips, in the workspace's own clothes rather than the browser's */
+  #tipBox { position: fixed; z-index: 1400; max-width: 320px; padding: 7px 10px; pointer-events: none;
+            font: 12px/1.45 Arial, Helvetica, sans-serif; background: #fff; color: #000;
+            border: 1px solid #777; box-shadow: 0 8px 24px rgba(0,0,0,.28);
+            opacity: 0; transform: translateY(4px); transition: opacity .16s ease, transform .16s ease; }
+  #tipBox.on { opacity: 1; transform: none; }
+  body.glass #tipBox { background: rgba(18,25,48,.94); color: #eef2ff; border: 1px solid rgba(255,255,255,.2);
+                       border-radius: 11px; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+                       box-shadow: 0 14px 40px rgba(0,0,0,.5); }
+
+  /* Scrollbars everywhere, not just in glass */
+  * { scrollbar-width: thin; scrollbar-color: rgba(130,140,160,.55) transparent; }
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-track { background: rgba(0,0,0,.06); }
+  ::-webkit-scrollbar-thumb { background: rgba(120,130,150,.5); border-radius: 7px;
+                              border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(120,130,150,.8); background-clip: padding-box; }
+  ::-webkit-scrollbar-corner { background: transparent; }
+  body.glass * { scrollbar-color: rgba(126,170,255,.5) transparent; }
+  body.glass ::-webkit-scrollbar-thumb { background: rgba(126,170,255,.38); border-radius: 7px;
+                                         border: 2px solid transparent; background-clip: padding-box; }
+  body.glass ::-webkit-scrollbar-thumb:hover { background: rgba(126,170,255,.68); background-clip: padding-box; }
+
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
@@ -1640,7 +1683,7 @@
       <section class="panel" id="status" aria-label="Status">
         <span id="stClock"><span id="sysTime">--</span> / <span id="footprint">--</span></span>
         <span id="stDock" aria-label="Closed panels"></span>
-        <span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Force winter on every panel, for testing" hidden style="display:none">Winter</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
+        <span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden>×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Force winter on every panel, for testing" hidden style="display:none">Winter</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
     </div>
@@ -1679,6 +1722,7 @@
   </div>
 </div>
 <div id="saverHint">move to wake</div>
+<div id="tipBox" role="tooltip"></div>
 <div id="tbPeek"><div class="tbPeekHead"></div><div class="tbPeekBody"></div></div>
 <div id="tbDue" role="status">
   <h4>About to be deleted</h4>
@@ -2006,6 +2050,7 @@ var Flip = (function () {
       nxt.classList.add('front');
       nxt.focus({ preventScroll: true });
       nxt.dispatchEvent(new CustomEvent('faceshown'));
+      if (typeof Wear !== 'undefined' && Wear.isOn && Wear.isOn()) Wear.refresh();
     }
     if (reduce.matches) { swap(); if (done) done(); return; }
 
@@ -4059,6 +4104,17 @@ var Sys = (function () {
       }).join('\n') || '(bin is empty)'; } },
     { key: 'ws.marks', name: 'Bookmarks', app: 'marks', count: function (v) { return (v || []).length; },
       text: function (v) { return (v || []).map(function (m) { return (m.t || '(unnamed)') + '\n  ' + m.u; }).join('\n') || '(no bookmarks)'; } },
+    { key: 'ws.wear', name: 'Button wear', app: 'web',
+      count: function (v) { return Object.keys(v || {}).length; },
+      text: function (v) {
+        var ks = Object.keys(v || {});
+        if (!ks.length) return '(nothing worn yet)';
+        return ks.map(function (k) {
+          var n = Object.keys(v[k]).reduce(function (a, c) { return a + v[k][c]; }, 0);
+          return { k: k.replace('flip:', ''), n: Math.round(n) };
+        }).sort(function (a, b) { return b.n - a.n; })
+          .map(function (r) { return r.k + '  —  ' + r.n + ' presses'; }).join('\n');
+      } },
     { key: 'ws.checkers', name: 'Checkers game', app: 'checkers',
       text: function (v) {
         if (!v || !v.b) return '(no game in progress)';
@@ -6671,7 +6727,18 @@ var Garden = (function () {
       ['Storage engine', { indexeddb: 'IndexedDB', local: 'localStorage (limited)', memory: 'None (data is not saved)' }[store.mode()]],
       ['Site storage used', estimate ? bytes(estimate.usage || 0) + ' of ' + bytes(estimate.quota || 0) + ' available' : 'Checking…'],
       ['JavaScript memory', mem],
-      ['News feeds on', String((store.get('ws.feeds', []) || []).filter(function (f) { return f.on; }).length)]
+      ['News feeds on', String((store.get('ws.feeds', []) || []).filter(function (f) { return f.on; }).length)],
+      ['Button wear', (function () {
+        var w = store.get('ws.wear', {}) || {}, ks = Object.keys(w);
+        if (!ks.length) return 'Nothing worn yet';
+        var total = 0, top = '', best = 0;
+        ks.forEach(function (k) {
+          var n = Object.keys(w[k]).reduce(function (a, c) { return a + w[k][c]; }, 0);
+          total += n;
+          if (n > best) { best = n; top = k.replace('flip:', ''); }
+        });
+        return ks.length + ' worn · most used: ' + top;
+      })()]
     ];
     sysEl.innerHTML = '';
     rows.forEach(function (x) {
@@ -7772,6 +7839,227 @@ var chkSoundOn = true, _chkAudio = null;
   chkSetStatus(chkOver ? 'Game over — start a new one' : 'Your move');
   fit();
   chkDraw();
+})();
+
+/* ================= Wear =================
+   Aviation panels tell you which switches a pilot actually uses. Wear here is a MAP, not a
+   single spot: every press deposits wear into the cell it landed in, so patches build up,
+   overlap and spread exactly the way a real thumb wears a real button. Nothing ever moves. */
+var Wear = (function () {
+  var KEY = 'ws.wear', data = store.get(KEY, {}), on = false, rate = 1, saveT = null;
+  var RATES = [1, 25, 200, 2000];
+  var NEVER = { wearBtn: 1, wearRate: 1, wearNew: 1 };   // the wear controls never wear
+  var GX = 9, GY = 5;            // the grid a button's face is divided into
+  var FULL = 2600;               // presses into one cell for that cell to go fully bare
+
+  function save() { clearTimeout(saveT); saveT = setTimeout(function () { store.set(KEY, data); }, 800); }
+  function key(b) {
+    // Every face carries its own copy of the switcher, so a switcher button has to be keyed
+    // by the app it selects — otherwise the wear vanishes the moment you flip.
+    if (b.dataset && b.dataset.flip) return 'flip:' + b.dataset.flip;
+    if (b.id) return b.id;
+    var face = b.closest('.face'), panel = b.closest('.panel');
+    return (panel ? panel.id : '_') + '/' + (face ? face.dataset.face : '_') + '/' + (b.textContent || '').trim().slice(0, 18);
+  }
+  function depth(n) { return Math.min(1, Math.log10(1 + n * 9 / FULL)); }
+
+  // Put the label in its own element so it can sit above the worn surface.
+  function inkFor(b) {
+    var ink = b.querySelector(':scope > .wearInk');
+    if (ink) return ink;
+    var moved = false;
+    ink = document.createElement('span');
+    ink.className = 'wearInk';
+    [].slice.call(b.childNodes).forEach(function (n) {
+      if (n.nodeType === 3 || (n.nodeType === 1 && !n.classList.contains('wearLayer'))) { ink.appendChild(n); moved = true; }
+    });
+    if (!moved) return null;
+    b.insertBefore(ink, b.firstChild);
+    return ink;
+  }
+
+  function layerFor(b) {
+    var l = b.querySelector(':scope > .wearLayer');
+    if (!l) {
+      l = document.createElement('i');
+      l.className = 'wearLayer';
+      b.appendChild(l);
+    }
+    return l;
+  }
+
+  function paint(b, cells) {
+    var keys = Object.keys(cells);
+    if (!keys.length) return;
+    // strongest patches first, and only a handful — that is all the eye reads anyway
+    keys.sort(function (a, c) { return cells[c] - cells[a]; });
+    keys = keys.slice(0, 7);
+    var shine = [], metal = [], deepest = 0;
+    keys.forEach(function (k) {
+      var i = +k, cx = (i % GX + 0.5) / GX * 100, cy = (Math.floor(i / GX) + 0.5) / GY * 100;
+      var d = depth(cells[k]);
+      if (d > deepest) deepest = d;
+      // the finish polishes first: a soft, wide sheen
+      var j = (i * 2654435761 % 1000) / 1000;                  // steady jitter, so each cell is its own shape
+      var rx = (22 + d * 26 + j * 8).toFixed(1), ry = (34 + d * 30 + (1 - j) * 10).toFixed(1);
+      shine.push('radial-gradient(ellipse ' + rx + '% ' + ry + '% at ' + cx.toFixed(1) + '% ' + cy.toFixed(1) + '%, ' +
+        'rgba(255,255,255,' + (d * 0.2).toFixed(3) + ') 0%, rgba(255,255,255,' + (d * 0.08).toFixed(3) + ') 48%, rgba(255,255,255,0) 82%)');
+      // then the paint opens up and bright aluminium shows through
+      if (d > 0.42) {
+        var m = Math.min(1, (d - 0.42) / 0.58);
+        var mr = (16 + m * 18 + j * 6).toFixed(1), mry = (26 + m * 24 + (1 - j) * 8).toFixed(1);
+        var ox = (cx + (j - 0.5) * 6).toFixed(1), oy = (cy + (0.5 - j) * 8).toFixed(1);
+        metal.push('radial-gradient(ellipse ' + mr + '% ' + mry + '% at ' + ox + '% ' + oy + '%, ' +
+          'rgba(196,201,210,' + (m * 0.72).toFixed(3) + ') 0%, ' +        // dull scuffed alloy, not a hot spot
+          'rgba(178,184,195,' + (m * 0.66).toFixed(3) + ') 34%, ' +
+          'rgba(152,159,172,' + (m * 0.5).toFixed(3) + ') 58%, ' +
+          'rgba(92,98,112,' + (m * 0.3).toFixed(3) + ') 74%, ' +          // the paint lifts at the rim
+          'rgba(92,98,112,0) 90%)');
+      }
+    });
+    inkFor(b);
+    b.classList.toggle('wornDeep', deepest > 0.62);
+    var l = layerFor(b);
+    l.style.backgroundImage = shine.join(', ');
+    l.classList.remove('deep');
+    if (metal.length) {
+      // the bare patches sit in their own layer so they cover the legend instead of glowing through
+      var m2 = b.querySelector(':scope > .wearLayer.deep') ;
+      if (!m2) { m2 = document.createElement('i'); m2.className = 'wearLayer deep'; b.appendChild(m2); }
+      m2.style.backgroundImage = metal.join(', ');
+    } else {
+      var old = b.querySelector(':scope > .wearLayer.deep');
+      if (old) old.remove();
+    }
+  }
+
+  function strip(b) {
+    b.classList.remove('wornDeep');
+    b.querySelectorAll(':scope > .wearLayer').forEach(function (l) { l.remove(); });
+    var ink = b.querySelector(':scope > .wearInk');
+    if (ink) { while (ink.firstChild) b.insertBefore(ink.firstChild, ink); ink.remove(); }
+  }
+  function applyAll() {
+    document.querySelectorAll('.bar button, #stBtns button, .seg button').forEach(function (b) {
+      if (NEVER[b.id]) { strip(b); return; }
+      var w = data[key(b)];
+      if (on && w) paint(b, w); else strip(b);
+    });
+  }
+
+  document.addEventListener('pointerdown', function (e) {
+    var b = e.target.closest ? e.target.closest('.bar button, #stBtns button, .seg button') : null;
+    if (!b || NEVER[b.id]) return;
+    var k = key(b), r = b.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    var gx = Math.max(0, Math.min(GX - 1, Math.floor((e.clientX - r.left) / r.width * GX)));
+    var gy = Math.max(0, Math.min(GY - 1, Math.floor((e.clientY - r.top) / r.height * GY)));
+    var cells = data[k] || (data[k] = {});
+    var i = gy * GX + gx;
+    cells[i] = (cells[i] || 0) + rate;                       // the cell struck takes the wear
+    [i - 1, i + 1, i - GX, i + GX].forEach(function (j) {     // and a little bleeds into its neighbours
+      if (j >= 0 && j < GX * GY) cells[j] = (cells[j] || 0) + rate * 0.28;
+    });
+    save();
+    if (on) paint(b, cells);
+  }, true);
+
+  return {
+    set: function (v) { on = !!v; document.body.classList.toggle('wear', on); applyAll(); },
+    isOn: function () { return on; },
+    rate: function (v) { if (v !== undefined) rate = v; return rate; },
+    rates: RATES,
+    refinish: function () { data = {}; store.set(KEY, data); applyAll(); },
+    refresh: applyAll
+  };
+})();
+
+// ── Wear controls ──────────────────────────────────────────────────
+(function () {
+  var wb = $('wearBtn'), wr = $('wearRate'), wn = $('wearNew');
+  var ui = store.get('ws.ui', {}), wearOn = !!ui.wear, ri = 0;
+  function paintBtns() {
+    wb.classList.toggle('on', wearOn);
+    wb.setAttribute('aria-pressed', String(wearOn));
+    wr.hidden = !wearOn;
+    wn.hidden = !wearOn;
+    wr.textContent = '×' + Wear.rates[ri];
+    wr.classList.toggle('on', ri > 0);
+  }
+  function setWear(v) {
+    wearOn = !!v;
+    Wear.set(wearOn);
+    var u = store.get('ws.ui', {});
+    u.wear = wearOn;
+    store.set('ws.ui', u);
+    paintBtns();
+  }
+  function glassOn() { return document.body.classList.contains('glass'); }
+  wb.onclick = function () {
+    if (!glassOn()) { Sys.toast('Wear needs the glass theme. Switch to Glass first.', { ms: 4000 }); return; }
+    setWear(!wearOn);
+    Sys.toast(wearOn ? 'Wear on. Buttons will age where you press them.' : 'Wear off.', { ms: 3000 });
+  };
+  // Performance mode is for getting work done on a tired machine: the finish stays factory new.
+  setInterval(function () {
+    if (document.hidden) return;
+    var g = glassOn();
+    wb.disabled = !g;
+    wb.dataset.tip = g ? 'Buttons wear where you actually press them' : 'Wear needs the glass theme';
+    if (!g && wearOn) setWear(false);
+  }, 700);
+  wr.onclick = function () {
+    ri = (ri + 1) % Wear.rates.length;
+    Wear.rate(Wear.rates[ri]);
+    paintBtns();
+    Sys.toast(ri === 0 ? 'Normal wear rate.' : 'Testing at ×' + Wear.rates[ri] + ' — one press counts as ' + Wear.rates[ri] + '.', { ms: 3000 });
+  };
+  wn.onclick = function () {
+    Sys.toast('Refinish every button? The record of what you use goes with it.', { sticky: true, actions: [
+      { label: 'Refinish', fn: function () { Wear.refinish(); Sys.toast('Panel refinished.', { ms: 2500 }); } },
+      { label: 'Cancel' }
+    ] });
+  };
+  Wear.set(wearOn);
+  paintBtns();
+  // switchers are rebuilt when the layout changes, so the wear is repainted with them
+  document.addEventListener('faceshown', function () { if (wearOn) Wear.refresh(); }, true);
+})();
+
+/* ================= Tooltips =================
+   The browser's own tooltip is slow, ugly and cannot be themed. Titles are lifted off the
+   elements and shown in the workspace's own panel instead. */
+(function () {
+  var box = $('tipBox'), showT = null, at = null;
+  function hide() { clearTimeout(showT); box.classList.remove('on'); at = null; }
+  function place(e) {
+    var w = box.offsetWidth, h = box.offsetHeight;
+    var x = Math.min(innerWidth - w - 10, e.clientX + 14);
+    var y = e.clientY + 22 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 22;
+    box.style.left = Math.max(8, x) + 'px';
+    box.style.top = Math.max(8, y) + 'px';
+  }
+  document.addEventListener('pointerover', function (e) {
+    var el = e.target.closest ? e.target.closest('[title], [data-tip]') : null;
+    if (!el) return;
+    if (el.hasAttribute('title')) {          // take it off the element so the browser stops showing it
+      var t = el.getAttribute('title');
+      if (t) { el.dataset.tip = t; el.removeAttribute('title'); }
+    }
+    var text = el.dataset.tip;
+    if (!text || at === el) return;
+    at = el;
+    clearTimeout(showT);
+    showT = setTimeout(function () {
+      box.textContent = text;
+      box.classList.add('on');
+      place(e);
+    }, 320);
+  }, true);
+  document.addEventListener('pointermove', function (e) { if (box.classList.contains('on')) place(e); }, true);
+  ['pointerout', 'pointerdown', 'wheel', 'keydown'].forEach(function (ev) {
+    document.addEventListener(ev, hide, true);
+  });
 })();
 
 /* ================= Status bar ================= */
