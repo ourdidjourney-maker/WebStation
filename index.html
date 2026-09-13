@@ -347,11 +347,11 @@
   body.glass #lyTable select option { background: #141b33; }
   #lyTable td.lyAct { text-align: right; }
   .lyZoom { margin-right: 4px; }
-  .lyHide { font: 11px Arial, Helvetica, sans-serif; height: 22px; padding: 0 10px; border: 1px solid #777;
-            background: #fff; color: #000; cursor: pointer; }
-  .lyHide.on { background: #000; color: #fff; border-color: #000; }
-  body.glass .lyHide { background: rgba(255,255,255,.1); color: #eef2ff; border-color: rgba(255,255,255,.2); border-radius: 8px; }
-  body.glass .lyHide.on { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
+  .lyBtn { font: 11px Arial, Helvetica, sans-serif; height: 22px; padding: 0 10px; border: 1px solid #777;
+           background: #fff; color: #000; cursor: pointer; }
+  .lyBtn.on { background: #000; color: #fff; border-color: #000; }
+  body.glass .lyBtn { background: rgba(255,255,255,.1); color: #eef2ff; border-color: rgba(255,255,255,.2); border-radius: 8px; }
+  body.glass .lyBtn.on { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
   #lyTable tr.lyGone td:first-child { opacity: .45; text-decoration: line-through; }
   .lyBtns { display: flex; gap: 6px; margin-top: 10px; }
   .lyBtns button { font: 12px Arial, Helvetica, sans-serif; height: 26px; padding: 0 12px; border: 1px solid #777; background: #fff; color: #000; cursor: pointer; }
@@ -1880,7 +1880,7 @@ var Layout = (function () {
 
       // One button per app: hide it, or bring it back.
       var hide = document.createElement('button');
-      hide.className = 'lyHide' + (hidden ? ' on' : '');
+      hide.className = 'lyBtn lyHide' + (hidden ? ' on' : '');
       hide.dataset.app = a[0];
       hide.dataset.hidden = hidden ? '1' : '0';
       hide.textContent = hidden ? 'Show App' : 'Hide App';
@@ -1896,7 +1896,7 @@ var Layout = (function () {
       tr.children[1].appendChild(sel);
       var zoomOff = !!noZoom[a[0]];
       var zb = document.createElement('button');
-      zb.className = 'lyHide lyZoom' + (zoomOff ? '' : ' on');
+      zb.className = 'lyBtn lyZoom' + (zoomOff ? '' : ' on');
       zb.dataset.app = a[0];
       zb.dataset.off = zoomOff ? '1' : '0';
       zb.textContent = zoomOff ? 'Zoom off' : 'Zoom on';
