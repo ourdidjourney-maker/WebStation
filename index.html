@@ -1633,7 +1633,7 @@
       <section class="panel" id="status" aria-label="Status">
         <span id="stClock"><span id="sysTime">--</span> / <span id="footprint">--</span></span>
         <span id="stDock" aria-label="Closed panels"></span>
-        <span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Force winter on every panel, for testing" hidden style="display:none">Winter</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
+        <span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Force winter on every panel, for testing" hidden style="display:none">Winter</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
     </div>
@@ -4501,6 +4501,9 @@ var Sys = (function () {
   var lastSec = -1;
   setInterval(function () {
     var now = new Date();
+    var busy = tm.run || sw.run || pm.run;
+    if (document.hidden && !busy) return;                    // asleep, and nothing to keep
+    if (!busy && now.getSeconds() === lastSec) return;        // idle: once a second is plenty
     if (tm.run && Date.now() >= tm.end) { tm.run = false; tm.rem = 0; $('ckTStart').textContent = 'Start'; Sys.flash('Timer finished'); }
     tDisp();
     if (sw.run) $('ckSDisp').textContent = swFmt(swNow());
@@ -5002,7 +5005,29 @@ var Sys = (function () {
     clearTimeout(rt);
     rt = setTimeout(function () { rows.querySelectorAll('.tkRow').forEach(function (r) { if (cache[r.dataset.id]) fill(r, cache[r.dataset.id]); }); }, 300);
   });
-  setInterval(renderRows, 10 * 60 * 1000);
+  var feedTimer = setInterval(renderRows, 10 * 60 * 1000);
+
+  // The ticker can be switched off entirely: no fetches, no scrolling, no row rebuilding.
+  var feedBtn = $('feedBtn'), tickerOn = store.get('ws.ui', {}).ticker !== false;
+  function setTicker(v) {
+    tickerOn = !!v;
+    feedBtn.classList.toggle('on', tickerOn);
+    feedBtn.setAttribute('aria-pressed', String(tickerOn));
+    var bar = $('ticker');
+    if (bar) bar.style.display = tickerOn ? '' : 'none';
+    clearInterval(feedTimer);
+    feedTimer = null;
+    if (tickerOn) { feedTimer = setInterval(renderRows, 10 * 60 * 1000); renderRows(); }
+    else { rows.innerHTML = ''; }   // nothing left running or scrolling
+    var ui = store.get('ws.ui', {});
+    ui.ticker = tickerOn;
+    store.set('ws.ui', ui);
+  }
+  feedBtn.onclick = function () {
+    setTicker(!tickerOn);
+    Sys.toast(tickerOn ? 'News ticker on.' : 'News ticker off — nothing is being fetched.', { ms: 2600 });
+  };
+  setTicker(tickerOn);
   save();
   renderRows();
 })();
@@ -5215,7 +5240,7 @@ var Blur = (function () {
   setProx(prox);
   Panels.ids.forEach(apply);
   place();
-  setInterval(place, 800);   // follows panel resizes, flips and closes
+  setInterval(function () { if (!document.hidden) place(); }, 800);   // follows panel resizes, flips and closes
   return { toggle: toggle, isBlurred: function (id) { return !!blurred[id]; } };
 })();
 
@@ -6202,6 +6227,7 @@ var Garden = (function () {
   };
   // If the theme goes plain, the garden closes for the night.
   setInterval(function () {
+    if (document.hidden) return;
     var g = glassOn();
     btn.disabled = !g;
     btn.title = g ? 'Katy Mae — grow a garden in the workspace' : 'Katy Mae mode needs the glass theme';
@@ -6312,8 +6338,9 @@ var Garden = (function () {
 
   // It only covers the page while the panel is zoomed in, so at 100% the page is fully usable.
   setInterval(function () {
+    if (document.hidden) return;
     grab.classList.toggle('on', body.classList.contains('panZoom'));
-  }, 300);
+  }, 600);
 })();
 
 /* ================= Drag to pan a zoomed panel ================= */
@@ -6473,7 +6500,7 @@ var Garden = (function () {
   }
   Sys.hasData = function (k) { try { return !!(CHECK[k] && CHECK[k]()); } catch (e) { return false; } };
   update();
-  setInterval(update, 1500);
+  setInterval(function () { if (!document.hidden) update(); }, 1500);   // idle in a background tab
 })();
 
 /* ================= Task Manager ================= */
@@ -7676,7 +7703,7 @@ var chkSoundOn = true, _chkAudio = null;
   var sysTime = $('sysTime'), footprint = $('footprint');
   function tick() { sysTime.textContent = new Date().toLocaleTimeString(); }
   tick();
-  setInterval(tick, 1000);
+  setInterval(function () { if (!document.hidden) tick(); }, 1000);
 
   // Size of this HTML file. Exact via navigation timing when served over http(s);
   // on file:// that value is 0, so fall back to the serialized DOM, marked "~".
