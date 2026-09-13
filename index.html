@@ -97,6 +97,11 @@
   /* Image gallery */
   #gStage { background: #222; overflow: auto; }
   #gImg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: none; }
+  /* Presenting: the strip and the surrounding chrome get out of the way. */
+  #galFace.presenting #gStrip { display: none; }
+  #galFace.presenting .bar { opacity: 0; pointer-events: none; transition: opacity .6s ease; }
+  #galFace.presenting .bar:hover { opacity: 1; pointer-events: auto; }
+  #galFace .bar { transition: opacity .4s ease; }
   #gHint { color: #aaa; }
   #galFace.drag #gStage { outline: 3px dashed #fff; outline-offset: -6px; }
   #gCount { min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; }
@@ -1242,7 +1247,9 @@
               <span id="gCount">0 / 0</span>
               <button id="gNext" aria-label="Next image">▶</button>
               <button id="gShow">Slideshow</button>
+              <select id="gEvery" title="How long each picture stays up" aria-label="Time per picture"><option value="2000">2s</option><option value="4000" selected>4s</option><option value="6000">6s</option><option value="10000">10s</option><option value="20000">20s</option><option value="60000">1 min</option></select>
               <button id="gRemove">Remove</button>
+              <button id="gWipe">Delete all</button>
               <button id="gSend">Send to Paint</button>
               <input type="file" id="gFile" accept="image/*" multiple hidden>
             </div>
@@ -3072,6 +3079,7 @@ var Sys = (function () {
 /* ================= Image gallery (Paint panel face) ================= */
 (function () {
   var face = $('galFace'), img = $('gImg'), hint = $('gHint'), strip = $('gStrip'), count = $('gCount'), showBtn = $('gShow');
+
   var items = [], idx = -1, timer = null;
 
   function show(i) {
@@ -3088,7 +3096,7 @@ var Sys = (function () {
     [].forEach.call(strip.children, function (t, j) { t.classList.toggle('on', j === idx); });
     var t = strip.children[idx];   // scroll the strip itself; scrollIntoView could shift the whole app
     if (t) strip.scrollLeft = t.offsetLeft - (strip.clientWidth - t.offsetWidth) / 2;
-    ['gPrev', 'gNext', 'gShow', 'gRemove', 'gSend'].forEach(function (id) { $(id).disabled = !items.length; });
+    ['gPrev', 'gNext', 'gShow', 'gRemove', 'gSend', 'gWipe'].forEach(function (id) { $(id).disabled = !items.length; });
   }
   function addItem(rec) {
     // data: URLs, not blob: URLs, so images also display where a page's security policy blocks blob: (e.g. embedded previews).
@@ -3114,7 +3122,11 @@ var Sys = (function () {
     [].forEach.call(files, function (f) { if (/^image\//.test(f.type)) addBlob(f, f.name); });
     show(items.length > first ? first : idx);   // jump to the first newly added image
   }
-  function stopShow() { clearInterval(timer); timer = null; showBtn.classList.remove('on'); }
+  function stopShow() {
+    clearInterval(timer); timer = null;
+    showBtn.classList.remove('on');
+    face.classList.remove('presenting');
+  }
 
   galleryAPI.addBlob = function (blob, name) { show(addBlob(blob, name)); };
   // Panel zoom: below 100% the image shrinks centred; above 100% it enlarges and the stage scrolls.
@@ -3132,11 +3144,42 @@ var Sys = (function () {
   $('gFile').onchange = function () { add(this.files); this.value = ''; };
   $('gPrev').onclick = function () { show(idx - 1); };
   $('gNext').onclick = function () { show(idx + 1); };
+  function every() { return parseInt($('gEvery').value, 10) || 4000; }
+  $('gEvery').onchange = function () {          // change the pace without stopping
+    if (!timer) return;
+    clearInterval(timer);
+    timer = setInterval(function () { show(idx + 1); }, every());
+  };
   showBtn.onclick = function () {
     if (timer) { stopShow(); return; }
     if (!items.length) return;
     showBtn.classList.add('on');
-    timer = setInterval(function () { show(idx + 1); }, 3000);
+    face.classList.add('presenting');            // the strip and toolbar step aside
+    timer = setInterval(function () { show(idx + 1); }, every());
+    Sys.toast('Slideshow. Press Escape, or click the picture, to stop.', { ms: 3500 });
+  };
+  // Anything obvious brings the controls back.
+  img.addEventListener('click', function () { if (timer) stopShow(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && timer) stopShow();
+  });
+  $('gWipe').onclick = function () {
+    if (!items.length) return;
+    var n = items.length;
+    Sys.toast('Delete all ' + n + ' image' + (n === 1 ? '' : 's') + '? They go to the bin first.',
+      { sticky: true, actions: [
+        { label: 'Delete all', fn: function () {
+            var gone = items.slice();
+            gone.forEach(function (it) { Trash.add('Image', it.name || 'image', { id: it.id, name: it.name }); });
+            gone.forEach(function (it) { store.deleteFile(it.id); });
+            items.length = 0;
+            strip.innerHTML = '';
+            stopShow();
+            show(-1);
+            Sys.toast(n + ' image' + (n === 1 ? '' : 's') + ' removed.', { ms: 3000 });
+          } },
+        { label: 'Cancel' }
+      ] });
   };
   $('gRemove').onclick = function () {
     if (idx < 0) return;
@@ -4016,6 +4059,14 @@ var Sys = (function () {
       }).join('\n') || '(bin is empty)'; } },
     { key: 'ws.marks', name: 'Bookmarks', app: 'marks', count: function (v) { return (v || []).length; },
       text: function (v) { return (v || []).map(function (m) { return (m.t || '(unnamed)') + '\n  ' + m.u; }).join('\n') || '(no bookmarks)'; } },
+    { key: 'ws.checkers', name: 'Checkers game', app: 'checkers',
+      text: function (v) {
+        if (!v || !v.b) return '(no game in progress)';
+        var red = 0, black = 0;
+        v.b.forEach(function (p) { if (p === 1 || p === 3) red++; else if (p === 2 || p === 4) black++; });
+        return 'Game in progress\n  You ' + red + ' · Engine ' + black +
+               '\n  ' + (v.over ? 'finished' : (v.red === false ? 'engine to move' : 'your move'));
+      } },
     { key: 'ws.slides', name: 'Slides', app: 'slides', count: function (v) { return (v || []).length; },
       text: function (v) { return (v || []).map(function (sl, i) { return 'Slide ' + (i + 1) + ': ' + (sl.t || '(untitled)') + (sl.x ? '\n  ' + sl.x : ''); }).join('\n') || '(no slides)'; } },
     { key: 'ws.ui', name: 'Workspace settings', app: 'web', text: function (v) {
@@ -4871,15 +4922,32 @@ var Sys = (function () {
 
   function save() { store.set(KEY, feeds); }
   function host(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
+  // Every request in flight is tracked, so the ticker can be severed outright rather than
+  // merely told to stop asking. Switching it off aborts what is open and refuses what is new.
+  var live = [], severed = false;
+  function severAll() {
+    severed = true;
+    live.forEach(function (c) { try { c.abort(); } catch (e) {} });
+    live = [];
+  }
+  function reconnect() { severed = false; }
+
   function fetchFeed(url) {
     var i = 0;
     function attempt() {
+      if (severed) return Promise.reject(new Error('ticker is off'));
       if (i >= PROXIES.length) return Promise.reject(new Error('unreachable'));
       var ctl = new AbortController(), timer = setTimeout(function () { ctl.abort(); }, 12000);
+      live.push(ctl);
+      function done() {
+        clearTimeout(timer);
+        var k = live.indexOf(ctl);
+        if (k >= 0) live.splice(k, 1);
+      }
       return fetch(PROXIES[i++](url), { signal: ctl.signal })
-        .then(function (r) { clearTimeout(timer); if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(function (r) { done(); if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
         .then(function (t) { if (!/<(rss|feed|rdf:RDF)[\s>]/i.test(t)) throw new Error('not a feed'); return t; })
-        .catch(function () { clearTimeout(timer); return attempt(); });
+        .catch(function (e) { done(); if (severed) throw e; return attempt(); });
     }
     return attempt();
   }
@@ -4995,7 +5063,8 @@ var Sys = (function () {
   btn.onclick = function () { openPop(pop.hidden); };
   $('tkClose').onclick = function () { openPop(false); btn.focus(); };
   $('tkAdd').onclick = add;
-  $('tkRefresh').onclick = function () { renderRows(); Sys.toast('Refreshing feeds…', { ms: 1500 }); };
+  $('tkRefresh').onclick = function () {
+    if (severed) { Sys.toast('The news ticker is off.', { ms: 2200 }); return; } renderRows(); Sys.toast('Refreshing feeds…', { ms: 1500 }); };
   urlIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') add(); });
   pop.addEventListener('keydown', function (e) { if (e.key === 'Escape') { openPop(false); btn.focus(); } });
 
@@ -5017,8 +5086,15 @@ var Sys = (function () {
     if (bar) bar.style.display = tickerOn ? '' : 'none';
     clearInterval(feedTimer);
     feedTimer = null;
-    if (tickerOn) { feedTimer = setInterval(renderRows, 10 * 60 * 1000); renderRows(); }
-    else { rows.innerHTML = ''; }   // nothing left running or scrolling
+    if (tickerOn) {
+      reconnect();
+      feedTimer = setInterval(renderRows, 10 * 60 * 1000);
+      renderRows();
+    } else {
+      severAll();                  // anything open right now is cut off mid-flight
+      cache = {};                  // and nothing fetched is kept in memory
+      rows.innerHTML = '';
+    }
     var ui = store.get('ws.ui', {});
     ui.ticker = tickerOn;
     store.set('ws.ui', ui);
