@@ -944,6 +944,42 @@
   #vShow.on { background: #000; color: #fff; border-color: #000; }
   body.glass #vShow.on { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
 
+  #tbList li.pending { opacity: .72; }
+  #tbList .tbSafe.on { background: #b4571c; color: #fff; border-color: #b4571c; }
+  body.glass #tbList .tbSafe.on { background: linear-gradient(180deg, #ffb266, #e8802a); color: #2a1405; border-color: #ffc48a; }
+  #tbList .tbTick { font-size: 11px; white-space: nowrap; color: #c2551d; font-weight: bold; }
+  body.glass #tbList .tbTick { color: #ffb266; }
+
+  /* The quiet notice when something is about to be deleted for good */
+  #tbDue { position: fixed; right: 18px; bottom: 54px; z-index: 1300; width: min(380px, calc(100vw - 36px));
+           padding: 14px 16px; background: #fff; color: #000; border: 1px solid #777;
+           box-shadow: 0 14px 40px rgba(0,0,0,.3); opacity: 0; transform: translateY(14px);
+           transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.3,1); pointer-events: none; }
+  #tbDue.on { opacity: 1; transform: none; pointer-events: auto; }
+  #tbDue h4 { font-size: 12px; letter-spacing: .05em; text-transform: uppercase; opacity: .6; margin-bottom: 6px; }
+  #tbDue .tbDueWhat { font-size: 13px; line-height: 1.5; margin-bottom: 12px; overflow-wrap: anywhere; }
+  #tbDue .tbDueBtns { display: flex; gap: 8px; }
+  #tbDue button { font: 12px Arial, Helvetica, sans-serif; height: 28px; padding: 0 14px;
+                  border: 1px solid #777; background: #fff; color: #000; cursor: pointer; }
+  body.glass #tbDue { background: rgba(18,25,48,.92); color: #eef2ff; border: 1px solid rgba(255,255,255,.2);
+                      border-radius: 16px; -webkit-backdrop-filter: blur(26px); backdrop-filter: blur(26px);
+                      box-shadow: 0 20px 60px rgba(0,0,0,.55); }
+  body.glass #tbDue button { background: rgba(255,255,255,.1); color: #eef2ff;
+                             border-color: rgba(255,255,255,.22); border-radius: 9px; }
+  body.glass #tbDue button:hover { background: rgba(255,255,255,.2); }
+  #tbList li.flagged { outline: 2px solid #e8802a; outline-offset: -2px; }
+  .seg button[data-flip="trash"].needsEye { animation: tbBlink 1.1s ease-in-out infinite; }
+  @keyframes tbBlink {
+    0%, 100% { background: rgba(232,128,42,.25); }
+    50% { background: #e8802a; color: #fff; }
+  }
+  body.glass .seg button[data-flip="trash"].needsEye { animation: tbBlinkG 1.1s ease-in-out infinite; }
+  @keyframes tbBlinkG {
+    0%, 100% { background: rgba(255,178,102,.2); }
+    50% { background: linear-gradient(180deg, #ffb266, #e8802a); color: #2a1405; }
+  }
+  body.glass #tbList li.flagged { outline-color: #ffb266; }
+
   /* Trash bin — a proper panel for the full text, in the theme */
   #tbPeek { position: fixed; z-index: 1200; max-width: min(560px, 70vw); max-height: 40vh; overflow: auto;
             padding: 10px 12px; font: 13px/1.55 Arial, Helvetica, sans-serif; white-space: pre-wrap;
@@ -959,6 +995,37 @@
   /* Trash bin */
   #tbList .tbKind { font-size: 11px; opacity: .65; min-width: 74px; }
   #tbList .tbWhen { font-size: 11px; opacity: .6; white-space: nowrap; }
+  /* Bookmarks */
+  #bmTitle { width: 130px; }
+  #bmFind { width: 130px; }
+  #bmList li { cursor: pointer; }
+  #bmList .bmU { opacity: .6; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40%; }
+
+  /* Slides */
+  #slBody { display: flex; flex-direction: column; }
+  #slStage { flex: 1; min-height: 0; padding: 5% 7%; display: flex; flex-direction: column; gap: 14px; overflow: auto; }
+  #slTitle { font: bold 30px/1.25 Arial, Helvetica, sans-serif; outline: none; }
+  #slText { font: 17px/1.6 Arial, Helvetica, sans-serif; outline: none; white-space: pre-wrap; flex: 1; }
+  #slTitle:empty:before, #slText:empty:before { content: attr(data-ph); opacity: .35; }
+  #slStrip { flex: 0 0 62px; display: flex; gap: 6px; overflow-x: auto; padding: 6px; list-style: none;
+             border-top: 1px solid rgba(128,128,128,.3); }
+  #slStrip li { flex: 0 0 84px; height: 48px; border: 1px solid rgba(128,128,128,.4); border-radius: 4px;
+                font-size: 8px; padding: 4px; overflow: hidden; cursor: pointer; background: rgba(255,255,255,.04); }
+  #slStrip li.on { outline: 2px solid #6a9cf0; }
+  #slPos { font-size: 12px; opacity: .8; min-width: 54px; text-align: center; }
+  body.slideShow #slidesFace { position: fixed; inset: 0; z-index: 2000; background: #0b1020; }
+  body.slideShow #slidesFace #slStrip, body.slideShow #slidesFace .bar { display: none; }
+  body.slideShow #slTitle { font-size: 58px; }
+  body.slideShow #slText { font-size: 26px; }
+
+  /* Sticky notes peel off and fall */
+  .nsNote.peeling { animation: nsPeel var(--pf, 1500ms) cubic-bezier(.35,.02,.8,.5) forwards; transform-origin: 18% 0%; pointer-events: none; }
+  @keyframes nsPeel {
+    0%   { transform: rotate(var(--r0, 0deg)); opacity: 1; }
+    14%  { transform: rotate(calc(var(--r0, 0deg) + var(--curl, 14deg))) translateY(-6px) skewX(-4deg); }
+    30%  { transform: rotate(calc(var(--r0, 0deg) + var(--curl, 14deg) * 2.2)) translateY(4px) skewX(-8deg); }
+    100% { transform: rotate(var(--spin, 120deg)) translate(var(--dx, 30px), var(--dy, 500px)) skewX(2deg); opacity: 0; }
+  }
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
@@ -1084,6 +1151,15 @@
         <input type="text" id="cbFind" class="grow" placeholder="Search clipboard history" aria-label="Search clipboard">
         <button id="cbClear">Clear all</button></div>
       <div class="body"><ul id="cbList" class="clist" aria-label="Clipboard history"></ul></div>
+    </div>
+    <div class="face" data-face="marks" id="marksFace" tabindex="-1">
+      <div class="bar"><span class="seg"></span><span class="sep"></span>
+        <input type="text" id="bmTitle" placeholder="Name" aria-label="Bookmark name">
+        <input type="text" id="bmUrl" class="grow" placeholder="https://…" aria-label="Address">
+        <button id="bmAdd">Save</button>
+        <input type="text" id="bmFind" placeholder="Search" aria-label="Search bookmarks">
+      </div>
+      <div class="body"><ul id="bmList" class="clist" aria-label="Bookmarks"></ul></div>
     </div>
     </div>
   </section>
@@ -1413,6 +1489,17 @@
               <textarea id="nText" placeholder="Write a note…" aria-label="Note"></textarea>
             </div>
           </div>
+        <div class="face" data-face="slides" id="slidesFace" tabindex="-1">
+          <div class="bar"><span class="seg"></span><span class="sep"></span>
+            <button id="slAdd">New slide</button><button id="slDel">Delete slide</button>
+            <button id="slPrev">◀</button><span id="slPos"></span><button id="slNext">▶</button>
+            <button id="slPlay">Present</button>
+          </div>
+          <div class="body" id="slBody">
+            <div id="slStage"><div id="slTitle" contenteditable="true" data-ph="Title"></div><div id="slText" contenteditable="true" data-ph="Say something here"></div></div>
+            <ul id="slStrip"></ul>
+          </div>
+        </div>
         </div>
       </section>
 
@@ -1552,6 +1639,11 @@
 </div>
 <div id="saverHint">move to wake</div>
 <div id="tbPeek"><div class="tbPeekHead"></div><div class="tbPeekBody"></div></div>
+<div id="tbDue" role="status">
+  <h4>About to be deleted</h4>
+  <div class="tbDueWhat"></div>
+  <div class="tbDueBtns"><button id="tbDueStop">Stop</button><button id="tbDueGo">Go to bin</button><button id="tbDueOk">Continue</button></div>
+</div>
 <div id="toasts" aria-live="polite"></div>
 <script>
 (function () {
@@ -1704,7 +1796,8 @@ var Layout = (function () {
               ['media', 'Media player'], ['rec', 'Recorder'],
               ['sticky', 'Sticky notes'], ['clip', 'Clipboard history'], ['units', 'Unit converter'],
               ['pass', 'Password generator'], ['chars', 'Character map'],
-              ['vault', 'Password vault'], ['trash', 'Trash bin']];
+              ['vault', 'Password vault'], ['trash', 'Trash bin'],
+              ['marks', 'Bookmarks'], ['slides', 'Slides']];
   var HOME = {};   // where each app started out
   document.querySelectorAll('.face').forEach(function (f) {
     var p = f.closest('.panel');
@@ -1750,7 +1843,7 @@ var Layout = (function () {
                   calendar: 'Calendar', calc: 'Calc', clock: 'Clock', time: 'Time', word: 'Word', sheet: 'Sheet',
                   code: 'Code', notes: 'Notes', media: 'Media', rec: 'Recorder',
                   sticky: 'Sticky', clip: 'Clipboard', units: 'Units', pass: 'Password', chars: 'Chars',
-                  vault: 'Vault', trash: 'Trash' };
+                  vault: 'Vault', trash: 'Trash', marks: 'Bookmarks', slides: 'Slides' };
     document.querySelectorAll('.card').forEach(function (card) {
       var names = [].filter.call(card.querySelectorAll('.face'), function (f) { return !f.classList.contains('faceOff'); })
                     .map(function (f) { return f.dataset.face; });
@@ -2625,6 +2718,24 @@ var Sys = (function () {
     if (e.inputType && e.inputType.indexOf('delete') === 0) return;
     stampChar();
   });
+
+  // Text put back from the bin returns to the document itself.
+  Sys.restoreText = function (t) {
+    if (!t) return;
+    if (typeof Flip !== 'undefined') Flip.to(ed.closest('.panel').id, 'word');
+    setTimeout(function () {
+      ed.focus();
+      var sel = getSelection(), inside = sel.rangeCount && ed.contains(sel.anchorNode);
+      if (!inside) {                                  // no cursor in the document: put it at the end
+        var r = document.createRange();
+        r.selectNodeContents(ed); r.collapse(false);
+        sel.removeAllRanges(); sel.addRange(r);
+      }
+      document.execCommand('insertText', false, t);
+      changed();
+      Sys.toast('Put back into the document.', { ms: 2200 });
+    }, 260);
+  };
 
   // Anything you delete from the document is kept in the bin.
   ed.addEventListener('keydown', function (e) {
@@ -6253,7 +6364,9 @@ var Garden = (function () {
     pass: function () { return any('#pwHist li:not(.empty)'); },
     chars: function () { return false; },
     vault: function () { return any('#vList li:not(.empty)'); },
-    trash: function () { return any('#tbList li:not(.empty)'); }
+    trash: function () { return any('#tbList li:not(.empty)'); },
+    marks: function () { return any('#bmList li:not(.empty)'); },
+    slides: function () { return any('#slStrip li'); }
   };
   function update() {
     Object.keys(CHECK).forEach(function (k) {
@@ -6285,7 +6398,9 @@ var Garden = (function () {
     { k: 'pass', name: 'Password generator', panel: 'media', note: 'Not saved' },
     { k: 'chars', name: 'Character map', panel: 'media', note: 'Not saved' },
     { k: 'vault', name: 'Password vault', panel: 'media', key: 'ws.vault' },
-    { k: 'trash', name: 'Trash bin', panel: 'paint', key: 'ws.trash' }
+    { k: 'trash', name: 'Trash bin', panel: 'paint', key: 'ws.trash' },
+    { k: 'marks', name: 'Bookmarks', panel: 'browser', key: 'ws.marks' },
+    { k: 'slides', name: 'Slides', panel: 'word', key: 'ws.slides' }
   ];
   function bytes(n) { if (n < 1024) return n + ' B'; if (n < 1048576) return (n / 1024).toFixed(1) + ' KB'; if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB'; return (n / 1073741824).toFixed(2) + ' GB'; }
   function kvSize(key) { var v = store.get(key); return v === undefined ? 0 : new Blob([JSON.stringify(v)]).size; }
@@ -6309,6 +6424,11 @@ var Garden = (function () {
       out.push({ what: 'Time tracking', detail: p ? p.name : 'Project', stop: function () { var b = document.querySelector('#trProjects button.on'); if (b) b.click(); } });
     }
     if ($('gShow').classList.contains('on')) out.push({ what: 'Slideshow', detail: 'Gallery', stop: function () { $('gShow').click(); } });
+    // anything in the bin counting down to a permanent delete
+    (Trash.pending ? Trash.pending() : []).forEach(function (p) {
+      out.push({ what: 'Deleting ' + p.kind.toLowerCase(), detail: p.label + ' — ' + p.left,
+                 stop: function () { Trash.stop(p.id); } });
+    });
     return out;
   }
 
@@ -6448,7 +6568,18 @@ var Garden = (function () {
     };
     el.querySelector('.nsKill').onclick = function () {
       notes = notes.filter(function (x) { return x !== n; });
-      el.remove(); save(); count();
+      // it peels off the board and falls away rather than vanishing
+      var dir = Math.random() < 0.5 ? -1 : 1;
+      var fall = 1200 + Math.random() * 800;
+      el.style.setProperty('--pf', Math.round(fall) + 'ms');
+      el.style.setProperty('--r0', n.r + 'deg');
+      el.style.setProperty('--curl', (dir * (10 + Math.random() * 12)).toFixed(1) + 'deg');
+      el.style.setProperty('--spin', Math.round(dir * (60 + Math.random() * 260)) + 'deg');
+      el.style.setProperty('--dx', Math.round(dir * (20 + Math.random() * 120)) + 'px');
+      el.style.setProperty('--dy', Math.round((board.clientHeight || 400) + 220) + 'px');
+      el.classList.add('peeling');
+      setTimeout(function () { el.remove(); }, fall + 80);
+      save(); count();
       Trash.add('Sticky note', (n.t || '').slice(0, 60) || 'Empty note', n);
       Sys.toast('Note removed.', { ms: 4000, actions: [{ label: 'Undo', fn: function () { notes.push(n); surface().appendChild(draw(n)); save(); count(); } }] });
     };
@@ -6720,7 +6851,93 @@ var Trash = (function () {
       ? d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
       : d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   }
+  var STEPS = [0, 1 / 60, 0.5, 1, 12, 24, 48];   // 1 min is there for testing
+  function next(cur) { var i = STEPS.indexOf(cur || 0); return STEPS[(i + 1) % STEPS.length]; }
+  function label(h) {
+    if (h < 0.02) return '1 min';
+    if (h === 0.5) return '30 min';
+    return h + (h === 1 ? ' hour' : ' hours');
+  }
+  function two(n) { return (n < 10 ? '0' : '') + n; }
+  function left(it) {
+    var ms = it.purgeAt - Date.now();
+    if (ms <= 0) return 'going…';
+    var sec = Math.ceil(ms / 1000);
+    return two(Math.floor(sec / 3600)) + ':' + two(Math.floor(sec % 3600 / 60)) + ':' + two(sec % 60);
+  }
+  var warned = {}, notice = null;
+  function ago(it) {
+    var h = Math.round((Date.now() - it.at) / 3600000);
+    if (h < 1) return 'a short while ago';
+    return h === 1 ? 'an hour ago' : h + ' hours ago';
+  }
+  // A quiet word before anything is lost for good.
+  function warn(it) {
+    if (warned[it.id] || notice) return;
+    warned[it.id] = 1;
+    notice = it;
+    var box = $('tbDue');
+    box.querySelector('.tbDueWhat').textContent =
+      'The ' + it.kind.toLowerCase() + ' you deleted ' + ago(it) + ' — “' + it.label + '” — is about to be removed for good.';
+    box.classList.add('on');
+    $('tbDueOk').onclick = function () { box.classList.remove('on'); notice = null; };
+    // Stop the clock and leave the bin button blinking until it has been looked at.
+    $('tbDueStop').onclick = function () {
+      it.purgeAt = 0;
+      save(); render();
+      box.classList.remove('on'); notice = null;
+      blink(true);
+      Sys.toast('Timer stopped. It stays in the bin.', { ms: 3000 });
+    };
+    $('tbDueGo').onclick = function () {
+      box.classList.remove('on'); notice = null;
+      if (typeof Flip !== 'undefined') Flip.to($('tbList').closest('.panel').id, 'trash');
+      setTimeout(function () {
+        var li = list.querySelector('li[data-id="' + it.id + '"]');
+        if (li) { li.classList.add('flagged'); li.scrollIntoView({ block: 'nearest' }); }
+      }, 700);
+    };
+    setTimeout(function () {                       // it fades away on its own if left alone
+      if (notice === it) { box.classList.remove('on'); notice = null; }
+    }, 45000);
+  }
+  function sweep() {                      // anything whose time is up goes for good
+    items.forEach(function (it) {
+      if (it.purgeAt && it.purgeAt - Date.now() < 20000) warn(it);
+    });
+    var n = items.length;
+    items = items.filter(function (it) {
+      var live = !it.purgeAt || it.purgeAt > Date.now();
+      if (!live && notice === it) { $('tbDue').classList.remove('on'); notice = null; }
+      return live;
+    });
+    if (items.length !== n) { save(); render(); }
+  }
+  setInterval(function () {
+    var pending = items.filter(function (it) { return it.purgeAt; });
+    if (!pending.length) return;
+    var ticks = list.querySelectorAll('li');
+    var order = items.slice().reverse();
+    ticks.forEach(function (li, i) {
+      var it = order[i], el = li.querySelector('.tbTick');
+      if (it && el) el.textContent = it.purgeAt ? left(it) : '';
+    });
+    sweep();
+  }, 1000);
+
+  // The trash button asks to be looked at, and settles once it has been.
+  function blink(on) {
+    document.querySelectorAll('.seg button[data-flip="trash"]').forEach(function (b) {
+      b.classList.toggle('needsEye', !!on);
+      if (on && !b._eyeWired) {
+        b._eyeWired = 1;
+        b.addEventListener('click', function () { blink(false); });
+      }
+    });
+  }
+
   function render() {
+    sweep();
     list.innerHTML = '';
     $('tbCount').textContent = items.length ? items.length + (items.length === 1 ? ' item' : ' items') : '';
     if (!items.length) {
@@ -6730,8 +6947,11 @@ var Trash = (function () {
     }
     items.slice().reverse().forEach(function (it) {
       var li = document.createElement('li');
+      li.dataset.id = it.id;
+      if (it.purgeAt) li.className = 'pending';
       li.innerHTML = '<span class="tbKind"></span><span class="grow1"></span><span class="tbWhen"></span>' +
-                     '<button>Put back</button><button class="x">×</button>';
+                     '<span class="tbTick"></span><button>Put back</button>' +
+                     '<button class="tbSafe"></button><button class="x">×</button>';
       li.children[0].textContent = it.kind;
       li.children[1].textContent = it.count > 1 ? it.label + '  (' + it.count + ' characters)' : it.label;
       if (typeof it.data === 'string' && it.data.length) {
@@ -6740,14 +6960,35 @@ var Trash = (function () {
         li.children[1].addEventListener('pointerleave', hide);
       }
       li.children[2].textContent = when(it.at);
-      li.children[3].onclick = function () {
+      li.children[3].textContent = it.purgeAt ? left(it) : '';
+      li.children[4].onclick = function () {
         var back = restorers[it.kind];
         items = items.filter(function (x) { return x !== it; });
         save(); render();
         if (back) back(it.data);
         Sys.toast(back ? 'Put back.' : 'That app is not open to receive it.', { ms: 2500 });
       };
-      li.children[4].onclick = function () {
+      // How long this one should survive after it is thrown out
+      var sb = li.children[5];
+      sb.textContent = it.safe ? label(it.safe) : 'Safe delete';
+      sb.title = it.safe ? 'It will be kept for ' + label(it.safe) + ' after you delete it. Click to change.'
+                         : 'Click to keep this for a while after deleting, instead of losing it at once.';
+      sb.classList.toggle('on', !!it.safe);
+      sb.onclick = function () {
+        it.safe = next(it.safe);
+        if (it.purgeAt) it.purgeAt = it.safe ? Date.now() + it.safe * 3600000 : 0;   // retime a pending one
+        save(); render();
+      };
+      li.children[6].textContent = it.purgeAt ? '↺' : '×';
+      li.children[6].title = it.purgeAt ? 'Keep it after all' : (it.safe ? 'Delete, kept for ' + label(it.safe) : 'Delete for good');
+      li.children[6].onclick = function () {
+        if (it.purgeAt) { it.purgeAt = 0; save(); render(); return; }       // called it back
+        if (it.safe) {
+          it.purgeAt = Date.now() + it.safe * 3600000;
+          save(); render();
+          Sys.toast('Gone in ' + label(it.safe) + '. Click the arrow to keep it.', { ms: 3500 });
+          return;
+        }
         items = items.filter(function (x) { return x !== it; }); save(); render();
       };
       list.appendChild(li);
@@ -6770,6 +7011,9 @@ var Trash = (function () {
     place(ev);
   }
   function hide() { peekEl.classList.remove('on'); }
+
+  var tbFace = $('tbList').closest('.face');
+  if (tbFace) tbFace.addEventListener('faceshown', function () { blink(false); });
 
   $('tbAll').onclick = function () {
     if (!items.length) return;
@@ -6818,6 +7062,14 @@ var Trash = (function () {
         timer = setTimeout(function () { run = null; }, 900);
       };
     })(),
+    pending: function () {
+      return items.filter(function (it) { return it.purgeAt; })
+        .map(function (it) { return { id: it.id, kind: it.kind, label: it.label, left: left(it) }; });
+    },
+    stop: function (id) {
+      items.forEach(function (it) { if (it.id === id) it.purgeAt = 0; });
+      save(); render();
+    },
     add: function (kind, label, data) {
       items.push({ id: uid(), kind: kind, label: String(label || '').slice(0, 200), data: data, at: Date.now() });
       if (items.length > 200) items = items.slice(-200);
@@ -6901,15 +7153,110 @@ var Vault = (function () {
   Trash.handler('Sticky note', function (n) { if (Sys.restoreSticky) Sys.restoreSticky(n); });
   Trash.handler('Task', function (t) { if (Sys.restoreTask) Sys.restoreTask(t); });
   Trash.handler('Sheet cells', function (snap) { if (Sys.restoreCells) Sys.restoreCells(snap); });
-  Trash.handler('Text', function (t) {
-    var done = function () { Sys.toast('Text copied — paste it back where you want it.', { ms: 3000 }); };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, done);
-    else done();
-  });
+  Trash.handler('Text', function (t) { if (Sys.restoreText) Sys.restoreText(t); });
   render();
   return { add: add, keep: function (pw) {
     add('New password ' + new Date().toLocaleDateString([], { month: 'short', day: 'numeric' }), '', pw, 6);
   } };
+})();
+
+/* ================= Bookmarks ================= */
+(function () {
+  var KEY = 'ws.marks', list = $('bmList'), marks = store.get(KEY, []);
+  function save() { store.set(KEY, marks); }
+  function tidy(u) {
+    u = (u || '').trim();
+    if (!u) return '';
+    return /^https?:\/\//i.test(u) ? u : 'https://' + u;
+  }
+  function host(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
+  function render() {
+    var q = $('bmFind').value.trim().toLowerCase();
+    list.innerHTML = '';
+    var show = marks.filter(function (m) { return !q || (m.t + ' ' + m.u).toLowerCase().indexOf(q) >= 0; });
+    if (!show.length) {
+      var e = document.createElement('li'); e.className = 'empty';
+      e.textContent = marks.length ? 'Nothing matches.' : 'Save the places you go back to.';
+      list.appendChild(e); return;
+    }
+    show.forEach(function (m) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="grow1"></span><span class="bmU"></span><button>Open</button><button class="x">×</button>';
+      li.children[0].textContent = m.t || host(m.u);
+      li.children[1].textContent = host(m.u);
+      li.children[2].onclick = function () {
+        var bar = $('bUrl');
+        if (bar) { bar.value = m.u; $('bGo').click(); }
+        Flip.to($('bUrl').closest('.panel').id, 'web');
+      };
+      li.children[3].onclick = function () {
+        marks = marks.filter(function (x) { return x !== m; });
+        save(); render();
+        Trash.add('Bookmark', m.t || m.u, m);
+      };
+      list.appendChild(li);
+    });
+  }
+  $('bmAdd').onclick = function () {
+    var u = tidy($('bmUrl').value);
+    if (!u) { $('bmUrl').focus(); return; }
+    marks.push({ id: uid(), t: $('bmTitle').value.trim(), u: u });
+    $('bmTitle').value = $('bmUrl').value = '';
+    save(); render();
+  };
+  $('bmUrl').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('bmAdd').click(); });
+  $('bmFind').addEventListener('input', render);
+  Trash.handler('Bookmark', function (m) { marks.push(m); save(); render(); });
+  render();
+})();
+
+/* ================= Slides ================= */
+(function () {
+  var KEY = 'ws.slides', strip = $('slStrip'), T = $('slTitle'), X = $('slText');
+  var deck = store.get(KEY, [{ id: uid(), t: '', x: '' }]), at = 0, saveTimer = null;
+  function save() { clearTimeout(saveTimer); saveTimer = setTimeout(function () { store.set(KEY, deck); }, 300); }
+  function show(i) {
+    at = Math.max(0, Math.min(deck.length - 1, i));
+    T.textContent = deck[at].t || '';
+    X.textContent = deck[at].x || '';
+    $('slPos').textContent = (at + 1) + ' / ' + deck.length;
+    strip.innerHTML = '';
+    deck.forEach(function (sl, j) {
+      var li = document.createElement('li');
+      if (j === at) li.className = 'on';
+      li.textContent = (sl.t || '').slice(0, 26) || 'Slide ' + (j + 1);
+      li.onclick = function () { show(j); };
+      strip.appendChild(li);
+    });
+  }
+  T.addEventListener('input', function () {
+    deck[at].t = T.textContent;
+    save();
+    var li = strip.children[at];                       // just relabel the thumbnail
+    if (li) li.textContent = (deck[at].t || '').slice(0, 26) || 'Slide ' + (at + 1);
+  });
+  X.addEventListener('input', function () { deck[at].x = X.textContent; save(); });
+  $('slAdd').onclick = function () { deck.splice(at + 1, 0, { id: uid(), t: '', x: '' }); save(); show(at + 1); T.focus(); };
+  $('slDel').onclick = function () {
+    if (deck.length === 1) { deck[0] = { id: uid(), t: '', x: '' }; save(); show(0); return; }
+    var gone = deck.splice(at, 1)[0];
+    save(); show(Math.min(at, deck.length - 1));
+    Trash.add('Slide', gone.t || 'Untitled slide', gone);
+  };
+  $('slPrev').onclick = function () { show(at - 1); };
+  $('slNext').onclick = function () { show(at + 1); };
+  $('slPlay').onclick = function () {
+    document.body.classList.add('slideShow');
+    Sys.toast('Arrow keys to move, Escape to come back.', { ms: 3000 });
+  };
+  document.addEventListener('keydown', function (e) {
+    if (!document.body.classList.contains('slideShow')) return;
+    if (e.key === 'Escape') document.body.classList.remove('slideShow');
+    else if (e.key === 'ArrowRight' || e.key === ' ') { show(at + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') show(at - 1);
+  });
+  Trash.handler('Slide', function (sl) { deck.push(sl); save(); show(deck.length - 1); });
+  show(0);
 })();
 
 /* ================= Status bar ================= */
