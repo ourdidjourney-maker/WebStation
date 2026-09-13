@@ -42,7 +42,9 @@
   #paintStack { position: relative; }
   #paintStack canvas { position: absolute; left: 0; top: 0; display: block; }
   #pOverlay { cursor: crosshair; touch-action: none; }
-  #pTextInput { position: absolute; display: none; z-index: 2; min-width: 60px; border: 1px dashed #000; background: rgba(255,255,255,.85); outline: none; padding: 0 2px; font-family: Arial, Helvetica, sans-serif; }
+  #pTextInput { position: absolute; display: none; z-index: 2; min-width: 60px; outline: none; padding: 0 3px;
+                border: 1px dashed var(--tEdge, #000); background: var(--tBack, rgba(255,255,255,.9));
+                box-shadow: 0 2px 10px rgba(0,0,0,.25); font-family: Arial, Helvetica, sans-serif; }
   #pSwatches { display: inline-grid; grid-template-columns: repeat(6, 14px); gap: 1px; }
   #pSwatches button { width: 14px; height: 14px; min-width: 0; padding: 0; border: 1px solid #555; }
 
@@ -535,7 +537,7 @@
   body.glass #sGrid td { border-color: rgba(255, 255, 255, .07); color: #e9eeff; }
   body.glass #sGrid td.sel { outline-color: #7eaaff; }
   body.glass #sGrid td.e { color: #ff9a9a; }
-  body.glass #sEdit, body.glass #pTextInput { background: rgba(12, 18, 38, .95); color: #eef2ff; border-color: #7eaaff; }
+  body.glass #sEdit { background: rgba(12, 18, 38, .95); color: #eef2ff; border-color: #7eaaff; }
   body.glass #sName { background: rgba(255, 255, 255, .06); }
 
   /* Tasks */
@@ -1042,6 +1044,13 @@
     30%  { transform: rotate(calc(var(--r0, 0deg) + var(--curl, 14deg) * 2.2)) translateY(4px) skewX(-8deg); }
     100% { transform: rotate(var(--spin, 120deg)) translate(var(--dx, 30px), var(--dy, 500px)) skewX(2deg); opacity: 0; }
   }
+  /* Checkers */
+  #chkBody { display: flex; align-items: center; justify-content: center; }
+  #chkCanvas { border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.45); cursor: pointer; max-width: 100%; max-height: 100%; }
+  #chkStatus { font-size: 12px; opacity: .85; }
+  #chkScore { font-size: 12px; opacity: .7; }
+  #chkSound { min-width: 30px; }
+
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
@@ -1608,6 +1617,15 @@
           </div>
           <div class="body"><ul id="vList" class="clist" aria-label="Password vault"></ul></div>
         </div>
+        <div class="face" data-face="checkers" id="checkersFace" tabindex="-1">
+          <div class="bar"><span class="seg"></span><span class="sep"></span>
+            <button id="chkNew">New game</button>
+            <select id="chkLevel" aria-label="Difficulty"><option value="2">Easy</option><option value="4" selected>Normal</option><option value="6">Hard</option></select>
+            <button id="chkSound" title="Sound">🔊</button>
+            <span id="chkStatus"></span><span id="chkScore"></span>
+          </div>
+          <div class="body" id="chkBody"><canvas id="chkCanvas" width="360" height="360"></canvas></div>
+        </div>
         </div>
       </section>
 
@@ -1813,7 +1831,7 @@ var Layout = (function () {
               ['sticky', 'Sticky notes'], ['clip', 'Clipboard history'], ['units', 'Unit converter'],
               ['pass', 'Password generator'], ['chars', 'Character map'],
               ['vault', 'Password vault'], ['trash', 'Trash bin'],
-              ['marks', 'Bookmarks'], ['slides', 'Slides']];
+              ['marks', 'Bookmarks'], ['slides', 'Slides'], ['checkers', 'Checkers']];
   var HOME = {};   // where each app started out
   document.querySelectorAll('.face').forEach(function (f) {
     var p = f.closest('.panel');
@@ -1859,7 +1877,7 @@ var Layout = (function () {
                   calendar: 'Calendar', calc: 'Calc', clock: 'Clock', time: 'Time', word: 'Word', sheet: 'Sheet',
                   code: 'Code', notes: 'Notes', media: 'Media', rec: 'Recorder',
                   sticky: 'Sticky', clip: 'Clipboard', units: 'Units', pass: 'Password', chars: 'Chars',
-                  vault: 'Vault', trash: 'Trash', marks: 'Bookmarks', slides: 'Slides' };
+                  vault: 'Vault', trash: 'Trash', marks: 'Bookmarks', slides: 'Slides', checkers: 'Checkers' };
     document.querySelectorAll('.card').forEach(function (card) {
       var names = [].filter.call(card.querySelectorAll('.face'), function (f) { return !f.classList.contains('faceOff'); })
                     .map(function (f) { return f.dataset.face; });
@@ -2429,6 +2447,13 @@ var Sys = (function () {
     txt.style.left = p.x + 'px'; txt.style.top = p.y + 'px';
     txt.style.fontSize = fs + 'px'; txt.style.height = Math.round(fs * 1.3) + 'px';
     txt.style.color = stroke.value; txt.value = '';
+    // A light box behind dark paint, a dark box behind light paint: the text is always readable.
+    var hex = (stroke.value || '#000000').replace('#', '');
+    var lum = (parseInt(hex.substr(0, 2), 16) * 0.299 +
+               parseInt(hex.substr(2, 2), 16) * 0.587 +
+               parseInt(hex.substr(4, 2), 16) * 0.114) / 255;
+    txt.style.setProperty('--tBack', lum > 0.55 ? 'rgba(26,30,42,.92)' : 'rgba(255,255,255,.92)');
+    txt.style.setProperty('--tEdge', lum > 0.55 ? 'rgba(255,255,255,.75)' : 'rgba(0,0,0,.6)');
     txt.dataset.x = p.x; txt.dataset.y = p.y;
     txt.style.display = 'block';
     setTimeout(function () { txt.focus(); }, 0);
@@ -6436,7 +6461,8 @@ var Garden = (function () {
     vault: function () { return any('#vList li:not(.empty)'); },
     trash: function () { return any('#tbList li:not(.empty)'); },
     marks: function () { return any('#bmList li:not(.empty)'); },
-    slides: function () { return any('#slStrip li'); }
+    slides: function () { return any('#slStrip li'); },
+    checkers: function () { return !!store.get('ws.checkers', null); }
   };
   function update() {
     Object.keys(CHECK).forEach(function (k) {
@@ -6470,7 +6496,8 @@ var Garden = (function () {
     { k: 'vault', name: 'Password vault', panel: 'media', key: 'ws.vault' },
     { k: 'trash', name: 'Trash bin', panel: 'paint', key: 'ws.trash' },
     { k: 'marks', name: 'Bookmarks', panel: 'browser', key: 'ws.marks' },
-    { k: 'slides', name: 'Slides', panel: 'word', key: 'ws.slides' }
+    { k: 'slides', name: 'Slides', panel: 'word', key: 'ws.slides' },
+    { k: 'checkers', name: 'Checkers', panel: 'media', key: 'ws.checkers' }
   ];
   function bytes(n) { if (n < 1024) return n + ' B'; if (n < 1048576) return (n / 1024).toFixed(1) + ' KB'; if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB'; return (n / 1073741824).toFixed(2) + ' GB'; }
   function kvSize(key) { var v = store.get(key); return v === undefined ? 0 : new Blob([JSON.stringify(v)]).size; }
@@ -7349,6 +7376,299 @@ var Vault = (function () {
   });
   Trash.handler('Slide', function (sl) { deck.push(sl); save(); show(deck.length - 1); });
   show(0);
+})();
+
+/* ================= Checkers =================
+   The engine from the OTOM dev platform, brought across whole: forced captures,
+   multi-jumps, kings, and a minimax search with alpha-beta pruning. */
+(function () {
+var chkSoundOn = true, _chkAudio = null;
+  function chkTone(freq, dur, vol, type, delay) {
+      if (!chkSoundOn) return;
+      try {
+          if (!_chkAudio) _chkAudio = new (window.AudioContext || window.webkitAudioContext)();
+          if (_chkAudio.state === 'suspended') _chkAudio.resume();
+          const t = _chkAudio.currentTime + (delay || 0);
+          const o = _chkAudio.createOscillator(), g = _chkAudio.createGain();
+          o.type = type || 'sine';
+          o.frequency.setValueAtTime(freq, t);
+          // gentle bell-ish envelope — soft attack, long soft tail
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(vol || 0.05, t + 0.03);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.3));
+          o.connect(g); g.connect(_chkAudio.destination);
+          o.start(t); o.stop(t + (dur || 0.3) + 0.05);
+      } catch (e) {}
+  }
+  const chkSfx = {
+      pick:    () => chkTone(523.25, 0.22, 0.035, 'sine'),                     // soft C5
+      move:    () => { chkTone(392.00, 0.30, 0.045, 'sine'); },                // warm G4
+      capture: () => { chkTone(329.63, 0.34, 0.05, 'sine'); chkTone(493.88, 0.40, 0.035, 'sine', 0.07); },
+      king:    () => { chkTone(523.25, 0.35, 0.04, 'sine'); chkTone(659.25, 0.35, 0.04, 'sine', 0.09); chkTone(783.99, 0.5, 0.04, 'sine', 0.18); },
+      engine:  () => chkTone(293.66, 0.28, 0.035, 'sine'),                     // low D4
+      win:     () => { [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => chkTone(f, 0.5, 0.04, 'sine', i * 0.12)); },
+      lose:    () => { [440, 392, 329.63].forEach((f, i) => chkTone(f, 0.55, 0.04, 'sine', i * 0.15)); }
+  };
+
+    var chkBoard = null, chkSel = null, chkTurnRed = true, chkBusy = false, chkOver = false;
+
+  const chkOnB = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+  const chkIsRed = v => v > 0, chkIsBlk = v => v < 0, chkIsKing = v => Math.abs(v) === 2;
+
+  function chkNewBoard() {
+      const b = new Array(64).fill(0);
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 8; c++) if ((r + c) % 2 === 1) b[r * 8 + c] = -1;
+      for (let r = 5; r < 8; r++) for (let c = 0; c < 8; c++) if ((r + c) % 2 === 1) b[r * 8 + c] = 1;
+      return b;
+  }
+
+  function chkApply(b, mv) {
+      const nb = b.slice();
+      let v = nb[mv.from];
+      nb[mv.from] = 0;
+      mv.caps.forEach(ci => nb[ci] = 0);
+      const row = (mv.to / 8) | 0;
+      if (v === 1 && row === 0) v = 2;
+      if (v === -1 && row === 7) v = -2;
+      nb[mv.to] = v;
+      return nb;
+  }
+
+  // All legal moves. Captures are mandatory in checkers, so if any exist
+  // only captures are returned. Multi-jumps are expanded recursively.
+  function chkMoves(b, red) {
+      const seeds = [], quiet = [];
+      for (let i = 0; i < 64; i++) {
+          const v = b[i]; if (!v) continue;
+          if (red ? !chkIsRed(v) : !chkIsBlk(v)) continue;
+          const r = (i / 8) | 0, c = i % 8;
+          const dirs = chkIsKing(v) ? [[-1,-1],[-1,1],[1,-1],[1,1]] : (red ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]]);
+          dirs.forEach(([dr, dc]) => {
+              const nr = r + dr, nc = c + dc;
+              if (!chkOnB(nr, nc)) return;
+              const t = b[nr * 8 + nc];
+              if (t === 0) { quiet.push({ from: i, to: nr * 8 + nc, caps: [] }); return; }
+              const enemy = red ? chkIsBlk(t) : chkIsRed(t);
+              if (!enemy) return;
+              const jr = r + dr * 2, jc = c + dc * 2;
+              if (chkOnB(jr, jc) && b[jr * 8 + jc] === 0) seeds.push({ from: i, to: jr * 8 + jc, caps: [nr * 8 + nc] });
+          });
+      }
+      if (!seeds.length) return quiet;
+      const out = [];
+      const rec = (bd, cur, origin) => {
+          const nb = chkApply(bd, cur);
+          const piece = nb[cur.to];
+          const r = (cur.to / 8) | 0, c = cur.to % 8;
+          const dirs = chkIsKing(piece) ? [[-1,-1],[-1,1],[1,-1],[1,1]] : (red ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]]);
+          let extended = false;
+          dirs.forEach(([dr, dc]) => {
+              const nr = r + dr, nc = c + dc, jr = r + dr * 2, jc = c + dc * 2;
+              if (!chkOnB(jr, jc)) return;
+              const t = nb[nr * 8 + nc];
+              if (!t) return;
+              const enemy = red ? chkIsBlk(t) : chkIsRed(t);
+              if (enemy && nb[jr * 8 + jc] === 0) {
+                  extended = true;
+                  rec(nb, { from: cur.from, to: jr * 8 + jc, caps: cur.caps.concat([nr * 8 + nc]) }, origin);
+              }
+          });
+          if (!extended) out.push({ from: origin, to: cur.to, caps: cur.caps });
+      };
+      seeds.forEach(m => rec(b, m, m.from));
+      return out;
+  }
+
+  function chkEval(b) {
+      let s = 0;
+      for (let i = 0; i < 64; i++) {
+          const v = b[i]; if (!v) continue;
+          const r = (i / 8) | 0, c = i % 8;
+          if (v === -1) s += 10 + r * 0.6;
+          else if (v === -2) s += 18;
+          else if (v === 1) s -= 10 + (7 - r) * 0.6;
+          else if (v === 2) s -= 18;
+          if (c === 0 || c === 7) s += (v < 0 ? 0.4 : -0.4);
+      }
+      return s;
+  }
+
+  function chkMinimax(b, depth, alpha, beta, blackTurn) {
+      const moves = chkMoves(b, !blackTurn);
+      if (!moves.length) return blackTurn ? -9999 : 9999;
+      if (depth === 0) return chkEval(b);
+      if (blackTurn) {
+          let best = -Infinity;
+          for (const m of moves) {
+              best = Math.max(best, chkMinimax(chkApply(b, m), depth - 1, alpha, beta, false));
+              alpha = Math.max(alpha, best);
+              if (beta <= alpha) break;
+          }
+          return best;
+      }
+      let best = Infinity;
+      for (const m of moves) {
+          best = Math.min(best, chkMinimax(chkApply(b, m), depth - 1, alpha, beta, true));
+          beta = Math.min(beta, best);
+          if (beta <= alpha) break;
+      }
+      return best;
+  }
+
+  function chkBestMove(b, depth) {
+      const moves = chkMoves(b, false);
+      if (!moves.length) return null;
+      let best = null, bv = -Infinity;
+      for (const m of moves) {
+          const v = chkMinimax(chkApply(b, m), depth - 1, -Infinity, Infinity, false);
+          if (v > bv) { bv = v; best = m; }
+      }
+      return best;
+  }
+
+  function chkDraw() {
+      const cv = document.getElementById('chkCanvas');
+      if (!cv || !chkBoard) return;
+      const g = cv.getContext('2d');
+      const S = cv.width / 8;
+      const legal = chkTurnRed && !chkOver ? chkMoves(chkBoard, true) : [];
+      const targets = chkSel !== null ? legal.filter(m => m.from === chkSel).map(m => m.to) : [];
+      const movable = legal.map(m => m.from);
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+          const dark = (r + c) % 2 === 1;
+          g.fillStyle = dark ? '#5D4037' : '#D7CCC8';
+          g.fillRect(c * S, r * S, S, S);
+          const i = r * 8 + c;
+          if (chkSel === i) { g.fillStyle = 'rgba(255,213,79,.55)'; g.fillRect(c * S, r * S, S, S); }
+          else if (targets.includes(i)) {
+              g.fillStyle = 'rgba(129,199,132,.45)'; g.fillRect(c * S, r * S, S, S);
+          } else if (chkSel === null && movable.includes(i)) {
+              g.strokeStyle = 'rgba(255,204,128,.5)'; g.lineWidth = 2;
+              g.strokeRect(c * S + 2, r * S + 2, S - 4, S - 4);
+          }
+          const v = chkBoard[i];
+          if (!v) continue;
+          const cx = c * S + S / 2, cy = r * S + S / 2, rad = S * 0.36;
+          g.beginPath(); g.arc(cx, cy + 2, rad, 0, Math.PI * 2);
+          g.fillStyle = 'rgba(0,0,0,.45)'; g.fill();
+          const grad = g.createRadialGradient(cx - rad * .35, cy - rad * .4, rad * .15, cx, cy, rad);
+          if (v > 0) { grad.addColorStop(0, '#FF8A65'); grad.addColorStop(1, '#C62828'); }
+          else { grad.addColorStop(0, '#546E7A'); grad.addColorStop(1, '#1a1a1a'); }
+          g.beginPath(); g.arc(cx, cy, rad, 0, Math.PI * 2);
+          g.fillStyle = grad; g.fill();
+          g.strokeStyle = v > 0 ? '#8E1B1B' : '#000'; g.lineWidth = 1.5; g.stroke();
+          if (chkIsKing(v)) {
+              g.fillStyle = '#FFD54F';
+              g.font = 'bold ' + (S * 0.38) + 'px Arial';
+              g.textAlign = 'center'; g.textBaseline = 'middle';
+              g.fillText('♛', cx, cy + 1);
+          }
+      }
+      const reds = chkBoard.filter(chkIsRed).length, blks = chkBoard.filter(chkIsBlk).length;
+      const sc = document.getElementById('chkScore');
+      if (sc) sc.textContent = 'You ' + reds + '  ·  Engine ' + blks;
+  }
+
+  function chkSetStatus(t) { const el = document.getElementById('chkStatus'); if (el) el.textContent = t; }
+
+  function chkCheckEnd() {
+      const rm = chkMoves(chkBoard, true).length, bm = chkMoves(chkBoard, false).length;
+      if (!rm) { chkOver = true; chkSetStatus('Engine wins — no moves left'); chkSfx.lose(); return true; }
+      if (!bm) { chkOver = true; chkSetStatus('You win'); chkSfx.win(); return true; }
+      return false;
+  }
+
+  function chkAIMove() {
+      if (chkOver) return;
+      chkBusy = true;
+      chkSetStatus('Engine thinking…');
+      setTimeout(() => {
+          const depth = parseInt(document.getElementById('chkLevel').value, 10) || 4;
+          const mv = chkBestMove(chkBoard, depth);
+          if (!mv) { chkOver = true; chkSetStatus('You win'); chkBusy = false; chkDraw(); return; }
+          chkBoard = chkApply(chkBoard, mv);
+          chkSfx.engine();
+          chkTurnRed = true; chkBusy = false;
+          chkDraw();
+          if (!chkCheckEnd()) chkSetStatus('Your move');
+      }, 30);
+  }
+
+  function chkClick(ev) {
+      if (chkBusy || chkOver || !chkTurnRed) return;
+      const cv = document.getElementById('chkCanvas');
+      const r0 = cv.getBoundingClientRect();
+      const S = cv.width / 8;
+      const c = Math.floor((ev.clientX - r0.left) / (r0.width / 8));
+      const r = Math.floor((ev.clientY - r0.top) / (r0.height / 8));
+      if (!chkOnB(r, c)) return;
+      const i = r * 8 + c;
+      const legal = chkMoves(chkBoard, true);
+      if (chkSel !== null) {
+          const mv = legal.find(m => m.from === chkSel && m.to === i);
+          if (mv) {
+              const wasKing = chkIsKing(chkBoard[mv.from]);
+              chkBoard = chkApply(chkBoard, mv);
+              if (mv.caps.length) chkSfx.capture(); else chkSfx.move();
+              if (!wasKing && chkIsKing(chkBoard[mv.to])) chkSfx.king();
+              chkSel = null; chkTurnRed = false; chkDraw();
+              if (!chkCheckEnd()) chkAIMove();
+              return;
+          }
+      }
+      const prevSel = chkSel;
+      chkSel = legal.some(m => m.from === i) ? i : null;
+      if (chkSel !== null && chkSel !== prevSel) chkSfx.pick();
+      chkDraw();
+  }
+
+  function chkNewGame() {
+      chkBoard = chkNewBoard(); chkSel = null; chkTurnRed = true; chkOver = false; chkBusy = false;
+      chkSetStatus('Your move'); chkDraw();
+  }
+
+  
+  // ── WebStation wiring ──────────────────────────────────────────────
+  var KEY = 'ws.checkers';
+  function save() {
+    store.set(KEY, { b: chkBoard, red: chkTurnRed, over: chkOver, lvl: $('chkLevel').value });
+  }
+  var saved = store.get(KEY, null);
+  if (saved && saved.b && saved.b.length === 64) {
+    chkBoard = saved.b; chkTurnRed = saved.red !== false; chkOver = !!saved.over;
+    if (saved.lvl) $('chkLevel').value = saved.lvl;
+  } else chkBoard = chkNewBoard();
+
+  var _apply = chkApply;                      // every board change is kept
+  chkApply = function (b, mv) { return _apply(b, mv); };
+  var _draw = chkDraw;
+  chkDraw = function () { _draw(); save(); };
+
+  $('chkCanvas').addEventListener('click', chkClick);
+  $('chkNew').onclick = function () {
+    chkNewGame();
+    Sys.toast('New game. You are red, and you move first.', { ms: 3000 });
+  };
+  $('chkLevel').onchange = save;
+  $('chkSound').onclick = function () {
+    chkSoundOn = !chkSoundOn;
+    this.textContent = chkSoundOn ? '🔊' : '🔇';
+    this.style.opacity = chkSoundOn ? '1' : '.5';
+  };
+  // the board is sized to the panel whenever it is shown
+  function fit() {
+    var body = $('chkBody'), cv = $('chkCanvas');
+    if (!body || !cv) return;
+    var n = Math.max(180, Math.min(body.clientWidth - 16, body.clientHeight - 16));
+    if (!n || !isFinite(n)) return;
+    cv.style.width = n + 'px';
+    cv.style.height = n + 'px';
+  }
+  $('checkersFace').addEventListener('faceshown', function () { fit(); chkDraw(); });
+  window.addEventListener('resize', fit);
+  chkSetStatus(chkOver ? 'Game over — start a new one' : 'Your move');
+  fit();
+  chkDraw();
 })();
 
 /* ================= Status bar ================= */
