@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebStation OS</title>
+<title>Workspace</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; background: #000; font-family: Arial, Helvetica, sans-serif; color: #000; }
@@ -3961,6 +3961,22 @@ var Sys = (function () {
       Object.keys(v.r || {}).forEach(function (r) { out.push('Row ' + (+r + 1) + ': ' + Math.round(v.r[r]) + 'px'); });
       return out.join('\n') || '(all default)';
     } },
+    { key: 'ws.sticky', name: 'Sticky notes', app: 'sticky', count: function (v) { return (v || []).length; },
+      text: function (v) { return (v || []).map(function (n) { return '— ' + (n.t || '(empty note)'); }).join('\n') || '(no notes)'; } },
+    { key: 'ws.clipboard', name: 'Clipboard history', app: 'clip', count: function (v) { return (v || []).length; },
+      text: function (v) { return (v || []).map(function (c) { return new Date(c.at).toLocaleString() + '\n  ' + c.t; }).join('\n\n') || '(nothing copied yet)'; } },
+    { key: 'ws.vault', name: 'Password vault', app: 'vault', count: function (v) { return (v || []).length; },
+      text: function (v) { return (v || []).map(function (e) {
+        return e.site + (e.user ? '  ' + e.user : '') + '\n  password hidden · added ' + new Date(e.created).toLocaleDateString() + ' · renew every ' + (e.months || 6) + ' months';
+      }).join('\n') || '(vault is empty)'; } },
+    { key: 'ws.trash', name: 'Trash bin', app: 'trash', count: function (v) { return (v || []).length; },
+      text: function (v) { return (v || []).map(function (it) {
+        return '[' + it.kind + '] ' + it.label + (it.purgeAt ? '  — deleting at ' + new Date(it.purgeAt).toLocaleTimeString() : '') + '\n  binned ' + new Date(it.at).toLocaleString();
+      }).join('\n') || '(bin is empty)'; } },
+    { key: 'ws.marks', name: 'Bookmarks', app: 'marks', count: function (v) { return (v || []).length; },
+      text: function (v) { return (v || []).map(function (m) { return (m.t || '(unnamed)') + '\n  ' + m.u; }).join('\n') || '(no bookmarks)'; } },
+    { key: 'ws.slides', name: 'Slides', app: 'slides', count: function (v) { return (v || []).length; },
+      text: function (v) { return (v || []).map(function (sl, i) { return 'Slide ' + (i + 1) + ': ' + (sl.t || '(untitled)') + (sl.x ? '\n  ' + sl.x : ''); }).join('\n') || '(no slides)'; } },
     { key: 'ws.ui', name: 'Workspace settings', app: 'web', text: function (v) {
       v = v || {};
       var z = v.zoom || {}, out = [];
@@ -6282,8 +6298,14 @@ var Garden = (function () {
         if (own) { content.style.zoom = z === 1 ? '' : String(z); return; }
         var inner = content.querySelector(':scope > .zoomInner');
         if (!inner) {
+          var cs = getComputedStyle(content);
           inner = document.createElement('div');
           inner.className = 'zoomInner';
+          inner.style.display = cs.display === 'block' ? 'block' : cs.display;
+          inner.style.flexDirection = cs.flexDirection;
+          inner.style.alignItems = cs.alignItems;
+          inner.style.justifyContent = cs.justifyContent;
+          inner.style.gap = cs.gap;
           while (content.firstChild) inner.appendChild(content.firstChild);
           content.appendChild(inner);
         }
