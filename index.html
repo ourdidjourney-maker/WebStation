@@ -772,7 +772,8 @@
     0%   { transform: translate(0, 0) scaleY(1); opacity: 1; }
     8%   { transform: translate(0, 4px) scaleY(1.25); }
     55%  { transform: translate(var(--wob, 3px), calc(var(--rdist, 300px) * .55)) scaleY(1.5); opacity: 1; }
-    100% { transform: translate(0, var(--rdist, 300px)) scaleY(1.7); opacity: .85; }
+    86%  { opacity: .8; }
+    100% { transform: translate(0, var(--rdist, 300px)) scaleY(1.7); opacity: 0; }
   }
   /* The wet trail it leaves behind, thinning as it dries */
   .kmTrail {
@@ -1191,6 +1192,55 @@
   #mQueue li.playing .mqName { font-weight: bold; }
   #mQueue .mqName { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #mQueue .mqKind { font-size: 10.5px; opacity: .6; min-width: 52px; }
+
+  /* The heat lamp: a warm bloom from the sill, and a drift that sinks rather than fades */
+  .kmLamp { position: absolute; inset: 0; pointer-events: none; z-index: 42; border-radius: inherit;
+            opacity: 0; transition: opacity 1.6s ease;
+            will-change: opacity;
+            box-shadow: inset 0 0 26px -4px rgba(255,152,62,.34),
+                        inset 0 0 62px -24px rgba(255,132,46,.22); }
+  /* it strikes in spurts like a bulb catching, drops out, then comes up to heat slowly */
+  .kmLamp.igniting { animation: kmLampStrike 1.5s steps(1, end) both; }
+  @keyframes kmLampStrike {
+    0%   { opacity: 0; }
+    4%   { opacity: .85; }
+    9%   { opacity: 0; }
+    15%  { opacity: .95; }
+    19%  { opacity: .05; }
+    24%  { opacity: .7; }
+    28%  { opacity: 0; }
+    36%  { opacity: .5; }
+    41%  { opacity: 0; }
+    70%  { opacity: 0; }
+    100% { opacity: .06; }
+  }
+  .kmLamp { transition: opacity 7s cubic-bezier(.35,0,.5,1); }
+  .kmLamp.on { animation: kmLampWarm 7s cubic-bezier(.35,0,.5,1) forwards,
+                          kmLampBreathe 6.5s ease-in-out 7s infinite; }
+  @keyframes kmLampWarm { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes kmLampBreathe { 0%, 100% { opacity: .92; } 50% { opacity: 1; } }
+  /* switched off, the element gives up its heat slowly */
+  .kmLamp.cooling { animation: kmLampCool 8s cubic-bezier(.3,0,.55,1) forwards; }
+  @keyframes kmLampCool {
+    0%   { opacity: 1; }
+    18%  { opacity: .82; }
+    45%  { opacity: .5; }
+    72%  { opacity: .22; }
+    90%  { opacity: .07; }
+    100% { opacity: 0; }
+  }
+  /* water dries quickly on hot glass */
+  .kmRain.hot .kmBead { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+  .kmRain.warm .kmBead { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+  /* a faint warm rim on the inside of the pane */
+  .panel.warmed .card, .panel .card { transition: box-shadow 8s cubic-bezier(.3,0,.55,1); }
+  .panel.warmed { will-change: auto; }
+  .panel.warmed .card { box-shadow: inset 0 0 44px -14px rgba(255,150,60,.55); }
+  .kmPile { transition: height 2.5s linear; }
+  .kmPile.melting { transition: height 1.1s ease-out; }
+  .lampBtn.on { background: linear-gradient(180deg, #ffcf8a, #f0973a); color: #2a1608; border-color: #ffd9a6; }
 
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
@@ -2251,7 +2301,7 @@ paused, then deleted again
       <section class="panel" id="status" aria-label="Status">
         <span id="stClock"><span id="sysTime">--</span> / <span id="footprint">--</span></span>
         <span id="stDock" aria-label="Closed panels"></span>
-        <span id="stTasks" tabindex="0"></span><span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden>×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Force winter on every panel, for testing" hidden style="display:none">Winter</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button><button id="wipeBtn" title="Erase everything and start the workspace fresh">Reset OS</button></span>
+        <span id="stTasks" tabindex="0"></span><span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden>×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Test mode: force winter and snow on every panel" hidden>Snow test</button><button id="saverBtn" title="How long before the screensaver starts">Screensaver</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button><button id="wipeBtn" title="Erase everything and start the workspace fresh">Reset OS</button></span>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
     </div>
@@ -6795,6 +6845,95 @@ var Garden = (function () {
   var wet = {}, rainTimers = {};   // each panel keeps its own weather
   function anyRain() { return Object.keys(wet).length > 0; }
 
+  // ── The heat lamp ────────────────────────────────────────────────────
+  // It fights the weather rather than cancelling it: snow keeps falling, but it cannot
+  // settle, the drift melts into water, and the panel glows faintly warm from the sill.
+  var lamps = {}, lampTimers = {};
+  function lampFor(pid) {
+    var p = $(pid), l = p.querySelector('.kmLamp');
+    if (!l) { l = document.createElement('div'); l.className = 'kmLamp'; p.appendChild(l); }
+    return l;
+  }
+  function setLamp(pid, v) {
+    var p = $(pid);
+    if (!p) return;
+    if (!v && !lamps[pid]) return;        // nothing was on, so nothing to cool
+    clearTimeout(lampTimers[pid]);
+    if (v) {
+      lamps[pid] = 1;
+      var l = lampFor(pid);
+      l.classList.remove('on');
+      l.classList.remove('cooling');
+      l.classList.add('igniting');
+      var warm = setTimeout(function () {
+        l.classList.remove('igniting');
+        requestAnimationFrame(function () { if (lamps[pid]) l.classList.add('on'); });
+      }, 1500);
+      track(timers, warm);
+      var hot = p.querySelector('.kmRain');
+      if (hot) { hot.classList.remove('warm'); hot.classList.add('hot'); }
+      p.classList.add('warmed');
+      // a real lamp is on a thermostat: it gives up after a while
+      lampTimers[pid] = setTimeout(function () { setLamp(pid, false); }, test ? 45000 : 300000);
+      track(timers, lampTimers[pid]);
+    } else {
+      delete lamps[pid];
+      var l2 = p.querySelector('.kmLamp');
+      if (l2) {
+        l2.classList.remove('igniting');
+        l2.classList.remove('on');
+        l2.classList.add('cooling');                 // it stays lit and fades as it cools
+        setTimeout(function () { if (!lamps[pid] && l2.parentNode) l2.remove(); }, 8400);
+      }
+      var cool = p.querySelector('.kmRain');
+      if (cool) {
+        cool.classList.remove('hot');
+        cool.classList.add('warm');                       // the pane is still warm
+        setTimeout(function () {
+          if (!lamps[pid] && cool.parentNode) cool.classList.remove('warm');   // and finally cold
+        }, 8000);
+      }
+      p.classList.remove('warmed');
+    }
+    paintLampBtns();
+  }
+  // The button only exists while there is snow to melt.
+  function paintLampBtns() {
+    Panels.ids.forEach(function (pid) {
+      var p = $(pid);
+      if (!p) return;
+      var snowing = !!p.querySelector('.kmFlake');
+      p.querySelectorAll('.lampBtn').forEach(function (b) {
+        b.hidden = !snowing && !lamps[pid];
+        b.classList.toggle('on', !!lamps[pid]);
+        b.dataset.tip = lamps[pid] ? 'The heat lamp is on — the drift is melting' : 'Warm this panel and melt the snow';
+      });
+    });
+  }
+  function addLampButtons() {
+    document.querySelectorAll('.face').forEach(function (f) {
+      var bar = f.querySelector('.bar');
+      if (!bar || bar.querySelector('.lampBtn')) return;
+      var b = document.createElement('button');
+      b.className = 'lampBtn';
+      b.textContent = '☀';
+      b.hidden = true;
+      b.onclick = function () {
+        var pid = f.closest('.panel').id;
+        setLamp(pid, !lamps[pid]);
+        Sys.toast(lamps[pid] ? 'Heat lamp on.' : 'Heat lamp off.', { ms: 2200 });
+      };
+      bar.appendChild(b);
+    });
+  }
+  addLampButtons();
+  setInterval(function () {
+    if (document.hidden) return;
+    // nothing is snowing and no lamp is lit: there is nothing to repaint
+    if (!document.querySelector('.kmFlake') && !Object.keys(lamps).length) return;
+    paintLampBtns();
+  }, 1600);
+
   function rainLayer(id) {
     var p = $(id), l = p.querySelector('.kmRain');
     if (!l) {
@@ -6802,6 +6941,7 @@ var Garden = (function () {
       l.className = 'kmRain';
       p.appendChild(l);
       // the fade-in runs from the CSS animation above, so it can never be skipped
+      if (lamps[id]) l.classList.add('hot');
     }
     return l;
   }
@@ -6846,6 +6986,20 @@ var Garden = (function () {
     pile.style.height = depth.toFixed(1) + 'px';
     var grow = setInterval(function () {
       if (!wet[id] || !layer.isConnected) { clearInterval(grow); return; }
+      if (lamps[id]) {
+        // The lamp is on: the drift sinks from the top down and runs off as meltwater.
+        pile.classList.add('melting');
+        depth = Math.max(0, depth - rnd(1.6, 3.4) * (test ? 1.6 : 1));
+        pile.style.height = depth.toFixed(1) + 'px';
+        var live = layer.querySelectorAll('.kmBead').length;
+        if (live < 14) {                                     // a pane only holds so much water
+          for (var w = 0; w < Math.min(2, 14 - live); w++) {
+            addBead(layer, id, W, H * 0.94, rnd(0, 900));    // water forms at the melting edge
+          }
+        }
+        return;
+      }
+      pile.classList.remove('melting');
       depth = Math.min(cap, depth + rnd(1.6, 4.5) * Math.max(0.5, heavy));
       pile.style.height = depth.toFixed(1) + 'px';
       // flakes landing on the glass melt and run down it
@@ -6927,6 +7081,10 @@ var Garden = (function () {
     if (!b.isConnected || !wet[pid]) return;
     var top = parseFloat(b.style.top), left = parseFloat(b.style.left);
     var dist = H - top + 30, dur = (test ? rnd(900, 1800) : rnd(1600, 3400)) * (1.4 - Math.min(0.7, size / 16));
+    // hot glass dries the water faster — the run and its removal shorten together, so a
+    // bead always finishes its fade instead of being taken off the glass mid-run
+    if (layer.classList.contains('hot')) dur *= 0.42;
+    else if (layer.classList.contains('warm')) dur *= 0.72;
     // The trail sits behind the bead and stretches as it runs
     var tr = document.createElement('div');
     tr.className = 'kmTrail';
@@ -6939,10 +7097,21 @@ var Garden = (function () {
     b.style.setProperty('--rdur', dur + 'ms');
     b.style.setProperty('--wob', (rnd(-5, 5)).toFixed(1) + 'px');
     b.classList.add('rolling');
-    var t = setTimeout(function () {
+    var gone = false;
+    function done() {
+      if (gone) return;
+      gone = true;
       b.remove(); tr.remove();
       if (wet[pid] && layer.isConnected) addBead(layer, pid, W, H, rnd(200, test ? 1500 : 6000));   // a new bead forms
-    }, dur + 60);
+    }
+    b.addEventListener('animationend', done);
+    var t = setTimeout(function () {
+      if (gone || !b.isConnected) { done(); return; }
+      b.style.transition = 'opacity .28s ease';      // dry it off rather than snatch it away
+      b.style.opacity = '0';
+      if (tr.parentNode) { tr.style.transition = 'opacity .28s ease'; tr.style.opacity = '0'; }
+      setTimeout(done, 300);
+    }, dur * 1.6 + 400);
     track(rainTimers[pid] = rainTimers[pid] || [], t);
   }
 
@@ -7074,6 +7243,7 @@ var Garden = (function () {
     hostFor(pid).classList.add('raining');
   }
   function stopRain(pid) {
+    setLamp(pid, false);            // nothing left to melt
     stopBolts(pid);
     delete wet[pid];
     (rainTimers[pid] || []).forEach(clearTimeout);
@@ -7171,7 +7341,13 @@ var Garden = (function () {
     forceWinter = !forceWinter;
     setBtns();
     start();
-    Sys.toast(forceWinter ? 'Winter, everywhere.' : 'Back to the ordinary run of seasons.', { ms: 3000 });
+    if (forceWinter) {
+      // don't wait on the weather clock — start a snowfall in every planted panel now
+      Object.keys(gardens).forEach(function (pid) {
+        track(timers, setTimeout(function () { if (on && isWinter(pid)) startRain(pid); }, rnd(200, 1600)));
+      });
+    }
+    Sys.toast(forceWinter ? 'Winter, everywhere. Snow is on the way.' : 'Back to the ordinary run of seasons.', { ms: 3000 });
   };
   rangeBtn.onclick = function () {
     rangeIdx = (rangeIdx + 1) % RANGES.length;
@@ -7593,7 +7769,11 @@ var Garden = (function () {
    After a minute of stillness the interface fades out and the garden takes the screen.
    It runs in its own mode: every panel planted, fuller, fewer leaves, one storm at a time. */
 (function () {
-  var IDLE = 60000, timer = null, active = false, wasOn = false;
+  var STEPS = [1, 5, 20, 30, 60, 0];        // minutes, and 0 for off
+  var ui0 = store.get('ws.ui', {});
+  var si = STEPS.indexOf(ui0.saverMins === undefined ? 1 : ui0.saverMins);
+  if (si < 0) si = 0;
+  var IDLE = STEPS[si] * 60000, timer = null, active = false, wasOn = false;
 
   function enter() {
     if (active) return;
@@ -7612,8 +7792,28 @@ var Garden = (function () {
   function poke() {
     if (active) leave();
     clearTimeout(timer);
-    timer = setTimeout(enter, IDLE);
+    if (IDLE) timer = setTimeout(enter, IDLE);      // nothing scheduled when it is switched off
   }
+  var sb = $('saverBtn');
+  function paintSaverBtn() {
+    sb.textContent = 'Screensaver' + (STEPS[si] ? ' ' + STEPS[si] + 'm' : ' off');
+    sb.classList.toggle('on', !!STEPS[si]);
+    sb.dataset.tip = STEPS[si] ? 'Starts after ' + STEPS[si] + (STEPS[si] === 1 ? ' minute' : ' minutes') + ' of stillness'
+                               : 'The screensaver will not start';
+  }
+  sb.onclick = function () {
+    si = (si + 1) % STEPS.length;
+    IDLE = STEPS[si] * 60000;
+    var u = store.get('ws.ui', {});
+    u.saverMins = STEPS[si];
+    store.set('ws.ui', u);
+    paintSaverBtn();
+    if (active && !IDLE) leave();
+    poke();
+    Sys.toast(STEPS[si] ? 'Screensaver after ' + STEPS[si] + (STEPS[si] === 1 ? ' minute.' : ' minutes.')
+                        : 'Screensaver switched off.', { ms: 2600 });
+  };
+  paintSaverBtn();
 
   ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'].forEach(function (ev) {
     document.addEventListener(ev, poke, { passive: true, capture: true });
