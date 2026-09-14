@@ -88,7 +88,7 @@
 
   /* Flip system */
   .card { position: relative; flex: 1 1 auto; min-height: 0; }
-  .face { position: absolute; inset: 0; display: flex; flex-direction: column; background: #fff; visibility: hidden; outline: none; }
+  .face { position: absolute; inset: 0; display: flex; flex-direction: column; background: #fff; visibility: hidden; outline: none; isolation: isolate; }
   .face.front { visibility: visible; }
   .panel.flipping { background: #000; }
   .seg { display: inline-flex; }
@@ -991,6 +991,25 @@
                              border-color: rgba(255,255,255,.22); border-radius: 9px; }
   body.glass #tbDue button:hover { background: rgba(255,255,255,.2); }
   #tbList li.flagged { outline: 2px solid #e8802a; outline-offset: -2px; }
+  /* Something has just been thrown away: the bin breathes pink for half a minute */
+  body .seg button[data-flip="trash"].justBinned { animation: tbBreathe 2.6s ease-in-out infinite; }
+  @keyframes tbBreathe {
+    0%, 100% { background: rgba(255,150,190,.2) !important; border-color: rgba(255,150,190,.45) !important; }
+    50% { background: rgba(255,138,185,.9) !important; border-color: rgba(255,195,218,.95) !important; color: #2a0f1c !important; }
+  }
+  /* Something just went in the bin: a calm pink pulse for half a minute */
+  .seg button[data-flip="trash"].justBinned { animation: tbSoft 2.4s ease-in-out infinite; }
+  @keyframes tbSoft {
+    0%, 100% { background: rgba(255,255,255,.08); box-shadow: none; }
+    50% { background: rgba(255,150,200,.55); box-shadow: 0 0 14px rgba(255,150,200,.45); }
+  }
+  body.glass .seg button[data-flip="trash"].justBinned { animation: tbSoftG 2.4s ease-in-out infinite; }
+  @keyframes tbSoftG {
+    0%, 100% { background: rgba(255,255,255,.08); box-shadow: none; }
+    50% { background: linear-gradient(180deg, rgba(255,168,210,.85), rgba(238,120,180,.85));
+          color: #2a0f1e; box-shadow: 0 0 18px rgba(255,150,200,.5); }
+  }
+
   .seg button[data-flip="trash"].needsEye { animation: tbBlink 1.1s ease-in-out infinite; }
   @keyframes tbBlink {
     0%, 100% { background: rgba(232,128,42,.25); }
@@ -1125,6 +1144,39 @@
   body:not(.glass) .hb .hbCard { background: #f6f7fa; border-color: #ccc; }
   body:not(.glass) .hb pre { background: #f2f3f7; color: #223; border-color: #ccc; }
 
+  /* Task timers */
+  .tcard .tclock { display: inline-block; margin-left: 6px; font-size: 10.5px; padding: 0 5px; border-radius: 6px;
+                   background: rgba(126,170,255,.22); color: #9fc2ff; white-space: nowrap; }
+  .tcard .tclock.idle { background: rgba(255,255,255,.1); color: rgba(215,226,255,.6); }
+  .tcard .tclock.over { background: rgba(232,128,42,.85); color: #16100a; font-weight: bold; }
+  #stTasks { font-size: 11.5px; color: rgba(215,226,255,.72); padding: 2px 9px; margin-right: 6px; cursor: default;
+             border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: rgba(255,255,255,.05); white-space: nowrap; }
+  body:not(.glass) #stTasks { color: #333; background: #f0f1f5; border-color: #bbb; }
+  #tMins { font: 11px Arial, Helvetica, sans-serif; height: 22px; }
+
+  /* A finished task timer dims the workspace, exactly as a pending deletion does */
+  body.taskDue .panel .kmHost, body.taskDue .panel .kmRain, body.taskDue .panel .card,
+  body.taskDue #ticker, body.taskDue #mnav {
+    filter: blur(7px) saturate(.3) contrast(.55) brightness(.8);
+    opacity: .6;
+    transition: filter .9s cubic-bezier(.22,.7,.3,1), opacity .9s cubic-bezier(.22,.7,.3,1);
+  }
+  #tkDue { position: fixed; right: 18px; bottom: 54px; z-index: 1300; width: min(380px, calc(100vw - 36px));
+           padding: 14px 16px; background: #fff; color: #000; border: 1px solid #777;
+           box-shadow: 0 14px 40px rgba(0,0,0,.3); opacity: 0; transform: translateY(14px);
+           transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.3,1); pointer-events: none; }
+  #tkDue.on { opacity: 1; transform: none; pointer-events: auto; }
+  #tkDue h4 { font-size: 12px; letter-spacing: .05em; text-transform: uppercase; opacity: .6; margin-bottom: 6px; }
+  #tkDue .tkDueWhat { font-size: 13px; line-height: 1.5; margin-bottom: 12px; overflow-wrap: anywhere; }
+  #tkDue .tkDueBtns { display: flex; gap: 8px; }
+  #tkDue button { font: 12px Arial, Helvetica, sans-serif; height: 28px; padding: 0 14px;
+                  border: 1px solid #777; background: #fff; color: #000; cursor: pointer; }
+  body.glass #tkDue { background: rgba(18,25,48,.92); color: #eef2ff; border: 1px solid rgba(255,255,255,.2);
+                      border-radius: 16px; -webkit-backdrop-filter: blur(26px); backdrop-filter: blur(26px);
+                      box-shadow: 0 20px 60px rgba(0,0,0,.55); }
+  body.glass #tkDue button { background: rgba(255,255,255,.1); color: #eef2ff;
+                             border-color: rgba(255,255,255,.22); border-radius: 9px; }
+
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
@@ -1231,7 +1283,16 @@
           <span class="seg"><button data-flip="web">Web</button><button data-flip="tasks">Tasks</button></span>
           <span class="sep"></span>
           <input type="text" id="tNew" class="grow" placeholder="New task" aria-label="New task">
+          <select id="tMins" title="Give this task a timer" aria-label="Timer">
+            <option value="0">No timer</option>
+            <optgroup label="Minutes"><option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option></optgroup>
+            <optgroup label="Hours"><option value="60">1 hour</option><option value="120">2 hours</option><option value="240">4 hours</option><option value="480">8 hours</option><option value="720">12 hours</option></optgroup>
+            <optgroup label="Days"><option value="1440">1 day</option><option value="2880">2 days</option><option value="4320">3 days</option></optgroup>
+            <optgroup label="Weeks"><option value="10080">1 week</option><option value="20160">2 weeks</option><option value="30240">3 weeks</option></optgroup>
+            <optgroup label="Months"><option value="43200">1 month</option><option value="86400">2 months</option><option value="129600">3 months</option><option value="262800">6 months</option></optgroup>
+          </select>
           <button id="tAdd">Add</button>
+          <span id="tState"></span>
           <button id="tClearDone">Clear done</button>
         </div>
         <div class="body" id="tBoard">
@@ -2172,7 +2233,7 @@ paused, then deleted again
       <section class="panel" id="status" aria-label="Status">
         <span id="stClock"><span id="sysTime">--</span> / <span id="footprint">--</span></span>
         <span id="stDock" aria-label="Closed panels"></span>
-        <span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden>×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Force winter on every panel, for testing" hidden style="display:none">Winter</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button></span>
+        <span id="stTasks" tabindex="0"></span><span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden>×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Force winter on every panel, for testing" hidden style="display:none">Winter</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button><button id="wipeBtn" title="Erase everything and start the workspace fresh">Reset OS</button></span>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
     </div>
@@ -2211,6 +2272,11 @@ paused, then deleted again
   </div>
 </div>
 <div id="saverHint">move to wake</div>
+<div id="tkDue" role="status">
+  <h4>Task timer finished</h4>
+  <div class="tkDueWhat"></div>
+  <div class="tkDueBtns"><button id="tkDueDone">Mark done</button><button id="tkDueMore">More time</button><button id="tkDueOk">Dismiss</button></div>
+</div>
 <div id="tipBox" role="tooltip"></div>
 <div id="tbPeek"><div class="tbPeekHead"></div><div class="tbPeekBody"></div></div>
 <div id="tbDue" role="status">
@@ -3471,6 +3537,7 @@ var Sys = (function () {
     });
   }
 
+  function addTaskTimerNoop() {}
   function add() {
     var t = xIn.value.trim();
     if (!t) { xIn.focus(); return; }
@@ -3776,11 +3843,68 @@ var Sys = (function () {
       }
       items.forEach(function (t) { list.appendChild(card(t, ci)); });
     });
+    state();
   }
+  // A plain-language line saying what is waiting and what is being worked on.
+  function state() {
+    var todo = tasks.filter(function (t) { return t.col === 'todo'; }).length;
+    var doing = tasks.filter(function (t) { return t.col === 'doing'; }).length;
+    var due = tasks.filter(function (t) { return t.col === 'doing' && t.due; });
+    var bits = [];
+    if (doing) bits.push(doing + (doing === 1 ? ' task being worked on' : ' tasks being worked on'));
+    if (todo) bits.push(todo + ' waiting');
+    var soon = due.sort(function (a, b) { return a.due - b.due; })[0];
+    if (soon) bits.push('next timer ' + fmtLeft(soon.due - Date.now()));
+    var el = $('stTasks');
+    if (el) {
+      el.textContent = bits.length ? bits.join(' · ') : '';
+      el.style.display = bits.length ? '' : 'none';
+      el.dataset.full = tasks.length
+        ? tasks.map(function (t) {
+            var when = t.due ? '  ' + fmtLeft(t.due - Date.now()) + ' left'
+                     : t.mins ? '  ' + label(t.mins) + ' timer, not started' : '';
+            return NAMES[COLS.indexOf(t.col)].toUpperCase() + '   ' + t.text + when;
+          }).join('\n')
+        : 'Nothing on the board.';
+    }
+    Sys.taskState = { todo: todo, doing: doing, soon: soon ? soon.due : 0,
+                      text: bits.join(' · ') };
+  }
+  // The clocks tick every second, and a finished timer dims the workspace.
+  setInterval(function () {
+    if (document.hidden) return;
+    var changed = false;
+    tasks.forEach(function (t) {
+      if (!t.due) return;
+      var left = t.due - Date.now();
+      var c = board.querySelector('.tclock[data-id="' + t.id + '"]');
+      if (c) {
+        c.textContent = left > 0 ? fmtLeft(left) : 'time up';
+        c.classList.toggle('over', left <= 0);
+      }
+      if (left <= 0 && !t.rang) { t.rang = 1; changed = true; ring(t); }
+    });
+    if (changed) save();
+    state();
+  }, 1000);
   function card(t, ci) {
     var el = document.createElement('div'), tx = document.createElement('span');
     el.className = 'tcard'; el.draggable = true; el.dataset.id = t.id;
     tx.className = 'tx'; tx.textContent = t.text; tx.title = 'Double-click to edit';
+    if (t.mins) {
+      var clock = document.createElement('span');
+      clock.className = 'tclock';
+      clock.dataset.id = t.id;
+      if (t.due) {
+        var left = t.due - Date.now();
+        clock.textContent = left > 0 ? fmtLeft(left) : 'time up';
+        if (left <= 0) clock.classList.add('over');
+      } else {
+        clock.textContent = label(t.mins);
+        clock.classList.add('idle');
+      }
+      tx.appendChild(clock);
+    }
     if (ci > 0) el.appendChild(btn('◀', 'Move to ' + NAMES[ci - 1], function () { move(t.id, -1); }));
     el.appendChild(tx);
     if (ci < 2) el.appendChild(btn('▶', 'Move to ' + NAMES[ci + 1], function () { move(t.id, 1); }));
@@ -3797,11 +3921,60 @@ var Sys = (function () {
     tx.addEventListener('dblclick', function () { edit(t, tx, el); });
     return el;
   }
+  // A finished task timer dims the workspace and says so, until it is answered.
+  function ring(t) {
+    document.body.classList.add('taskDue');
+    var box = $('tkDue');
+    box.querySelector('.tkDueWhat').textContent = '“' + t.text + '” — the time you set for this task is up.';
+    box.classList.add('on');
+    function settle() {
+      box.classList.remove('on');
+      document.body.classList.remove('taskDue');
+    }
+    $('tkDueOk').onclick = function () { settle(); };
+    $('tkDueMore').onclick = function () {
+      t.due = Date.now() + (t.mins || 15) * 60000; t.rang = 0;
+      save(); render(); settle();
+      Sys.toast('Another ' + (t.mins || 15) + ' minutes.', { ms: 2500 });
+    };
+    $('tkDueDone').onclick = function () {
+      setCol(t, 'done');
+      var i = find(t.id);
+      if (i >= 0) { tasks.splice(i, 1); tasks.push(t); }
+      save(); render(); settle();
+    };
+    Sys.beep(2);
+  }
+  function two(n) { return (n < 10 ? '0' : '') + n; }
+  function fmtLeft(ms) {
+    var sec = Math.max(0, Math.ceil(ms / 1000));
+    var d = Math.floor(sec / 86400); sec -= d * 86400;
+    var h = Math.floor(sec / 3600); sec -= h * 3600;
+    var m = Math.floor(sec / 60), ss = sec % 60;
+    var clock = two(h) + ':' + two(m) + ':' + two(ss);
+    if (d >= 30) { var mo = Math.floor(d / 30); return mo + (mo === 1 ? ' month ' : ' months ') + (d % 30) + 'd ' + clock; }
+    if (d) return d + (d === 1 ? ' day ' : ' days ') + clock;
+    return clock;
+  }
+  function label(mins) {
+    if (mins >= 43200) { var mo = Math.round(mins / 43200); return mo + (mo === 1 ? ' month' : ' months'); }
+    if (mins >= 10080) { var w = Math.round(mins / 10080); return w + (w === 1 ? ' week' : ' weeks'); }
+    if (mins >= 1440) { var d2 = Math.round(mins / 1440); return d2 + (d2 === 1 ? ' day' : ' days'); }
+    if (mins >= 60) { var h2 = mins / 60; return h2 + (h2 === 1 ? ' hour' : ' hours'); }
+    return mins + ' min';
+  }
+  function setCol(t, col) {
+    t.col = col;
+    if (t.mins) {
+      if (col === 'doing' && !t.due) t.due = Date.now() + t.mins * 60000;   // the clock starts here
+      if (col !== 'doing') { delete t.due; delete t.rang; }                 // and stops if it leaves
+    }
+  }
   function move(id, dir) {
     var i = find(id); if (i < 0) return;
     var t = tasks[i], ci = COLS.indexOf(t.col) + dir;
     if (ci < 0 || ci > 2) return;
-    tasks.splice(i, 1); t.col = COLS[ci]; tasks.push(t);
+    tasks.splice(i, 1); setCol(t, COLS[ci]); tasks.push(t);
     save(); render();
   }
   function del(id) {
@@ -3835,7 +4008,7 @@ var Sys = (function () {
       e.preventDefault(); list.classList.remove('over');
       var i = find(dragId); if (i < 0) return;
       var t = tasks.splice(i, 1)[0], before = null, cards = list.querySelectorAll('.tcard');
-      t.col = col;
+      setCol(t, col);
       for (var k = 0; k < cards.length; k++) {   // drop position: before the first card whose middle is below the pointer
         if (cards[k].dataset.id === t.id) continue;
         var r = cards[k].getBoundingClientRect();
@@ -3850,7 +4023,10 @@ var Sys = (function () {
   function add() {
     var v = input.value.trim();
     if (!v) { input.focus(); return; }
-    tasks.push({ id: uid(), text: v, col: 'todo' });
+    var mins = parseInt($('tMins').value, 10) || 0;
+    var t = { id: uid(), text: v, col: 'todo' };
+    if (mins) { t.mins = mins; }                       // the clock starts when it moves to Doing
+    tasks.push(t);
     input.value = '';
     save(); render();
   }
@@ -6916,10 +7092,16 @@ var Garden = (function () {
   }
 
   // The screensaver runs the garden in its own way: every panel planted, fuller, quieter.
+  var beforeSaver = false;
   function setSaver(v) {
+    if (v && !saver) beforeSaver = on;          // what the user actually had running
     saver = !!v;
     if (saver) { start(); }
-    else { stop(true); if (ui.km) start(); }
+    else {
+      stop(true);
+      if (beforeSaver) start();                 // only restart if it was genuinely on
+      else { ui.km = false; store.set('ws.ui', ui); }
+    }
     setBtns();
   }
   return { isOn: function () { return on; }, nudge: nudge, saver: setSaver };
@@ -7219,6 +7401,11 @@ var Garden = (function () {
       ['Site storage used', estimate ? bytes(estimate.usage || 0) + ' of ' + bytes(estimate.quota || 0) + ' available' : 'Checking…'],
       ['JavaScript memory', mem],
       ['News feeds on', String((store.get('ws.feeds', []) || []).filter(function (f) { return f.on; }).length)],
+      ['Tasks', (function () {
+        var st = Sys.taskState || {};
+        if (!st.doing && !st.todo) return 'Nothing on the board';
+        return (st.text || '');
+      })()],
       ['Button wear', (function () {
         var w = store.get('ws.wear', {}) || {}, ks = Object.keys(w);
         if (!ks.length) return 'Nothing worn yet';
@@ -7408,6 +7595,7 @@ var Garden = (function () {
       };
       li.querySelector('.x').onclick = function () {
         items = items.filter(function (x) { return x !== it; }); save(); render();
+        Trash.add('Clipboard', it.t.replace(/\s+/g, ' ').slice(0, 90), it);
       };
       list.appendChild(li);
     });
@@ -7430,10 +7618,12 @@ var Garden = (function () {
     var sel = String(getSelection() || '');
     if (sel) add(sel);
   }, true);
+  Sys.restoreClip = function (it) { items.unshift(it); items = items.slice(0, 40); save(); render(); };
   find.addEventListener('input', render);
   $('cbClear').onclick = function () {
     if (!items.length) return;
     var old = items.slice();
+    old.forEach(function (it) { Trash.add('Clipboard', it.t.replace(/\s+/g, ' ').slice(0, 90), it); });
     items = []; save(); render();
     Sys.toast('Clipboard history cleared.', { ms: 5000, actions: [{ label: 'Undo', fn: function () { items = old; save(); render(); } }] });
   };
@@ -7601,7 +7791,7 @@ var Garden = (function () {
 /* ================= Trash bin =================
    Anything thrown away in the workspace lands here, and can be put back. */
 var Trash = (function () {
-  var KEY = 'ws.trash', list = $('tbList'), items = store.get(KEY, []), restorers = {};
+  var KEY = 'ws.trash', list = $('tbList'), items = store.get(KEY, []), restorers = {}, flashT = null;
   function save() { store.set(KEY, items); }
   function when(ts) {
     var d = new Date(ts), now = new Date();
@@ -7694,6 +7884,15 @@ var Trash = (function () {
   }, 1000);
 
   // The trash button asks to be looked at, and settles once it has been.
+  // a calm pink pulse on the bin button for thirty seconds after anything is deleted
+  var pinkT = null;
+  function binned() {
+    clearTimeout(pinkT);
+    document.querySelectorAll('.seg button[data-flip="trash"]').forEach(function (b) { b.classList.add('justBinned'); });
+    pinkT = setTimeout(function () {
+      document.querySelectorAll('.seg button[data-flip="trash"]').forEach(function (b) { b.classList.remove('justBinned'); });
+    }, 30000);
+  }
   function blink(on) {
     document.querySelectorAll('.seg button[data-flip="trash"]').forEach(function (b) {
       b.classList.toggle('needsEye', !!on);
@@ -7833,9 +8032,11 @@ var Trash = (function () {
           timer = setTimeout(function () { run = null; }, 900);
           return;
         }
+        binned();
         var id = uid();
         run = { id: id, text: ch, at: Date.now() };
         items.push({ id: id, kind: 'Text', label: ch, data: ch, count: ch.length, at: Date.now() });
+        Trash._flash();
         if (items.length > 200) items = items.slice(-200);
         save(); render();
         clearTimeout(timer);
@@ -7850,8 +8051,18 @@ var Trash = (function () {
       items.forEach(function (it) { if (it.id === id) it.purgeAt = 0; });
       save(); render();
     },
+    // the bin button pulses softly for half a minute after anything lands in it
+    _flash: function () {
+      clearTimeout(flashT);
+      document.querySelectorAll('.seg button[data-flip="trash"]').forEach(function (b) { b.classList.add('justBinned'); });
+      flashT = setTimeout(function () {
+        document.querySelectorAll('.justBinned').forEach(function (b) { b.classList.remove('justBinned'); });
+      }, 30000);
+    },
     add: function (kind, label, data) {
+      binned();
       items.push({ id: uid(), kind: kind, label: String(label || '').slice(0, 200), data: data, at: Date.now() });
+      Trash._flash();
       if (items.length > 200) items = items.slice(-200);
       save(); render();
     }
@@ -7934,6 +8145,7 @@ var Vault = (function () {
   Trash.handler('Task', function (t) { if (Sys.restoreTask) Sys.restoreTask(t); });
   Trash.handler('Sheet cells', function (snap) { if (Sys.restoreCells) Sys.restoreCells(snap); });
   Trash.handler('Text', function (t) { if (Sys.restoreText) Sys.restoreText(t); });
+  Trash.handler('Clipboard', function (it) { if (Sys.restoreClip) Sys.restoreClip(it); });
   render();
   return { add: add, keep: function (pw) {
     add('New password ' + new Date().toLocaleDateString([], { month: 'short', day: 'numeric' }), '', pw, 6);
@@ -8531,8 +8743,9 @@ var Wear = (function () {
     box.style.top = Math.max(8, y) + 'px';
   }
   document.addEventListener('pointerover', function (e) {
-    var el = e.target.closest ? e.target.closest('[title], [data-tip]') : null;
+    var el = e.target.closest ? e.target.closest('[title], [data-tip], [data-full]') : null;
     if (!el) return;
+    if (el.dataset.full) { el.dataset.tip = el.dataset.full; }
     if (el.hasAttribute('title')) {          // take it off the element so the browser stops showing it
       var t = el.getAttribute('title');
       if (t) { el.dataset.tip = t; el.removeAttribute('title'); }
@@ -8543,6 +8756,7 @@ var Wear = (function () {
     clearTimeout(showT);
     showT = setTimeout(function () {
       box.textContent = text;
+      box.style.whiteSpace = 'pre-wrap';
       box.classList.add('on');
       place(e);
     }, 320);
@@ -8574,6 +8788,43 @@ var Wear = (function () {
     if (q) { var f = secs.filter(function (x) { return x.style.display !== 'none'; })[0];
              if (f) body.scrollTop = f.offsetTop - body.offsetTop - 8; }
   });
+})();
+
+/* ================= Reset =================
+   Erases every trace of the workspace — stored data, files, layout, wear — and starts over. */
+(function () {
+  var btn = $('wipeBtn');
+  if (!btn) return;
+  btn.onclick = function () {
+    Sys.toast('Reset the whole workspace? Every document, note, image, task, password and setting is erased for good.',
+      { sticky: true, actions: [
+        { label: 'Erase everything', fn: function () {
+            Sys.toast('Erase it all? This cannot be undone — back up first if you are unsure.',
+              { sticky: true, actions: [
+                { label: 'Yes, erase it', fn: wipe },
+                { label: 'Cancel' }
+              ] });
+          } },
+        { label: 'Back up first', fn: function () { var b = $('bkSave'); if (b) b.click(); } },
+        { label: 'Cancel' }
+      ] });
+  };
+  function wipe() {
+    Sys.toast('Erasing…', { ms: 4000 });
+    // browser-held settings that live outside the store
+    try {
+      localStorage.removeItem('webstation.layout');
+      localStorage.removeItem('webstation.nozoom');
+    } catch (e) {}
+    var done = function () {
+      try { localStorage.clear(); } catch (e) {}
+      var req = indexedDB.deleteDatabase('workspace');       // and the database itself
+      req.onsuccess = req.onerror = req.onblocked = function () { location.reload(); };
+      setTimeout(function () { location.reload(); }, 1200);  // reload regardless
+    };
+    if (store.replaceAll) store.replaceAll({}, []).then(done, done);
+    else done();
+  }
 })();
 
 /* ================= Status bar ================= */
