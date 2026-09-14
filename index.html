@@ -1153,7 +1153,13 @@
   #stTasks { font-size: 11.5px; color: rgba(215,226,255,.72); padding: 2px 9px; margin-right: 6px; cursor: default;
              border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: rgba(255,255,255,.05); white-space: nowrap; }
   body:not(.glass) #stTasks { color: #333; background: #f0f1f5; border-color: #bbb; }
-  #tMins { font: 11px Arial, Helvetica, sans-serif; height: 22px; }
+  #tMins { font: 11px Arial, Helvetica, sans-serif; height: 22px; padding: 0 6px; }
+  /* a readable menu: proper contrast, no hairline scrollbar, clear group headings */
+  select option, select optgroup { background: #ffffff; color: #111; }
+  body.glass select option { background: #1b2340; color: #eef2ff; padding: 4px 8px; }
+  body.glass select optgroup { background: #131a33; color: #8fb4ff; font-style: normal;
+                               font-weight: 600; letter-spacing: .06em; }
+  select { scrollbar-width: thin; }
 
   /* A finished task timer dims the workspace, exactly as a pending deletion does */
   body.taskDue .panel .kmHost, body.taskDue .panel .kmRain, body.taskDue .panel .card,
@@ -4038,16 +4044,18 @@ var Sys = (function () {
     var doing = tasks.filter(function (t) { return t.col === 'doing'; }).length;
     var due = tasks.filter(function (t) { return t.col === 'doing' && t.due; });
     var bits = [];
-    if (doing) bits.push(doing + (doing === 1 ? ' task being worked on' : ' tasks being worked on'));
-    if (todo) bits.push(todo + ' waiting');
     var soon = due.sort(function (a, b) { return a.due - b.due; })[0];
-    if (soon) bits.push('next timer ' + fmtLeft(soon.due - Date.now()));
+    if (doing || todo) bits.push('Tasks ' + (doing + todo));
     var el = $('stTasks');
     if (el) {
-      el.textContent = bits.length ? bits.join(' · ') : '';
+      el.textContent = bits.length ? bits[0] : '';
       el.style.display = bits.length ? '' : 'none';
+      var head = [];
+      if (doing) head.push(doing + (doing === 1 ? ' being worked on' : ' being worked on'));
+      if (todo) head.push(todo + ' waiting');
+      if (soon) head.push('next timer ' + fmtLeft(soon.due - Date.now()));
       el.dataset.full = tasks.length
-        ? tasks.map(function (t) {
+        ? head.join(' · ') + '\n\n' + tasks.map(function (t) {
             var when = t.due ? '  ' + fmtLeft(t.due - Date.now()) + ' left'
                      : t.mins ? '  ' + label(t.mins) + ' timer, not started' : '';
             return NAMES[COLS.indexOf(t.col)].toUpperCase() + '   ' + t.text + when;
