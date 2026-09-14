@@ -1285,6 +1285,43 @@
   #gmDone div { display: flex; gap: 8px; }
   body.glass .gmPrimary { background: linear-gradient(180deg, rgba(226,84,63,.95), rgba(190,60,42,.95)); color: #fff; border-color: rgba(255,160,140,.5); }
 
+  /* Image editor */
+  #ieMain { display: flex; min-height: 0; overflow: hidden; padding: 0; }
+  #ieStage { flex: 1; position: relative; min-width: 0; background: #1b1f20;
+             display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  #ieCanvas { display: block; box-shadow: 0 2px 14px rgba(0,0,0,.45); max-width: 100%; max-height: 100%; }
+  #ieCanvas.ieArmed { cursor: crosshair; }
+  #ieStage.ieOver { outline: 2px dashed #7eaaff; outline-offset: -8px; }
+  #ieDrop[hidden] { display: none !important; }
+  #ieDrop { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px;
+            align-items: center; justify-content: center; text-align: center; padding: 14px; }
+  #ieDrop p { margin: 0; font-size: 12.5px; opacity: .65; }
+  #ieSide { width: 232px; flex: none; overflow-y: auto; padding: 10px 12px 16px;
+            border-left: 1px solid rgba(128,128,128,.28); }
+  #ieSide h2 { font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+               margin: 14px 0 6px; opacity: .55; }
+  #ieSide h2:first-child { margin-top: 0; }
+  .ieRow { display: flex; align-items: center; gap: 7px; margin: 6px 0; }
+  .ieRow label { flex: none; width: 66px; font-size: 12px; opacity: .7; }
+  .ieRow input[type=range] { flex: 1; min-width: 0; }
+  .ieRow output { flex: none; width: 32px; text-align: right;
+                  font: 11px ui-monospace, Consolas, monospace; }
+  .ieLooks { display: flex; flex-wrap: wrap; gap: 4px; }
+  .ieLooks button { font-size: 11px; padding: 3px 7px; }
+  .ieLooks button[aria-pressed=true] { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
+  #ieTextList { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; }
+  .ieItem { display: flex; gap: 5px; align-items: center; font-size: 12px; }
+  .ieItem button { padding: 2px 6px; font-size: 11px; }
+  .ieItem span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+  .ieItem.ieOn span { font-weight: bold; color: #9fc2ff; }
+  #ieTextEdit input[type=text] { width: 100%; }
+  #ieTextEdit .ieRow label { width: 52px; }
+  #ieTextEdit input[type=color] { padding: 0; width: 32px; height: 24px; }
+  #ieNote { font-size: 11.5px; opacity: .6; margin: 7px 0 0; }
+  #ieCropBar { display: flex; gap: 6px; margin-top: 8px; }
+  body.glass .iePrimary { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; border-color: rgba(190,215,255,.5); }
+  @media (max-width: 700px) { #ieMain { flex-direction: column; } #ieSide { width: auto; border-left: 0; border-top: 1px solid rgba(128,128,128,.28); max-height: 45%; } }
+
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
@@ -1581,6 +1618,64 @@
     <div id="gmDone" hidden>
       <p id="gmDoneText"></p>
       <div><button id="gmDownload">Save to disk</button><button id="gmAgain">Back to the video</button></div>
+    </div>
+  </div>
+</div>
+<div class="face" data-face="img" id="imgFace" tabindex="-1">
+  <div class="bar"><span class="seg"></span><span class="sep"></span>
+    <button id="ieOpen">Open a picture</button>
+    <button id="ieAddText" disabled>Add text</button>
+    <button id="ieCrop" disabled>Crop</button>
+    <button id="ieRotL" disabled title="Turn left">&#8630;</button>
+    <button id="ieRotR" disabled title="Turn right">&#8631;</button>
+    <button id="ieFlipH" disabled>Flip across</button>
+    <button id="ieFlipV" disabled>Flip down</button>
+    <button id="ieReset" disabled>Back to the original</button>
+    <input type="file" id="ieFile" accept="image/*" hidden>
+  </div>
+  <div class="body" id="ieMain">
+    <div id="ieStage">
+      <canvas id="ieCanvas"></canvas>
+      <div id="ieDrop"><button id="ieOpen2">Open a picture</button><p>Or drop one here, or paste one in.</p></div>
+    </div>
+    <div id="ieSide">
+      <h2>Adjust</h2>
+      <div class="ieRow"><label for="ieBright">Brightness</label><input id="ieBright" type="range" min="-100" max="100" value="0"><output id="ieBrightV">0</output></div>
+      <div class="ieRow"><label for="ieContrast">Contrast</label><input id="ieContrast" type="range" min="-100" max="100" value="0"><output id="ieContrastV">0</output></div>
+      <div class="ieRow"><label for="ieSat">Colour</label><input id="ieSat" type="range" min="-100" max="100" value="0"><output id="ieSatV">0</output></div>
+      <h2>Looks</h2>
+      <div class="ieLooks" id="ieLooks">
+        <button data-look="none" aria-pressed="true">None</button>
+        <button data-look="grey" aria-pressed="false">Black &amp; white</button>
+        <button data-look="sepia" aria-pressed="false">Sepia</button>
+        <button data-look="warm" aria-pressed="false">Warm</button>
+        <button data-look="cool" aria-pressed="false">Cool</button>
+        <button data-look="faded" aria-pressed="false">Faded</button>
+        <button data-look="punch" aria-pressed="false">High contrast</button>
+        <button data-look="vignette" aria-pressed="false">Vignette</button>
+        <button data-look="blur" aria-pressed="false">Blur</button>
+      </div>
+      <div class="ieRow"><label for="ieStrength">Strength</label><input id="ieStrength" type="range" min="0" max="100" value="60" disabled><output id="ieStrengthV">60</output></div>
+      <div id="ieCropBar" hidden><button id="ieCropDo" class="iePrimary">Crop to the box</button><button id="ieCropNo">Cancel</button></div>
+      <h2>Text</h2>
+      <div id="ieTextList"></div>
+      <p id="ieNote">Press Add text, then click the picture.</p>
+      <div id="ieTextEdit" hidden>
+        <div class="ieRow"><input id="ieTxt" type="text" placeholder="Type here"></div>
+        <div class="ieRow"><label for="ieFont">Font</label><select id="ieFont">
+          <option value="Trebuchet MS,sans-serif">Trebuchet</option>
+          <option value="Georgia,serif">Georgia</option>
+          <option value="Impact,sans-serif">Impact</option>
+          <option value="Courier New,monospace">Courier</option>
+          <option value="Verdana,sans-serif">Verdana</option></select></div>
+        <div class="ieRow"><label for="ieSize">Size</label><input id="ieSize" type="range" min="8" max="400" value="48"><output id="ieSizeV">48</output></div>
+        <div class="ieRow"><label for="ieColor">Colour</label><input id="ieColor" type="color" value="#ffffff"><button id="ieBold" aria-pressed="false">Bold</button><button id="ieHalo" aria-pressed="true">Outline</button></div>
+        <div class="ieRow"><button id="ieDel">Delete this text</button></div>
+      </div>
+      <h2>Save</h2>
+      <div class="ieRow"><label for="ieFmt">Format</label><select id="ieFmt"><option value="image/png">PNG</option><option value="image/jpeg">JPEG</option></select></div>
+      <div class="ieRow"><label for="ieQual">Quality</label><input id="ieQual" type="range" min="30" max="100" value="90" disabled><output id="ieQualV">90</output></div>
+      <div class="ieRow"><button id="ieExport" class="iePrimary" disabled>Save the picture</button></div>
     </div>
   </div>
 </div>
@@ -2587,7 +2682,7 @@ var Layout = (function () {
               ['sticky', 'Sticky notes'], ['clip', 'Clipboard history'], ['units', 'Unit converter'],
               ['pass', 'Password generator'], ['chars', 'Character map'],
               ['vault', 'Password vault'], ['trash', 'Trash bin'],
-              ['marks', 'Bookmarks'], ['slides', 'Slides'], ['checkers', 'Checkers'], ['help', 'Handbook'], ['gif', 'GIF maker']];
+              ['marks', 'Bookmarks'], ['slides', 'Slides'], ['checkers', 'Checkers'], ['help', 'Handbook'], ['gif', 'GIF maker'], ['img', 'Image editor']];
   var HOME = {};   // where each app started out
   document.querySelectorAll('.face').forEach(function (f) {
     var p = f.closest('.panel');
@@ -2633,7 +2728,7 @@ var Layout = (function () {
                   calendar: 'Calendar', calc: 'Calc', clock: 'Clock', time: 'Time', word: 'Word', sheet: 'Sheet',
                   code: 'Code', notes: 'Notes', media: 'Media', rec: 'Recorder',
                   sticky: 'Sticky', clip: 'Clipboard', units: 'Units', pass: 'Password', chars: 'Chars',
-                  vault: 'Vault', trash: 'Trash', marks: 'Bookmarks', slides: 'Slides', checkers: 'Checkers', help: 'Handbook', gif: 'GIF maker' };
+                  vault: 'Vault', trash: 'Trash', marks: 'Bookmarks', slides: 'Slides', checkers: 'Checkers', help: 'Handbook', gif: 'GIF maker', img: 'Image editor' };
     document.querySelectorAll('.card').forEach(function (card) {
       var names = [].filter.call(card.querySelectorAll('.face'), function (f) { return !f.classList.contains('faceOff'); })
                     .map(function (f) { return f.dataset.face; });
@@ -7691,7 +7786,8 @@ var Garden = (function () {
     slides: function () { return any('#slStrip li'); },
     checkers: function () { return !!store.get('ws.checkers', null); },
     help: function () { return false; },
-    gif: function () { return false; }
+    gif: function () { return false; },
+    img: function () { return false; }
   };
   function update() {
     Object.keys(CHECK).forEach(function (k) {
@@ -7728,7 +7824,8 @@ var Garden = (function () {
     { k: 'slides', name: 'Slides', panel: 'word', key: 'ws.slides' },
     { k: 'checkers', name: 'Checkers', panel: 'media', key: 'ws.checkers' },
     { k: 'help', name: 'Handbook', panel: 'word', note: 'Built in' },
-    { k: 'gif', name: 'GIF maker', panel: 'paint', note: 'Built in' }
+    { k: 'gif', name: 'GIF maker', panel: 'paint', note: 'Built in' },
+    { k: 'img', name: 'Image editor', panel: 'paint', note: 'Built in' }
   ];
   function bytes(n) { if (n < 1024) return n + ' B'; if (n < 1048576) return (n / 1024).toFixed(1) + ' KB'; if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB'; return (n / 1073741824).toFixed(2) + ' GB'; }
   function kvSize(key) { var v = store.get(key); return v === undefined ? 0 : new Blob([JSON.stringify(v)]).size; }
@@ -8569,6 +8666,7 @@ var Vault = (function () {
   Trash.handler('Sheet cells', function (snap) { if (Sys.restoreCells) Sys.restoreCells(snap); });
   Trash.handler('Text', function (t) { if (Sys.restoreText) Sys.restoreText(t); });
   Trash.handler('Clipboard', function (it) { if (Sys.restoreClip) Sys.restoreClip(it); });
+  Trash.handler('Picture text', function (t) { if (Sys.restorePicText) Sys.restorePicText(t); });
   render();
   return { add: add, keep: function (pw) {
     add('New password ' + new Date().toLocaleDateString([], { month: 'short', day: 'numeric' }), '', pw, 6);
@@ -9695,6 +9793,475 @@ var Wear = (function () {
     a.download = 'animation.gif';
     a.click();
   };
+})();
+
+var imageEditorAPI = {};
+/* ================= Image editor =================
+   Load a picture, adjust it, put words on it, save it. Every effect is a
+   parameter re-applied to the untouched original, so nothing ever stacks
+   on top of a previous render. Canvas 2D only, nothing leaves the machine. */
+(function () {
+  var canvas = $("ieCanvas"), ctx = canvas.getContext("2d");
+  var stage = $("ieStage");
+
+  var original = null;        // exactly as loaded, never written to
+  var source = null;          // working base; a baked crop replaces it
+  var oriented = null;        // source after rotate/flip, cached
+  var outURL = null, lastBlob = null;
+
+  var st = {
+    rot: 0, flipH: false, flipV: false,
+    crop: null,
+    bright: 0, contrast: 0, sat: 0,
+    look: "none", strength: 60,
+    texts: [], sel: -1
+  };
+  var scale = 1, armText = false, cropping = false, cropBox = null, drag = null;
+
+  function openFile() { $("ieFile").click(); }
+  $("ieOpen").onclick = openFile;
+  $("ieOpen2").onclick = openFile;
+  $("ieFile").onchange = function () { if (this.files && this.files[0]) loadBlob(this.files[0]); };
+
+  stage.addEventListener("dragover", function (e) { e.preventDefault(); stage.classList.add("ieOver"); });
+  stage.addEventListener("dragleave", function () { stage.classList.remove("ieOver"); });
+  stage.addEventListener("drop", function (e) {
+    e.preventDefault(); stage.classList.remove("ieOver");
+    var f = e.dataTransfer && e.dataTransfer.files[0];
+    if (f && f.type.indexOf("image/") === 0) loadBlob(f);
+  });
+  // paste only lands here when this app is the one on screen
+  document.addEventListener("paste", function (e) {
+    if (!$("imgFace").classList.contains("front")) return;
+    var items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image/") === 0) { loadBlob(items[i].getAsFile()); return; }
+    }
+  });
+
+  function loadBlob(blob) {
+    var url = URL.createObjectURL(blob);
+    var img = new Image();
+    img.onload = function () {
+      original = document.createElement("canvas");
+      original.width = img.naturalWidth;
+      original.height = img.naturalHeight;
+      original.getContext("2d").drawImage(img, 0, 0);
+      source = original;
+      URL.revokeObjectURL(url);
+      resetAll();
+      $("ieDrop").hidden = true;
+      ["ieAddText", "ieCrop", "ieRotL", "ieRotR", "ieFlipH", "ieFlipV", "ieReset", "ieExport"]
+        .forEach(function (id) { $(id).disabled = false; });
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); Sys.toast("That file could not be opened as a picture.", { ms: 3500 }); };
+    img.src = url;
+  }
+  imageEditorAPI.load = loadBlob;     // Gallery and Files hand pictures in here
+
+  function resetAll() {
+    source = original;
+    st.rot = 0; st.flipH = false; st.flipV = false; st.crop = null;
+    st.bright = 0; st.contrast = 0; st.sat = 0;
+    st.look = "none"; st.strength = 60;
+    st.texts = []; st.sel = -1;
+    $("ieBright").value = 0; $("ieContrast").value = 0; $("ieSat").value = 0;
+    $("ieStrength").value = 60;
+    cropping = false; cropBox = null; armText = false;
+    $("ieCropBar").hidden = true;
+    syncOutputs(); markLooks(); buildOriented(); listTexts(); render();
+  }
+  $("ieReset").onclick = resetAll;
+
+  // Rotate and flip are baked once into their own canvas; redoing this on
+  // every slider move would be wasted work on a big photo.
+  function buildOriented() {
+    if (!source) return;
+    var sw = source.width, sh = source.height;
+    var turned = (st.rot === 90 || st.rot === 270);
+    oriented = document.createElement("canvas");
+    oriented.width = turned ? sh : sw;
+    oriented.height = turned ? sw : sh;
+    var c = oriented.getContext("2d");
+    c.save();
+    c.translate(oriented.width / 2, oriented.height / 2);
+    c.rotate((st.rot * Math.PI) / 180);
+    c.scale(st.flipH ? -1 : 1, st.flipV ? -1 : 1);
+    c.drawImage(source, -sw / 2, -sh / 2);
+    c.restore();
+    if (!st.crop) st.crop = { x: 0, y: 0, w: oriented.width, h: oriented.height };
+  }
+
+  function turn(deg) {
+    if (!source) return;
+    flattenCrop();
+    st.rot = (st.rot + deg + 360) % 360;
+    st.crop = null;
+    buildOriented();
+    render();
+  }
+  $("ieRotL").onclick = function () { turn(-90); };
+  $("ieRotR").onclick = function () { turn(90); };
+  $("ieFlipH").onclick = function () { flattenCrop(); st.flipH = !st.flipH; st.crop = null; buildOriented(); render(); };
+  $("ieFlipV").onclick = function () { flattenCrop(); st.flipV = !st.flipV; st.crop = null; buildOriented(); render(); };
+
+  // Turning after a crop would put the crop box in the wrong place, so the
+  // crop becomes the new source first. Adjustments stay parameters.
+  function flattenCrop() {
+    if (!st.crop || !oriented) return;
+    var c = st.crop;
+    if (c.x === 0 && c.y === 0 && c.w === oriented.width && c.h === oriented.height) return;
+    var cut = document.createElement("canvas");
+    cut.width = c.w; cut.height = c.h;
+    cut.getContext("2d").drawImage(oriented, c.x, c.y, c.w, c.h, 0, 0, c.w, c.h);
+    for (var i = 0; i < st.texts.length; i++) {
+      st.texts[i].x -= c.x; st.texts[i].y -= c.y;
+    }
+    source = cut;
+    st.rot = 0; st.flipH = false; st.flipV = false;
+    st.crop = null;
+  }
+
+  function filterString(k) {
+    var f = [];
+    if (st.bright) f.push("brightness(" + (1 + st.bright / 140) + ")");
+    if (st.contrast) f.push("contrast(" + (1 + st.contrast / 140) + ")");
+    if (st.sat) f.push("saturate(" + (1 + st.sat / 100) + ")");
+    var s = st.strength / 100;
+    if (st.look === "grey") f.push("grayscale(" + s + ")");
+    else if (st.look === "sepia") f.push("sepia(" + s + ")");
+    else if (st.look === "warm") f.push("sepia(" + (0.4 * s) + ") saturate(" + (1 + 0.35 * s) + ")");
+    else if (st.look === "cool") f.push("saturate(" + (1 + 0.2 * s) + ") hue-rotate(" + (-14 * s) + "deg)");
+    else if (st.look === "faded") f.push("contrast(" + (1 - 0.3 * s) + ") saturate(" + (1 - 0.35 * s) + ") brightness(" + (1 + 0.07 * s) + ")");
+    else if (st.look === "punch") f.push("contrast(" + (1 + 0.55 * s) + ") saturate(" + (1 + 0.3 * s) + ")");
+    else if (st.look === "blur") f.push("blur(" + (12 * s * k).toFixed(2) + "px)");
+    return f.length ? f.join(" ") : "none";
+  }
+
+  // Tints ride on top as a blend so they warm the light without flattening
+  // the picture the way a plain translucent rectangle would.
+  function overlay(c, w, h) {
+    var s = st.strength / 100;
+    if (st.look === "warm" || st.look === "cool") {
+      c.save();
+      c.globalCompositeOperation = "soft-light";
+      c.globalAlpha = 0.55 * s;
+      c.fillStyle = st.look === "warm" ? "#FF9A3C" : "#4FA8D8";
+      c.fillRect(0, 0, w, h);
+      c.restore();
+    } else if (st.look === "faded") {
+      c.save();
+      c.globalAlpha = 0.14 * s;
+      c.fillStyle = "#E8E4DA";
+      c.fillRect(0, 0, w, h);
+      c.restore();
+    } else if (st.look === "vignette") {
+      var g = c.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.32,
+                                     w / 2, h / 2, Math.max(w, h) * 0.75);
+      g.addColorStop(0, "rgba(0,0,0,0)");
+      g.addColorStop(1, "rgba(0,0,0," + (0.85 * s) + ")");
+      c.save();
+      c.fillStyle = g;
+      c.fillRect(0, 0, w, h);
+      c.restore();
+    }
+  }
+
+  function fontOf(t, k) {
+    return (t.bold ? "bold " : "") + Math.max(1, t.size * k) + "px " + t.font;
+  }
+  function drawTexts(c, k) {
+    for (var i = 0; i < st.texts.length; i++) {
+      var t = st.texts[i];
+      if (!t.text) continue;
+      c.save();
+      c.font = fontOf(t, k);
+      c.textBaseline = "middle";
+      c.textAlign = "left";
+      var x = (t.x - st.crop.x) * k, y = (t.y - st.crop.y) * k;
+      if (t.halo) {
+        c.lineJoin = "round";
+        c.strokeStyle = "rgba(0,0,0,.85)";
+        c.lineWidth = Math.max(2, t.size * k * 0.14);
+        c.strokeText(t.text, x, y);
+      }
+      c.fillStyle = t.color;
+      c.fillText(t.text, x, y);
+      c.restore();
+    }
+  }
+  function textBox(t, k) {
+    ctx.save();
+    ctx.font = fontOf(t, k);
+    var w = ctx.measureText(t.text || " ").width;
+    ctx.restore();
+    var h = t.size * k;
+    return { x: (t.x - st.crop.x) * k, y: (t.y - st.crop.y) * k - h / 2, w: w, h: h };
+  }
+
+  function listTexts() {
+    var box = $("ieTextList");
+    box.textContent = "";
+    for (var i = 0; i < st.texts.length; i++) {
+      (function (i) {
+        var row = document.createElement("div");
+        row.className = "ieItem" + (i === st.sel ? " ieOn" : "");
+        var label = document.createElement("span");
+        label.textContent = st.texts[i].text || "(empty)";
+        label.onclick = function () { select(i); };
+        var del = document.createElement("button");
+        del.textContent = "Delete";
+        del.onclick = function () { removeText(i); };
+        row.appendChild(label);
+        row.appendChild(del);
+        box.appendChild(row);
+      })(i);
+    }
+    $("ieTextEdit").hidden = st.sel < 0;
+    $("ieNote").hidden = st.texts.length > 0;
+  }
+  function select(i) {
+    st.sel = i;
+    if (i >= 0) {
+      var t = st.texts[i];
+      $("ieTxt").value = t.text;
+      $("ieFont").value = t.font;
+      $("ieSize").value = t.size;
+      $("ieSizeV").value = t.size;
+      $("ieColor").value = t.color;
+      $("ieBold").setAttribute("aria-pressed", String(t.bold));
+      $("ieHalo").setAttribute("aria-pressed", String(t.halo));
+    }
+    listTexts();
+    render();
+  }
+  function removeText(i) {
+    var gone = st.texts[i];
+    st.texts.splice(i, 1);
+    if (st.sel >= st.texts.length) st.sel = st.texts.length - 1;
+    listTexts();
+    render();
+    if (gone && gone.text) Trash.add('Picture text', gone.text.slice(0, 60), gone);
+  }
+  $("ieDel").onclick = function () { if (st.sel >= 0) removeText(st.sel); };
+  Sys.restorePicText = function (t) { st.texts.push(t); select(st.texts.length - 1); };
+
+  $("ieAddText").onclick = function () {
+    armText = true;
+    canvas.classList.add("ieArmed");
+    $("ieNote").hidden = false;
+    $("ieNote").textContent = "Now click where the words should go.";
+  };
+  function addTextAt(ix, iy) {
+    var t = {
+      text: "Your words", x: ix, y: iy,
+      size: Math.max(14, Math.round(st.crop.h / 12)),
+      color: "#ffffff", font: "Trebuchet MS,sans-serif", bold: false, halo: true
+    };
+    st.texts.push(t);
+    st.sel = st.texts.length - 1;
+    armText = false;
+    canvas.classList.remove("ieArmed");
+    $("ieNote").textContent = "Press Add text, then click the picture.";
+    select(st.sel);
+  }
+
+  $("ieTxt").oninput = function () {
+    if (st.sel < 0) return;
+    st.texts[st.sel].text = this.value;
+    listTexts(); render();
+  };
+  $("ieFont").onchange = function () { if (st.sel >= 0) { st.texts[st.sel].font = this.value; render(); } };
+  $("ieSize").oninput = function () {
+    if (st.sel < 0) return;
+    st.texts[st.sel].size = +this.value; $("ieSizeV").value = this.value; render();
+  };
+  $("ieColor").oninput = function () { if (st.sel >= 0) { st.texts[st.sel].color = this.value; render(); } };
+  function toggle(btn, key) {
+    $(btn).onclick = function () {
+      if (st.sel < 0) return;
+      st.texts[st.sel][key] = !st.texts[st.sel][key];
+      this.setAttribute("aria-pressed", String(st.texts[st.sel][key]));
+      render();
+    };
+  }
+  toggle("ieBold", "bold");
+  toggle("ieHalo", "halo");
+
+  function atImage(e) {
+    var r = canvas.getBoundingClientRect();
+    return {
+      cx: e.clientX - r.left,
+      cy: e.clientY - r.top,
+      ix: (e.clientX - r.left) / scale + st.crop.x,
+      iy: (e.clientY - r.top) / scale + st.crop.y
+    };
+  }
+  canvas.addEventListener("pointerdown", function (e) {
+    if (!source) return;
+    var p = atImage(e);
+    canvas.setPointerCapture(e.pointerId);
+    if (cropping) { cropBox = { x0: p.cx, y0: p.cy, x1: p.cx, y1: p.cy }; drag = "crop"; return; }
+    if (armText) { addTextAt(p.ix, p.iy); return; }
+    for (var i = st.texts.length - 1; i >= 0; i--) {
+      var b = textBox(st.texts[i], scale);
+      if (p.cx >= b.x - 4 && p.cx <= b.x + b.w + 4 && p.cy >= b.y - 4 && p.cy <= b.y + b.h + 4) {
+        select(i);
+        drag = { i: i, dx: p.ix - st.texts[i].x, dy: p.iy - st.texts[i].y };
+        return;
+      }
+    }
+  });
+  canvas.addEventListener("pointermove", function (e) {
+    if (!drag) return;
+    var p = atImage(e);
+    if (drag === "crop") { cropBox.x1 = p.cx; cropBox.y1 = p.cy; render(); return; }
+    st.texts[drag.i].x = p.ix - drag.dx;
+    st.texts[drag.i].y = p.iy - drag.dy;
+    render();
+  });
+  canvas.addEventListener("pointerup", function () { drag = null; });
+
+  $("ieCrop").onclick = function () {
+    cropping = true; cropBox = null; armText = false;
+    canvas.classList.add("ieArmed");
+    $("ieCropBar").hidden = false;
+    render();
+  };
+  $("ieCropNo").onclick = endCrop;
+  function endCrop() {
+    cropping = false; cropBox = null;
+    canvas.classList.remove("ieArmed");
+    $("ieCropBar").hidden = true;
+    render();
+  }
+  $("ieCropDo").onclick = function () {
+    if (!cropBox) { endCrop(); return; }
+    var x0 = Math.min(cropBox.x0, cropBox.x1) / scale + st.crop.x;
+    var y0 = Math.min(cropBox.y0, cropBox.y1) / scale + st.crop.y;
+    var x1 = Math.max(cropBox.x0, cropBox.x1) / scale + st.crop.x;
+    var y1 = Math.max(cropBox.y0, cropBox.y1) / scale + st.crop.y;
+    var nx = Math.max(0, Math.round(x0)), ny = Math.max(0, Math.round(y0));
+    var nw = Math.min(oriented.width, Math.round(x1)) - nx;
+    var nh = Math.min(oriented.height, Math.round(y1)) - ny;
+    if (nw > 8 && nh > 8) st.crop = { x: nx, y: ny, w: nw, h: nh };
+    endCrop();
+  };
+
+  function slider(id, key) {
+    $(id).oninput = function () { st[key] = +this.value; syncOutputs(); render(); };
+  }
+  slider("ieBright", "bright");
+  slider("ieContrast", "contrast");
+  slider("ieSat", "sat");
+  slider("ieStrength", "strength");
+
+  function syncOutputs() {
+    $("ieBrightV").value = st.bright;
+    $("ieContrastV").value = st.contrast;
+    $("ieSatV").value = st.sat;
+    $("ieStrengthV").value = st.strength;
+    $("ieQualV").value = $("ieQual").value;
+  }
+  function markLooks() {
+    var b = $("ieLooks").getElementsByTagName("button");
+    for (var i = 0; i < b.length; i++) {
+      b[i].setAttribute("aria-pressed", String(b[i].getAttribute("data-look") === st.look));
+    }
+    $("ieStrength").disabled = st.look === "none";
+  }
+  $("ieLooks").onclick = function (e) {
+    var look = e.target.getAttribute && e.target.getAttribute("data-look");
+    if (!look) return;
+    st.look = look;
+    markLooks();
+    render();
+  };
+
+  function paint(c, w, h, k) {
+    c.save();
+    c.filter = filterString(k);
+    c.drawImage(oriented, st.crop.x, st.crop.y, st.crop.w, st.crop.h, 0, 0, w, h);
+    c.restore();
+    overlay(c, w, h);
+    drawTexts(c, k);
+  }
+
+  function render() {
+    if (!source || !oriented) return;
+    var box = stage.getBoundingClientRect();
+    var avail = Math.max(40, box.width - 20), availH = Math.max(40, box.height - 20);
+    scale = Math.min(avail / st.crop.w, availH / st.crop.h, 1);
+    var w = Math.max(1, Math.round(st.crop.w * scale));
+    var h = Math.max(1, Math.round(st.crop.h * scale));
+    canvas.width = w; canvas.height = h;
+    ctx.clearRect(0, 0, w, h);
+    paint(ctx, w, h, scale);
+
+    if (st.sel >= 0 && !cropping) {
+      var b = textBox(st.texts[st.sel], scale);
+      ctx.save();
+      ctx.strokeStyle = "rgba(126,170,255,.9)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 3]);
+      ctx.strokeRect(b.x - 3.5, b.y - 3.5, b.w + 7, b.h + 7);
+      ctx.restore();
+    }
+    if (cropping && cropBox) {
+      var x = Math.min(cropBox.x0, cropBox.x1), y = Math.min(cropBox.y0, cropBox.y1);
+      var cw = Math.abs(cropBox.x1 - cropBox.x0), ch = Math.abs(cropBox.y1 - cropBox.y0);
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,.45)";
+      ctx.fillRect(0, 0, w, y);
+      ctx.fillRect(0, y + ch, w, h - y - ch);
+      ctx.fillRect(0, y, x, ch);
+      ctx.fillRect(x + cw, y, w - x - cw, ch);
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + .5, y + .5, cw, ch);
+      ctx.restore();
+    }
+  }
+  imageEditorAPI.redraw = render;
+
+  // Sized from its panel, never from the window.
+  if (window.ResizeObserver) new ResizeObserver(render).observe(stage);
+  $("imgFace").addEventListener("faceshown", render);
+
+  $("ieFmt").onchange = function () { $("ieQual").disabled = this.value !== "image/jpeg"; };
+  $("ieQual").oninput = syncOutputs;
+
+  $("ieExport").onclick = function () {
+    if (!source) return;
+    var type = $("ieFmt").value, q = (+$("ieQual").value) / 100;
+    var w = st.crop.w, h = st.crop.h;
+    var out = document.createElement("canvas");
+    out.width = w; out.height = h;
+    var c = out.getContext("2d");
+    if (type === "image/jpeg") {            // JPEG has no alpha; fill it so edges aren't black
+      c.fillStyle = "#fff";
+      c.fillRect(0, 0, w, h);
+    }
+    paint(c, w, h, 1);
+    out.toBlob(function (blob) {
+      deliver(blob, { width: w, height: h, type: type, bytes: blob.size });
+    }, type, type === "image/jpeg" ? q : undefined);
+  };
+
+  function deliver(blob, info) {
+    lastBlob = blob;
+    if (outURL) URL.revokeObjectURL(outURL);
+    outURL = URL.createObjectURL(blob);
+    var name = "picture-" + Date.now() + (info.type === "image/jpeg" ? ".jpg" : ".png");
+    if (galleryAPI && galleryAPI.addBlob) galleryAPI.addBlob(blob, name);
+    Sys.toast("Saved to the Gallery — " + info.width + " x " + info.height + ", " +
+              Math.max(1, Math.round(info.bytes / 1024)) + " KB.", { ms: 4000,
+      actions: [{ label: 'Save to disk', fn: function () {
+        var a = document.createElement('a');
+        a.href = outURL; a.download = name; a.click();
+      } }] });
+  }
 })();
 
 /* ================= Status bar ================= */
