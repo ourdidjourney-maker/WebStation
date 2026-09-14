@@ -1177,6 +1177,21 @@
   body.glass #tkDue button { background: rgba(255,255,255,.1); color: #eef2ff;
                              border-color: rgba(255,255,255,.22); border-radius: 9px; }
 
+  /* Media playlist */
+  #mQueue { position: absolute; top: 38px; right: 8px; z-index: 40; width: min(340px, calc(100% - 16px));
+            max-height: min(300px, 62%); overflow: auto; display: none;
+            background: #fff; border: 1px solid #777; box-shadow: 0 14px 40px rgba(0,0,0,.4); }
+  body.glass #mQueue { background: rgba(18,25,48,.94); border: 1px solid rgba(255,255,255,.2);
+                       border-radius: 14px; -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+                       box-shadow: 0 20px 60px rgba(0,0,0,.55); }
+  #mediaFace.showQueue #mQueue { display: block; }
+  #mCount { font-size: 11px; opacity: .75; margin-left: 4px; white-space: nowrap; }
+  #mQueue li { cursor: pointer; }
+  #mQueue li.playing { background: rgba(126,170,255,.18); }
+  #mQueue li.playing .mqName { font-weight: bold; }
+  #mQueue .mqName { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #mQueue .mqKind { font-size: 10.5px; opacity: .6; min-width: 52px; }
+
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
@@ -2131,14 +2146,17 @@ paused, then deleted again
       <!-- ===== Media player ===== -->
       <section class="panel" id="media" aria-label="Media player">
         <div class="card">
-          <div class="face front" data-face="media" id="mediaFace" tabindex="-1">
+          <div class="face front" data-face="media" id="mediaFace" tabindex="-1" style="position:absolute">
             <div class="bar">
               <span class="seg"><button data-flip="media">Media</button><button data-flip="rec">Recorder</button></span>
               <span class="sep"></span>
               <input type="text" id="mUrl" class="grow" placeholder="Media URL or YouTube link" spellcheck="false" autocomplete="off">
               <button id="mLoad">Load</button>
               <button id="mOpen">Open file</button>
-              <input type="file" id="mFile" accept="audio/*,video/*" hidden>
+              <button id="mAdd" title="Add to the playlist without playing it now">Add</button>
+              <button id="mList" title="Show or hide the playlist">Playlist</button><span id="mCount"></span>
+              <ul id="mQueue" class="clist" aria-label="Playlist"></ul>
+              <input type="file" id="mFile" accept="audio/*,video/*" multiple hidden>
             </div>
             <div class="body" id="mStage">
               <video id="mVideo" playsinline></video>
@@ -2155,7 +2173,7 @@ paused, then deleted again
                 <option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option>
                 <option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option>
               </select>
-              <button id="mLoop">Loop</button>
+              <button id="mPrevTrack" aria-label="Previous">⏮</button><button id="mNextTrack" aria-label="Next">⏭</button><button id="mLoop">Loop</button>
               <button id="mFull">Fullscreen</button>
             </div>
           </div>
@@ -3662,16 +3680,135 @@ var Sys = (function () {
     else if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
   };
 
-  $('mLoad').onclick = loadURL;
-  urlIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') loadURL(); });
+  // ── Playlist ───────────────────────────────────────────────────────────
+  // Queue up as many videos as you like — local files and YouTube links together —
+  // and move through them with the track buttons, or by clicking one in the list.
+  var queue = [], atTrack = -1, qList = $('mQueue'), face = $('mediaFace');
+
+  function drawQueue() {
+    var c = $('mCount');
+    if (c) c.textContent = queue.length ? (atTrack + 1) + ' / ' + queue.length : '';
+    qList.innerHTML = '';
+    if (!queue.length) {
+      var e = document.createElement('li');
+      e.className = 'empty';
+      e.textContent = 'Nothing queued. Add files or links and they line up here.';
+      qList.appendChild(e);
+      return;
+    }
+    queue.forEach(function (item, i) {
+      var li = document.createElement('li');
+      if (i === atTrack) li.className = 'playing';
+      li.innerHTML = '<span class="mqKind"></span><span class="mqName"></span><button class="x">×</button>';
+      li.children[0].textContent = item.kind === 'yt' ? 'YouTube' : item.kind === 'file' ? 'File' : 'Link';
+      li.children[1].textContent = item.name;
+      li.children[1].title = item.name;
+      li.onclick = function (ev) {
+        if (ev.target.tagName === 'BUTTON') return;
+        playAt(i);
+        face.classList.remove('showQueue');            // pick one and the list gets out of the way
+        $('mList').classList.remove('on');
+      };
+      li.querySelector('.x').onclick = function () {
+        var wasPlaying = i === atTrack;
+        queue.splice(i, 1);
+        if (i < atTrack) atTrack--;
+        else if (wasPlaying) atTrack = -1;
+        drawQueue();
+      };
+      qList.appendChild(li);
+    });
+  }
+  function queueAdd(item, playNow) {
+    queue.push(item);
+    if (playNow || atTrack < 0) playAt(queue.length - 1);
+    else drawQueue();
+  }
+  function playAt(i) {
+    if (i < 0 || i >= queue.length) return;
+    atTrack = i;
+    var item = queue[i];
+    urlIn.value = item.name;
+    if (item.kind === 'yt') {
+      reset();
+      v.style.display = 'none'; yt.style.display = 'block';
+      yt.src = 'https://www.youtube.com/embed/' + item.id + '?autoplay=1';
+      setCtl(false);
+      msg('');
+    } else if (item.kind === 'file') {
+      var u = URL.createObjectURL(item.file);
+      start(u, item.name);
+      objURL = u;
+      v.play().catch(function () {});
+    } else {
+      start(item.url, item.name);
+      v.play().catch(function () {});
+    }
+    drawQueue();
+  }
+  function step(d) {
+    if (!queue.length) return;
+    playAt((atTrack + d + queue.length) % queue.length);
+  }
+  v.addEventListener('ended', function () { if (!v.loop && queue.length > 1) step(1); });
+  $('mPrevTrack').onclick = function () { step(-1); };
+  $('mNextTrack').onclick = function () { step(1); };
+  $('mList').onclick = function () {
+    face.classList.toggle('showQueue');
+    $('mList').classList.toggle('on', face.classList.contains('showQueue'));
+  };
+
+  function itemFromUrl(u) {
+    var id = ytId(u);
+    if (id) return { kind: 'yt', id: id, name: 'YouTube · ' + id };
+    return { kind: 'url', url: u, name: u.split('/').pop().split('?')[0] || u };
+  }
+  $('mLoad').onclick = function () {
+    var u = urlIn.value.trim();
+    if (!u) return;
+    if (!ytId(u) && !/^https?:\/\//i.test(u)) { msg('Enter a full address starting with http:// or https://'); return; }
+    queueAdd(itemFromUrl(u), true);
+  };
+  $('mAdd').onclick = function () {
+    var u = urlIn.value.trim();
+    if (!u) { $('mFile').click(); return; }
+    if (!ytId(u) && !/^https?:\/\//i.test(u)) { msg('Enter a full address starting with http:// or https://'); return; }
+    queueAdd(itemFromUrl(u), false);
+    urlIn.value = '';
+    Sys.toast('Added to the playlist.', { ms: 1800 });
+  };
+  urlIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') $('mLoad').click(); });
   $('mOpen').onclick = function () { $('mFile').click(); };
-  $('mFile').onchange = function () { var f = this.files[0]; this.value = ''; loadFile(f); };
+  $('mFile').onchange = function () {
+    var files = [].slice.call(this.files);
+    this.value = '';
+    var first = queue.length;
+    files.forEach(function (f) {
+      if (f.type && !/^(audio|video)\//.test(f.type)) return;
+      queue.push({ kind: 'file', file: f, name: f.name });
+    });
+    if (queue.length > first) playAt(first);
+    else drawQueue();
+  };
+  // clicking anywhere else closes the floating list
+  document.addEventListener('pointerdown', function (e) {
+    if (!face.classList.contains('showQueue')) return;
+    if (e.target.closest('#mQueue') || e.target.closest('#mList')) return;
+    face.classList.remove('showQueue');
+    $('mList').classList.remove('on');
+  }, true);
+  drawQueue();
 
   panel.addEventListener('dragover', function (e) { e.preventDefault(); panel.classList.add('drag'); });
   panel.addEventListener('dragleave', function (e) { if (!panel.contains(e.relatedTarget)) panel.classList.remove('drag'); });
   panel.addEventListener('drop', function (e) {
     e.preventDefault(); panel.classList.remove('drag');
-    if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]);
+    var fs = [].slice.call(e.dataTransfer.files), first = queue.length;
+    fs.forEach(function (f) {
+      if (f.type && !/^(audio|video)\//.test(f.type)) return;
+      queue.push({ kind: 'file', file: f, name: f.name });
+    });
+    if (queue.length > first) playAt(first);
   });
 
   upd();
