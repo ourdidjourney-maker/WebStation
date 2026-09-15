@@ -4534,13 +4534,13 @@ var Sys = (function () {
     var roll = Math.random();
     // most letters shed a little, some shed almost nothing, a few really run
     var drops = roll < 0.12 ? Math.round(rr(0, 1))
-              : roll > 0.9  ? Math.round(rr(5, 8))
-                            : Math.round(rr(2, 4));
+              : roll > 0.9  ? Math.round(rr(3, 5))
+                            : Math.round(rr(1, 2));
     for (var k = 0; k < drops; k++) bead(rr(0, 300), Math.random() < 0.18);
 
     // and roughly one letter in five holds on to a bead and lets it go late
     if (Math.random() < 0.22) {
-      var late = Math.round(rr(1, 2));
+      var late = 1;
       for (var j = 0; j < late; j++) bead(rr(450, 2200), Math.random() < 0.18);
     }
   }
