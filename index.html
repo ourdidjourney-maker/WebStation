@@ -867,9 +867,18 @@
   }
 
   /* Screensaver: every toolbar and document fades away, leaving the panels and the garden */
-  body.saver .card { opacity: 0; pointer-events: none; transition: opacity 2.2s ease; }
+  .card, #ticker, #status, #mnav, .unblurChip, #toasts { transition: opacity 2.2s ease; }
+  body.saver .card, body.saver #ticker, body.saver #status, body.saver #mnav,
+  body.saver .unblurChip, body.saver #toasts,
+  body.saver .panel.blurred .card, body.saver .panel.proxOn .card,
+  body.waking .card, body.waking #ticker, body.waking #status, body.waking #mnav,
+  body.waking .unblurChip, body.waking #toasts,
+  body.waking .panel.blurred .card, body.waking .panel.proxOn .card {
+    transition: opacity 2.2s ease, filter 2.2s ease !important;
+  }
+  body.saver .card { opacity: 0; pointer-events: none; }
   body.saver #ticker, body.saver #status, body.saver #mnav,
-  body.saver .unblurChip, body.saver #toasts { opacity: 0; pointer-events: none; transition: opacity 2.2s ease; }
+  body.saver .unblurChip, body.saver #toasts { opacity: 0; pointer-events: none; }
   body.saver .panel { border-color: rgba(255,255,255,.1); }
   body.saver #splitH { display: none; }
   .card, #ticker, #status { transition: opacity 1.4s ease; }
@@ -999,6 +1008,12 @@
     50% { background: rgba(255,138,185,.9) !important; border-color: rgba(255,195,218,.95) !important; color: #2a0f1c !important; }
   }
   /* Something just went in the bin: a calm pink pulse for half a minute */
+  /* the clipboard holds something: the same pink, steady rather than pulsing */
+  .seg button[data-flip="clip"].holding { background: rgba(255,150,200,.4); }
+  body.glass .seg button[data-flip="clip"].holding {
+    background: linear-gradient(180deg, rgba(255,168,210,.8), rgba(238,120,180,.8));
+    color: #2a0f1e; border-color: rgba(255,190,220,.6);
+  }
   .seg button[data-flip="trash"].justBinned { animation: tbSoft 2.4s ease-in-out infinite; }
   @keyframes tbSoft {
     0%, 100% { background: rgba(255,255,255,.08); box-shadow: none; }
@@ -1351,6 +1366,40 @@
   #seBarFill { height: 100%; width: 0; background: #7eaaff; transition: width .1s linear; }
   #seStatus { margin: 5px 0 0; font-size: 12px; opacity: .75; }
   @media (max-width: 700px) { #seMain { flex-direction: column; } #seSide { width: auto; border-left: 0; border-top: 1px solid rgba(128,128,128,.28); max-height: 48%; } }
+
+  /* Network disclosure — it stays until it is answered */
+  #netWarn { position: fixed; top: 0; left: 50%; transform: translate(-50%, -110%); z-index: 1500;
+             width: min(620px, calc(100vw - 24px)); padding: 16px 20px 14px;
+             background: #fff; color: #000; border: 1px solid #777;
+             box-shadow: 0 18px 50px rgba(0,0,0,.4); transition: transform .5s cubic-bezier(.2,.8,.3,1); }
+  #netWarn.on { transform: translate(-50%, 0); }
+  body.netAsk .panel .kmHost, body.netAsk .panel .kmRain, body.netAsk .panel .card,
+  body.netAsk #ticker, body.netAsk #mnav {
+    filter: blur(7px) saturate(.3) contrast(.55) brightness(.8);
+    opacity: .6;
+    transition: filter .9s cubic-bezier(.22,.7,.3,1), opacity .9s cubic-bezier(.22,.7,.3,1);
+  }
+  body.glass #netWarn { background: rgba(18,25,48,.96); color: #eef2ff;
+                        border: 1px solid rgba(255,190,120,.45); border-radius: 0 0 18px 18px;
+                        -webkit-backdrop-filter: blur(26px); backdrop-filter: blur(26px);
+                        box-shadow: 0 24px 70px rgba(0,0,0,.6); }
+  #netWarn h4 { margin: 0 0 8px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: #e8963a; }
+  #netWarn p { margin: 0 0 8px; font-size: 13.5px; line-height: 1.5; }
+  #netWarn .netWarnList { margin-bottom: 4px; opacity: .8; }
+  #netWarn ul { margin: 0 0 10px; padding-left: 20px; font-size: 13px; line-height: 1.6; opacity: .85; }
+  #netWarn .netWarnFoot { font-size: 12.5px; opacity: .7; }
+  #netWarn .netWarnBtns { display: flex; gap: 8px; }
+  #netWarn button { font: 13px Arial, Helvetica, sans-serif; height: 30px; padding: 0 16px; cursor: pointer;
+                    border: 1px solid #777; background: #fff; color: #000; }
+  body.glass #netWarn button { background: rgba(255,255,255,.1); color: #eef2ff;
+                               border-color: rgba(255,255,255,.22); border-radius: 9px; }
+  #netWarnAgain { display: block; margin-top: 9px; font-size: 12px; opacity: .65; }
+  /* the live network state in the control group */
+  #netState { font-size: 11.5px; padding: 2px 9px; margin-right: 6px; cursor: default; white-space: nowrap;
+              border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: rgba(255,255,255,.05); }
+  #netState.open { border-color: rgba(232,150,58,.6); background: rgba(232,150,58,.16); color: #ffc98a; }
+  body:not(.glass) #netState { color: #333; background: #f0f1f5; border-color: #bbb; }
+  body:not(.glass) #netState.open { color: #8a4a00; background: #ffe9cf; border-color: #d99a4a; }
 
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
@@ -2556,7 +2605,7 @@ paused, then deleted again
       <section class="panel" id="status" aria-label="Status">
         <span id="stClock"><span id="sysTime">--</span> / <span id="footprint">--</span></span>
         <span id="stDock" aria-label="Closed panels"></span>
-        <span id="stTasks" tabindex="0"></span><span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden>×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Test mode: force winter and snow on every panel" hidden>Snow test</button><button id="saverBtn" title="How long before the screensaver starts">Screensaver</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button><button id="wipeBtn" title="Erase everything and start the workspace fresh">Reset OS</button></span>
+        <span id="netState" tabindex="0"></span><span id="stTasks" tabindex="0"></span><span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden>×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Test mode: force winter and snow on every panel" hidden>Snow test</button><button id="saverBtn" title="How long before the screensaver starts">Screensaver</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button><button id="wipeBtn" title="Erase everything and start the workspace fresh">Reset OS</button></span>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
     </div>
@@ -2595,6 +2644,22 @@ paused, then deleted again
   </div>
 </div>
 <div id="saverHint">move to wake</div>
+<div id="netWarn" role="alertdialog" aria-modal="false" aria-labelledby="netWarnH">
+  <h4 id="netWarnH">You are about to leave your machine</h4>
+  <p id="netWarnWhat"></p>
+  <p class="netWarnList">Whoever runs it will be able to see:</p>
+  <ul>
+    <li>Your IP address, which gives away your rough location</li>
+    <li>Your device, operating system and browser</li>
+    <li>The time you asked, and what you asked for</li>
+  </ul>
+  <p class="netWarnFoot">Nothing you have made in this workspace is sent. Only the request itself.</p>
+  <div class="netWarnBtns">
+    <button id="netWarnNo">Cancel</button>
+    <button id="netWarnOk" class="gmPrimary">Okay, I understand</button>
+  </div>
+  <label id="netWarnAgain"><input type="checkbox" id="netWarnStop"> Don't show this again this session</label>
+</div>
 <div id="tkDue" role="status">
   <h4>Task timer finished</h4>
   <div class="tkDueWhat"></div>
@@ -2742,6 +2807,50 @@ store.load().then(function () {
 
 // Cross-app handoffs.
 var paintAPI = {}, galleryAPI = {}, mediaAPI = {};
+
+/* ================= Network disclosure =================
+   This file has no server and nothing to upload to, but the browser panel and the
+   news ticker do reach the outside world. Before either does, the user is told
+   exactly what that exposes, and nothing happens until they answer. The control
+   group then shows, at a glance, whether anything has a route out right now. */
+var Net = (function () {
+  var box = $('netWarn'), pill = $('netState');
+  var allowed = {};            // what the user has said yes to, this session only
+  var quiet = false;           // "don't ask again this session"
+  var live = {};               // what is actually reaching out right now
+
+  function ask(kind, what, go) {
+    if (quiet || allowed[kind]) { go(); return; }
+    $('netWarnWhat').textContent = what;
+    box.classList.add('on');
+    document.body.classList.add('netAsk');
+    $('netWarnOk').onclick = function () {
+      allowed[kind] = true;
+      if ($('netWarnStop').checked) quiet = true;
+      box.classList.remove('on');
+      document.body.classList.remove('netAsk');
+      go();
+    };
+    $('netWarnNo').onclick = function () {
+      box.classList.remove('on');
+      document.body.classList.remove('netAsk');
+    };
+  }
+  // A route is open while something is genuinely reaching out, and the pill says so.
+  function open(kind) { live[kind] = (live[kind] || 0) + 1; paint(); }
+  function close(kind) { if (live[kind]) live[kind]--; if (!live[kind]) delete live[kind]; paint(); }
+  function paint() {
+    var names = Object.keys(live);
+    pill.classList.toggle('open', names.length > 0);
+    pill.textContent = names.length ? 'Network open' : 'Sealed';
+    pill.dataset.full = names.length
+      ? 'Reaching out right now:\n\n' + names.map(function (n) { return '  ' + n; }).join('\n') +
+        '\n\nThey can see your IP address, your device, and what you asked for.'
+      : 'Nothing is leaving this machine.\n\nNo server, no account, no telemetry. The workspace is sealed.';
+  }
+  paint();
+  return { ask: ask, open: open, close: close, isQuiet: function () { return quiet; } };
+})();
 
 /* ================= Flip system ================= */
 // Any .panel containing a .card of .face elements can flip between faces.
@@ -3222,8 +3331,11 @@ var Sys = (function () {
     var u = normalize(url.value);
     if (u === '') return;
     if (u === null) { hint.textContent = 'Only http:// and https:// addresses are supported.'; hint.style.display = 'flex'; return; }
-    hist = hist.slice(0, idx + 1); hist.push(u); idx = hist.length - 1;
-    show(u);
+    Net.ask('web', 'The browser is about to load ' + u + ' from the internet.', function () {
+      hist = hist.slice(0, idx + 1); hist.push(u); idx = hist.length - 1;
+      show(u);
+      Net.open('The browser, showing ' + u);
+    });
   }
 
   $('bGo').onclick = go;
@@ -3663,25 +3775,41 @@ var Sys = (function () {
     document.body.appendChild(el);
     setTimeout(function () { el.remove(); }, heat + 60);
 
-    // Hot metal sheds slag: a few glowing beads run off the letter and fall away.
+    // Hot metal sheds slag. Real metal does not drip on a schedule: most of it
+    // runs off as the letter lands, but some letters hold a bead and let it go
+    // much later, and now and then one sheds far more than its neighbours.
     var panel = ed.closest('.panel'), pr = panel ? panel.getBoundingClientRect() : null;
-    var drops = Math.round(rr(2, 4));
-    for (var k = 0; k < drops; k++) {
+    var floor = pr ? Math.max(40, pr.bottom - box.top - box.height) : 320;
+
+    function bead(delay, heavy) {
       var d = document.createElement('span');
       d.className = 'wpSlag';
-      var sz = rr(1.4, 3.4);
+      var sz = heavy ? rr(2.6, 4.6) : rr(1.1, 3.4);
       d.style.width = sz.toFixed(1) + 'px';
       d.style.height = sz.toFixed(1) + 'px';
-      d.style.left = (box.left + rr(0, Math.max(2, box.width))) + 'px';
-      d.style.top = (box.top + box.height * rr(0.5, 0.95)) + 'px';
-      var floor = pr ? Math.max(40, pr.bottom - box.top - box.height) : 320;
-      var life = rr(1800, 3400);
-      d.style.setProperty('--sy', Math.round(floor) + 'px');
-      d.style.setProperty('--sx', Math.round(rr(-26, 26)) + 'px');
+      d.style.left = (box.left + rr(-2, Math.max(2, box.width) + 2)) + 'px';
+      d.style.top = (box.top + box.height * rr(0.45, 1)) + 'px';
+      // a fatter bead is heavier, so it falls faster and further
+      var life = heavy ? rr(1200, 2400) : rr(1600, 3600);
+      d.style.setProperty('--sy', Math.round(floor * (heavy ? rr(0.8, 1) : rr(0.35, 1))) + 'px');
+      d.style.setProperty('--sx', Math.round(rr(-30, 30)) + 'px');
       d.style.setProperty('--life', Math.round(life) + 'ms');
-      d.style.setProperty('--sdelay', Math.round(rr(0, 260)) + 'ms');
+      d.style.setProperty('--sdelay', Math.round(delay) + 'ms');
       document.body.appendChild(d);
-      (function (node, ms) { setTimeout(function () { node.remove(); }, ms); })(d, life + 320);
+      setTimeout(function () { d.remove(); }, delay + life + 320);
+    }
+
+    var roll = Math.random();
+    // most letters shed a little, some shed almost nothing, a few really run
+    var drops = roll < 0.12 ? Math.round(rr(0, 1))
+              : roll > 0.9  ? Math.round(rr(5, 8))
+                            : Math.round(rr(2, 4));
+    for (var k = 0; k < drops; k++) bead(rr(0, 300), Math.random() < 0.18);
+
+    // and roughly one letter in five holds on to a bead and lets it go late
+    if (Math.random() < 0.22) {
+      var late = Math.round(rr(1, 2));
+      for (var j = 0; j < late; j++) bead(rr(450, 2200), Math.random() < 0.18);
     }
   }
   ed.addEventListener('input', function (e) {
@@ -6104,8 +6232,10 @@ var Sys = (function () {
       if (i >= PROXIES.length) return Promise.reject(new Error('unreachable'));
       var ctl = new AbortController(), timer = setTimeout(function () { ctl.abort(); }, 12000);
       live.push(ctl);
+      Net.open('The news ticker');
       function done() {
         clearTimeout(timer);
+        Net.close('The news ticker');
         var k = live.indexOf(ctl);
         if (k >= 0) live.splice(k, 1);
       }
@@ -6242,6 +6372,7 @@ var Sys = (function () {
   var feedTimer = setInterval(renderRows, 10 * 60 * 1000);
 
   // The ticker can be switched off entirely: no fetches, no scrolling, no row rebuilding.
+  var booting = true;          // a warning at startup would be noise, not consent
   var feedBtn = $('feedBtn'), tickerOn = store.get('ws.ui', {}).ticker !== false;
   function setTicker(v) {
     tickerOn = !!v;
@@ -6252,10 +6383,12 @@ var Sys = (function () {
     clearInterval(feedTimer);
     feedTimer = null;
     if (tickerOn) {
+      if (!booting) Net.ask('feeds', 'The news ticker is about to fetch your feeds from the internet.', function () {});
       reconnect();
       feedTimer = setInterval(renderRows, 10 * 60 * 1000);
       renderRows();
     } else {
+      Net.close('The news ticker');
       severAll();                  // anything open right now is cut off mid-flight
       cache = {};                  // and nothing fetched is kept in memory
       rows.innerHTML = '';
@@ -6269,6 +6402,7 @@ var Sys = (function () {
     Sys.toast(tickerOn ? 'News ticker on.' : 'News ticker off — nothing is being fetched.', { ms: 2600 });
   };
   setTicker(tickerOn);
+  booting = false;
   save();
   renderRows();
 })();
@@ -8046,10 +8180,14 @@ var Garden = (function () {
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     Garden.saver(true);
   }
+  var wakeT = null;
   function leave() {
     if (!active) return;
     active = false;
+    document.body.classList.add('waking');        // hold the slow fade while it returns
     document.body.classList.remove('saver');
+    clearTimeout(wakeT);
+    wakeT = setTimeout(function () { document.body.classList.remove('waking'); }, 2400);
     Garden.saver(false);
   }
   function poke() {
@@ -8169,7 +8307,12 @@ var Garden = (function () {
 (function () {
   var KEY = 'ws.clipboard', list = $('cbList'), find = $('cbFind');
   var items = store.get(KEY, []);
-  function save() { store.set(KEY, items); }
+  function glow() {
+    document.querySelectorAll('.seg button[data-flip="clip"]').forEach(function (b) {
+      b.classList.toggle('holding', items.length > 0);
+    });
+  }
+  function save() { store.set(KEY, items); glow(); }
   function when(ts) { return new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
   function render() {
     var q = find.value.trim().toLowerCase();
@@ -8219,6 +8362,8 @@ var Garden = (function () {
     if (sel) add(sel);
   }, true);
   Sys.restoreClip = function (it) { items.unshift(it); items = items.slice(0, 40); save(); render(); };
+  glow();
+  document.addEventListener('faceshown', glow, true);
   find.addEventListener('input', render);
   $('cbClear').onclick = function () {
     if (!items.length) return;
