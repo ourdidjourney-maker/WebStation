@@ -290,11 +290,11 @@
   /* Browser resize handle (sits on the line under the browser) */
   #lower { position: relative; }
   /* Every seam between panels can be dragged, the same way the browser one always could. */
-  #splitV { position: absolute; top: 0; bottom: 0; left: calc(var(--seam, 50%) - 4px); width: 9px; cursor: col-resize; z-index: 20; touch-action: none; outline: none; }
+  #splitV { position: absolute; top: 0; bottom: 0; left: 0; width: 9px; cursor: col-resize; z-index: 20; touch-action: none; outline: none; }
   #splitV::after { content: ''; position: absolute; top: 0; bottom: 0; left: 3px; width: 2px; background: transparent; }
   #splitV:hover::after, #splitV:focus-visible::after, body.resizing #splitV::after { background: #06f; }
-  #splitL { position: absolute; left: 0; right: 0; top: calc(var(--seamL, 66.5%) - 4px); height: 9px; cursor: row-resize; z-index: 20; touch-action: none; outline: none; }
-  #splitR { position: absolute; left: 0; right: 0; top: calc(var(--seamR, 42%) - 4px); height: 9px; cursor: row-resize; z-index: 20; touch-action: none; outline: none; }
+  #splitL { position: absolute; left: 0; right: 0; top: 0; height: 9px; cursor: row-resize; z-index: 20; touch-action: none; outline: none; }
+  #splitR { position: absolute; left: 0; right: 0; top: 0; height: 9px; cursor: row-resize; z-index: 20; touch-action: none; outline: none; }
   #splitL::after, #splitR::after { content: ''; position: absolute; left: 0; right: 0; top: 3px; height: 2px; background: transparent; }
   #splitL:hover::after, #splitR:hover::after, body.resizing #splitL::after, body.resizing #splitR::after { background: #06f; }
   body.glass #splitV::after, body.glass #splitL::after, body.glass #splitR::after { background: transparent; }
@@ -3857,12 +3857,24 @@ var Sys = (function () {
       pct = Math.max(MIN, Math.min(MAX, pct));
       el.style.setProperty(varTop, pct + 'fr');
       el.style.setProperty(varBot, (100 - pct) + 'fr');
-      el.style.setProperty(seamVar, pct + '%');       // the handle rides on the seam it moves
+      place();                                        // sit on the gap, wherever it ended up
       h.setAttribute('aria-valuenow', String(Math.round(pct)));
       return pct;
     }
+    // The gap is measured from the panels themselves, so extra rows in a column
+    // (the status bar, for one) can never put the handle through a panel.
+    function place() {
+      var a = $(sides[0]), b = $(sides[sides.length - 1]);
+      if (!a || !b) return;
+      var ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect(), rc = el.getBoundingClientRect();
+      if (vertical) h.style.left = Math.round((ra.right + rb.left) / 2 - rc.left - 4) + 'px';
+      else h.style.top = Math.round((ra.bottom + rb.top) / 2 - rc.top - 4) + 'px';
+    }
     function commit(p) { ui[id] = p; store.set('ws.ui', ui); }
     cur = apply(ui[id] || def);
+    requestAnimationFrame(place);                     // once the grid has laid out
+    window.addEventListener('resize', place);
+    document.addEventListener('panelschanged', place);
     h.setAttribute('aria-valuemin', String(MIN));
     h.setAttribute('aria-valuemax', String(MAX));
     h.addEventListener('pointerdown', function (e) {
