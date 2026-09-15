@@ -1459,24 +1459,17 @@
   /* Theatre: the room goes dark and the picture gets the space.
      It only dims panels OTHER than the one playing, and it never touches the
      warning systems, so a pending deletion or a network warning still reads. */
-  body.theatre .panel:not(.playing) .card { opacity: .1; transition: opacity .7s ease; pointer-events: none; }
-  body.theatre .panel:not(.playing) .kmHost, body.theatre .panel:not(.playing) .kmRain,
-  body.theatre .panel:not(.playing) .kmLamp, body.theatre #ticker { opacity: .06; transition: opacity .7s ease; }
-  body.theatre #status { opacity: .28; transition: opacity .7s ease; }
-  body.theatre #status:hover { opacity: 1; }
-  body.theatre #splitH, body.theatre #splitV, body.theatre #splitL, body.theatre #splitR { opacity: 0; pointer-events: none; }
+  #mediaFace .bar, #mediaFace #mCtl { transition: opacity .6s ease; }
+  body.theatre .panel.playing .card { background: #000 !important; border-color: rgba(255,255,255,.06) !important;
+                                      box-shadow: none !important; transition: background .6s ease; }
+  body.theatre #mediaFace, body.theatre #mediaFace .body, body.theatre #mStage {
+    background: #000 !important; transition: background .6s ease; }
+  body.theatre #mediaFace .bar, body.theatre #mediaFace #mCtl { opacity: 0; }
+  body.theatre #mediaFace:hover .bar, body.theatre #mediaFace:hover #mCtl { opacity: 1; }
   /* the playing panel takes the screen, but stays a panel: no fullscreen takeover */
-  body.theatre .panel.playing { position: fixed; left: 10px; right: 10px; top: 10px;
-                                bottom: calc(var(--statusH, 46px) + 14px); z-index: 900; }
-  body.theatre #status { position: fixed; left: 0; right: 0; bottom: 0; height: auto; z-index: 950; }
-  body.theatre #right { grid-template-rows: minmax(0, 1fr) minmax(24px, 7fr) !important; }
-  body.theatre .panel.playing .card { box-shadow: 0 30px 90px rgba(0,0,0,.7); }
+
   #mTheatre.on { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
-  /* a warning always wins: if something needs answering, the room comes back up */
-  body.theatre.dueAlert .panel:not(.playing) .card, body.theatre.taskDue .panel:not(.playing) .card,
-  body.theatre.netAsk .panel:not(.playing) .card { opacity: .6; }
-  body.theatre.dueAlert .panel.playing, body.theatre.taskDue .panel.playing,
-  body.theatre.netAsk .panel.playing { z-index: 1; }
+
 
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
@@ -3064,7 +3057,7 @@ paused, then deleted again
                 <option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option>
               </select>
               <button id="mPrevTrack" aria-label="Previous">⏮</button><button id="mNextTrack" aria-label="Next">⏭</button><button id="mLoop">Loop</button>
-              <button id="mTheatre" title="Dim everything else and give the video room" hidden style="display:none">Theatre</button><button id="mFull">Fullscreen</button>
+              <button id="mTheatre" title="Dim everything else and give the video room">Theatre</button><button id="mFull">Fullscreen</button>
             </div>
           </div>
           <div class="face" data-face="rec" id="recFace" tabindex="-1">
@@ -4768,9 +4761,6 @@ var Sys = (function () {
     var panel = $('mediaFace').closest('.panel');    // it follows the app, not the panel
     document.querySelectorAll('.panel.playing').forEach(function (p) { p.classList.remove('playing'); });
     if (theatre && panel) panel.classList.add('playing');
-    // leave room for the control group, whatever height it is
-    var sb = $('status');
-    if (sb) document.documentElement.style.setProperty('--statusH', Math.round(sb.getBoundingClientRect().height) + 'px');
     document.body.classList.toggle('theatre', theatre);
     $('mTheatre').classList.toggle('on', theatre);
     $('mTheatre').setAttribute('aria-pressed', String(theatre));
@@ -7614,7 +7604,11 @@ var Garden = (function () {
     if (family !== 'fern' && family !== 'bud' && family !== 'spike') {
       var hr = kind === 'tulip' || kind === 'bell' ? r * 0.18 : kind === 'poppy' ? r * 0.42
              : kind === 'sunflower' ? r * 0.5 : kind === 'rose' ? r * 0.16 : r * 0.34;
-      var heart = svg('circle', { r: hr.toFixed(1), fill: pal[2], class: 'kmHeart' });
+      var hcy = kind === 'bell' ? r * 0.5              // the bell hangs downward
+              : kind === 'sunflower' ? -r * 0.3        // its petals start above the origin
+              : kind === 'tulip' ? -r * 0.35           // the cup sits high
+              : 0;
+      var heart = svg('circle', { cx: 0, cy: hcy.toFixed(1), r: hr.toFixed(1), fill: pal[2], class: 'kmHeart' });
       heart.style.setProperty('--cd', (grow * 0.5) + 'ms');
       head.appendChild(heart);
     }
