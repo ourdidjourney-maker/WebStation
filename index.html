@@ -1471,6 +1471,37 @@
   #mTheatre.on { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
 
 
+  /* Post */
+  #poBody { overflow: auto; padding: 10px 12px 14px; }
+  .poPane[hidden] { display: none !important; }
+  .poRow { display: flex; gap: 7px; align-items: center; margin: 7px 0; flex-wrap: wrap; }
+  .poRow label { flex: none; width: 58px; font-size: 12px; opacity: .7; }
+  .poRow input[type=text], .poRow select { flex: 1; min-width: 120px; }
+  #poText, #poBlob, #poDrop, #poCode { width: 100%; min-height: 96px; resize: vertical;
+    font: 12.5px/1.5 ui-monospace, Consolas, monospace; padding: 8px 10px; }
+  #poText { min-height: 140px; font: 14px/1.6 Arial, Helvetica, sans-serif; }
+  #poBlob, #poCode { min-height: 110px; word-break: break-all; }
+  .poHint { font-size: 12px; opacity: .62; }
+  #poState { font-size: 11.5px; opacity: .8; margin-left: 4px; }
+  #poState.live { color: #7ef0b0; }
+  .poPrimary { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
+  #poInList li.unread .grow1 { font-weight: bold; }
+  .poWhen { font-size: 11px; opacity: .55; }
+
+  /* Chat */
+  #chBody { display: flex; flex-direction: column; min-height: 0; padding: 0; }
+  #chLog { flex: 1 1 auto; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 7px; }
+  .chMsg { max-width: 78%; padding: 7px 11px; border-radius: 13px; font-size: 13.5px; line-height: 1.45;
+           word-break: break-word; }
+  .chMsg.them { align-self: flex-start; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14); }
+  .chMsg.me { align-self: flex-end; background: linear-gradient(180deg, rgba(126,170,255,.9), rgba(86,128,240,.9)); color: #071024; }
+  .chMsg .chTime { display: block; font-size: 10.5px; opacity: .55; margin-top: 3px; }
+  .chNote { align-self: center; font-size: 11.5px; opacity: .55; }
+  #chBar { flex: 0 0 auto; display: flex; gap: 7px; padding: 9px 12px; border-top: 1px solid rgba(128,128,128,.28); }
+  #chIn { flex: 1; min-width: 0; }
+  #chWho { font-size: 11.5px; opacity: .75; }
+  #chWho.live { color: #7ef0b0; }
+
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
@@ -1615,6 +1646,93 @@
       </div>
       <div class="body"><ul id="bmList" class="clist" aria-label="Bookmarks"></ul></div>
     </div>
+<div class="face" data-face="post" id="postFace" tabindex="-1">
+  <div class="bar"><span class="seg"></span><span class="sep"></span>
+    <button id="poWrite" class="on">Write</button>
+    <button id="poIn">Inbox</button>
+    <button id="poOut">Outbox</button>
+    <button id="poWho">Contacts</button>
+    <button id="poLink">Live link</button>
+    <span id="poState"></span>
+  </div>
+  <div class="body" id="poBody">
+
+    <div class="poPane" id="poPaneWrite">
+      <div class="poRow"><label for="poTo">To</label>
+        <select id="poTo"></select>
+        <button id="poSeal" class="poPrimary">Seal it</button>
+        <button id="poSend">Send on the link</button></div>
+      <div class="poRow"><label for="poSubj">Subject</label><input type="text" id="poSubj" placeholder="What is it about"></div>
+      <textarea id="poText" placeholder="Write your message here."></textarea>
+      <div class="poRow" id="poSealed" hidden>
+        <textarea id="poBlob" readonly></textarea>
+      </div>
+      <div class="poRow" id="poSealedBtns" hidden>
+        <button id="poCopy">Copy it</button>
+        <button id="poSave">Save as a file</button>
+        <button id="poDone">Done</button>
+        <span class="poHint">Send that block any way you like. Only they can open it.</span>
+      </div>
+    </div>
+
+    <div class="poPane" id="poPaneIn" hidden>
+      <div class="poRow">
+        <button id="poPaste" class="poPrimary">Open an envelope</button>
+        <button id="poOpenFile">Open a file</button>
+        <input type="file" id="poFile" accept=".wsp,text/plain" hidden>
+        <span class="poHint">Paste what they sent you, or open the file.</span>
+      </div>
+      <div class="poRow" id="poDropRow" hidden><textarea id="poDrop" placeholder="Paste the block here"></textarea></div>
+      <div class="poRow" id="poDropBtns" hidden><button id="poRead" class="poPrimary">Read it</button><button id="poCancelIn">Cancel</button></div>
+      <ul id="poInList" class="clist"></ul>
+    </div>
+
+    <div class="poPane" id="poPaneOut" hidden>
+      <p class="poHint">Messages waiting to go. They send themselves when a live link opens.</p>
+      <ul id="poOutList" class="clist"></ul>
+    </div>
+
+    <div class="poPane" id="poPaneWho" hidden>
+      <div class="poRow"><label>You are</label><input type="text" id="poMe" readonly><button id="poCopyMe">Copy my address</button></div>
+      <p class="poHint">Give that to anyone who should be able to write to you. It is not an account and nobody issued it.</p>
+      <div class="poRow"><input type="text" id="poName" placeholder="Their name"><input type="text" id="poAddr" placeholder="Their address"><button id="poAdd" class="poPrimary">Add</button></div>
+      <ul id="poWhoList" class="clist"></ul>
+    </div>
+
+    <div class="poPane" id="poPaneLink" hidden>
+      <p class="poHint">A direct link between the two machines. Nothing in the middle, nobody to ask.</p>
+      <div class="poRow">
+        <select id="poPeer"></select>
+        <button id="poGo" class="poPrimary">Connect</button>
+        <button id="poDrop2">Hang up</button>
+        <span class="poHint" id="poStep"></span>
+      </div>
+      <div class="poRow" id="poCodeRow" hidden>
+        <textarea id="poCode" placeholder="The code appears here"></textarea>
+      </div>
+      <div class="poRow" id="poCodeBtns" hidden>
+        <button id="poCodeCopy">Copy my code</button>
+        <button id="poCodeUse" class="poPrimary">Use their code</button>
+        <span class="poHint" id="poCodeHint"></span>
+      </div>
+      <ul id="poLog" class="clist"></ul>
+    </div>
+
+  </div>
+</div>
+<div class="face" data-face="chat" id="chatFace" tabindex="-1">
+  <div class="bar"><span class="seg"></span><span class="sep"></span>
+    <span id="chWho">Not connected</span>
+    <button id="chClear">Clear</button>
+  </div>
+  <div class="body" id="chBody">
+    <div id="chLog"></div>
+    <div id="chBar">
+      <input type="text" id="chIn" placeholder="Type and press Enter" autocomplete="off">
+      <button id="chSend" class="poPrimary">Send</button>
+    </div>
+  </div>
+</div>
     </div>
   </section>
 
@@ -3451,7 +3569,7 @@ var Layout = (function () {
               ['sticky', 'Sticky notes'], ['clip', 'Clipboard history'], ['units', 'Unit converter'],
               ['pass', 'Password generator'], ['chars', 'Character map'],
               ['vault', 'Password vault'], ['trash', 'Trash bin'],
-              ['marks', 'Bookmarks'], ['slides', 'Slides'], ['checkers', 'Checkers'], ['help', 'Handbook'], ['gif', 'GIF maker'], ['img', 'Image editor'], ['snd', 'Sound editor']];
+              ['marks', 'Bookmarks'], ['slides', 'Slides'], ['checkers', 'Checkers'], ['help', 'Handbook'], ['gif', 'GIF maker'], ['img', 'Image editor'], ['snd', 'Sound editor'], ['post', 'Post'], ['chat', 'Chat']];
   var HOME = {};   // where each app started out
   document.querySelectorAll('.face').forEach(function (f) {
     var p = f.closest('.panel');
@@ -3497,7 +3615,7 @@ var Layout = (function () {
                   calendar: 'Calendar', calc: 'Calc', clock: 'Clock', time: 'Time', word: 'Word', sheet: 'Sheet',
                   code: 'Code', notes: 'Notes', media: 'Media', rec: 'Recorder',
                   sticky: 'Sticky', clip: 'Clipboard', units: 'Units', pass: 'Password', chars: 'Chars',
-                  vault: 'Vault', trash: 'Trash', marks: 'Bookmarks', slides: 'Slides', checkers: 'Checkers', help: 'Handbook', gif: 'GIF maker', img: 'Image editor', snd: 'Sound editor' };
+                  vault: 'Vault', trash: 'Trash', marks: 'Bookmarks', slides: 'Slides', checkers: 'Checkers', help: 'Handbook', gif: 'GIF maker', img: 'Image editor', snd: 'Sound editor', post: 'Post', chat: 'Chat' };
     document.querySelectorAll('.card').forEach(function (card) {
       var names = [].filter.call(card.querySelectorAll('.face'), function (f) { return !f.classList.contains('faceOff'); })
                     .map(function (f) { return f.dataset.face; });
@@ -4037,6 +4155,18 @@ var Sys = (function () {
 /* ================= Browser ================= */
 (function () {
   var frame = $('bFrame'), url = $('bUrl'), hint = $('bHint'), back = $('bBack'), fwd = $('bFwd');
+
+  frame.addEventListener('load', function () {
+    if (!frame.getAttribute('src')) return;
+    var typed = url.value.trim();
+    // the address bar still holds what was typed; anything after that is unknown to us
+    if (frame._shown && frame._shown !== typed) {
+      Net.only('The browser, showing ', 'a page you followed from ' + frame._shown);
+    } else {
+      frame._shown = typed;
+      Net.only('The browser, showing ', typed);
+    }
+  });
   var hist = [], idx = -1, KEY = 'ws.web';   // our own history: cross-origin frames don't expose theirs
 
   function normalize(s) {
@@ -4739,7 +4869,7 @@ var Sys = (function () {
 
   // Roll "today" over at midnight.
   var lastDay = key(new Date());
-  setInterval(function () { var k = key(new Date()); if (k !== lastDay) { lastDay = k; render(); } }, 60000);
+  setInterval(function () { if (document.hidden) return; var k = key(new Date()); if (k !== lastDay) { lastDay = k; render(); } }, 60000);
 
   render();
 })();
@@ -6740,7 +6870,7 @@ var Sys = (function () {
     download(new Blob([rows.map(function (r) { return r.map(csv).join(','); }).join('\r\n')], { type: 'text/csv' }), 'time-entries.csv');
   };
 
-  setInterval(function () { if (st.running) tick(); }, 1000);
+  setInterval(function () { if (!document.hidden && st.running) tick(); }, 1000);
   render();
 })();
 
@@ -6995,10 +7125,8 @@ var Sys = (function () {
       if (i >= PROXIES.length) return Promise.reject(new Error('unreachable'));
       var ctl = new AbortController(), timer = setTimeout(function () { ctl.abort(); }, 12000);
       live.push(ctl);
-      Net.open('The news ticker');
       function done() {
         clearTimeout(timer);
-        Net.close('The news ticker');
         var k = live.indexOf(ctl);
         if (k >= 0) live.splice(k, 1);
       }
@@ -7147,11 +7275,12 @@ var Sys = (function () {
     feedTimer = null;
     if (tickerOn) {
       if (!booting) Net.ask('feeds', 'The news ticker is about to fetch your feeds from the internet.', function () {});
+      Net.only('The news ticker — ', 'on, fetching every ten minutes');
       reconnect();
       feedTimer = setInterval(renderRows, 10 * 60 * 1000);
       renderRows();
     } else {
-      Net.close('The news ticker');
+      Net.only('The news ticker', null);
       severAll();                  // anything open right now is cut off mid-flight
       cache = {};                  // and nothing fetched is kept in memory
       rows.innerHTML = '';
@@ -7378,7 +7507,12 @@ var Blur = (function () {
   setProx(prox);
   Panels.ids.forEach(apply);
   place();
-  setInterval(function () { if (!document.hidden) place(); }, 800);   // follows panel resizes, flips and closes
+  if (window.ResizeObserver) {
+    var ro = new ResizeObserver(function () { if (!document.hidden) place(); });
+    Panels.ids.forEach(function (pid) { var n = $(pid); if (n) ro.observe(n); });
+  }
+  document.addEventListener('faceshown', function () { if (!document.hidden) place(); }, true);
+  setInterval(function () { if (!document.hidden) place(); }, 1500);   // safety net behind the observers
   return { toggle: toggle, isBlurred: function (id) { return !!blurred[id]; } };
 })();
 
@@ -8144,6 +8278,7 @@ var Garden = (function () {
     pile.style.height = depth.toFixed(1) + 'px';
     var grow = setInterval(function () {
       if (!wet[id] || !layer.isConnected) { clearInterval(grow); return; }
+      if (document.hidden) return;            // nothing to see, nothing to build
       if (lamps[id]) {
         // The lamp is on: the drift sinks from the top down and runs off as meltwater.
         pile.classList.add('melting');
@@ -8767,7 +8902,9 @@ var Garden = (function () {
     help: function () { return false; },
     gif: function () { return false; },
     img: function () { return false; },
-    snd: function () { return false; }
+    snd: function () { return false; },
+    post: function () { var v = store.get('ws.post', null); return !!(v && ((v.inbox || []).length || (v.outbox || []).length)); },
+    chat: function () { return (store.get('ws.chat', []) || []).length > 0; }
   };
   function update() {
     Object.keys(CHECK).forEach(function (k) {
@@ -8806,7 +8943,9 @@ var Garden = (function () {
     { k: 'help', name: 'Handbook', panel: 'word', note: 'Built in' },
     { k: 'gif', name: 'GIF maker', panel: 'paint', note: 'Built in' },
     { k: 'img', name: 'Image editor', panel: 'paint', note: 'Built in' },
-    { k: 'snd', name: 'Sound editor', panel: 'media', note: 'Built in' }
+    { k: 'snd', name: 'Sound editor', panel: 'media', note: 'Built in' },
+    { k: 'post', name: 'Post', panel: 'browser', key: 'ws.post' },
+    { k: 'chat', name: 'Chat', panel: 'browser', key: 'ws.chat' }
   ];
   function bytes(n) { if (n < 1024) return n + ' B'; if (n < 1048576) return (n / 1024).toFixed(1) + ' KB'; if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB'; return (n / 1073741824).toFixed(2) + ' GB'; }
   function kvSize(key) { var v = store.get(key); return v === undefined ? 0 : new Blob([JSON.stringify(v)]).size; }
@@ -9386,6 +9525,7 @@ var Trash = (function () {
   setInterval(function () {
     var pending = items.filter(function (it) { return it.purgeAt; });
     if (!pending.length) return;
+    if (document.hidden) return;              // the deadline is still kept; only the display waits
     var ticks = list.querySelectorAll('li');
     var order = items.slice().reverse();
     ticks.forEach(function (li, i) {
@@ -11852,6 +11992,547 @@ var soundEditorAPI = {};
         } }
     ] });
   }
+})();
+
+/* ================= Post =================
+   Messages between two people running WebStation, with nothing in the middle.
+
+   Your address is a public key this machine generated. Nobody issued it and
+   nobody can take it away. A message is sealed to the person you are writing
+   to and signed by you, which makes it unreadable to anyone else and provably
+   from you. The sealed block is just text, so it can travel any way you like:
+   pasted into a chat, texted, carried on a stick, read down a phone line.
+
+   The live link is WebRTC with no company doing the introductions. The two
+   machines swap one code by hand, once, and after that they talk directly. */
+(function () {
+  var KEY = 'ws.post';
+  var st = store.get(KEY, null) || { inbox: [], outbox: [], who: [], me: null };
+  function save() { store.set(KEY, st); }
+
+  var enc = new TextEncoder(), dec = new TextDecoder();
+  function b64(buf) {
+    var b = new Uint8Array(buf), out = '';
+    for (var i = 0; i < b.length; i++) out += String.fromCharCode(b[i]);
+    return btoa(out);
+  }
+  function unb64(s64) {
+    var raw = atob(s64), b = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) b[i] = raw.charCodeAt(i);
+    return b;
+  }
+
+  // ── identity ─────────────────────────────────────────────────────────
+  // One keypair for sealing, one for signing. Generated here, kept here.
+  var keys = null;
+  function ready() {
+    if (keys) return Promise.resolve(keys);
+    if (st.me && st.me.priv) {
+      return Promise.all([
+        crypto.subtle.importKey('jwk', st.me.priv, { name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']),
+        crypto.subtle.importKey('jwk', st.me.pub, { name: 'ECDH', namedCurve: 'P-256' }, true, []),
+        crypto.subtle.importKey('jwk', st.me.spriv, { name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign']),
+        crypto.subtle.importKey('jwk', st.me.spub, { name: 'ECDSA', namedCurve: 'P-256' }, true, ['verify'])
+      ]).then(function (k) {
+        keys = { priv: k[0], pub: k[1], spriv: k[2], spub: k[3] };
+        return keys;
+      });
+    }
+    return Promise.all([
+      crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']),
+      crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify'])
+    ]).then(function (pair) {
+      keys = { priv: pair[0].privateKey, pub: pair[0].publicKey, spriv: pair[1].privateKey, spub: pair[1].publicKey };
+      return Promise.all([
+        crypto.subtle.exportKey('jwk', keys.priv), crypto.subtle.exportKey('jwk', keys.pub),
+        crypto.subtle.exportKey('jwk', keys.spriv), crypto.subtle.exportKey('jwk', keys.spub)
+      ]).then(function (j) {
+        st.me = { priv: j[0], pub: j[1], spriv: j[2], spub: j[3] };
+        save();
+        return keys;
+      });
+    });
+  }
+  // the address people give each other: the two public halves, packed small
+  function address() {
+    if (!st.me) return '';
+    return 'WS1.' + btoa(JSON.stringify({ e: st.me.pub, s: st.me.spub })).replace(/=+$/, '');
+  }
+  function unpack(addr) {
+    var body = String(addr || '').replace(/^WS1\./, '');
+    while (body.length % 4) body += '=';
+    return JSON.parse(atob(body));
+  }
+
+  function sharedKey(theirEnc) {
+    return crypto.subtle.importKey('jwk', theirEnc, { name: 'ECDH', namedCurve: 'P-256' }, true, [])
+      .then(function (pk) {
+        return crypto.subtle.deriveKey({ name: 'ECDH', public: pk }, keys.priv,
+          { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+      });
+  }
+
+  // ── sealing and opening ──────────────────────────────────────────────
+  function seal(toAddr, subject, text) {
+    var their = unpack(toAddr);
+    var body = JSON.stringify({ s: subject, t: text, at: Date.now(), from: address() });
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    return ready().then(function () { return sharedKey(their.e); }).then(function (k) {
+      return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, enc.encode(body));
+    }).then(function (ct) {
+      return crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, keys.spriv, ct)
+        .then(function (sig) {
+          var pkt = { v: 1, from: address(), iv: b64(iv), ct: b64(ct), sig: b64(sig) };
+          var raw = btoa(JSON.stringify(pkt));
+          return '-----BEGIN WEBSTATION MESSAGE-----\n' +
+                 raw.replace(/(.{72})/g, '$1\n') +
+                 '\n-----END WEBSTATION MESSAGE-----';
+        });
+    });
+  }
+
+  function open(block) {
+    var raw = String(block).replace(/-----[A-Z ]+-----/g, '').replace(/\s+/g, '');
+    var pkt;
+    try { pkt = JSON.parse(atob(raw)); } catch (e) { return Promise.reject(new Error('That does not look like a WebStation message.')); }
+    var their = unpack(pkt.from);
+    return ready().then(function () { return sharedKey(their.e); }).then(function (k) {
+      return crypto.subtle.importKey('jwk', their.s, { name: 'ECDSA', namedCurve: 'P-256' }, true, ['verify'])
+        .then(function (vk) {
+          return crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, vk, unb64(pkt.sig), unb64(pkt.ct));
+        })
+        .then(function (okSig) {
+          if (!okSig) throw new Error('That message failed its signature check. It is not from who it claims.');
+          return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(pkt.iv) }, k, unb64(pkt.ct));
+        });
+    }).then(function (plain) {
+      var m = JSON.parse(dec.decode(plain));
+      m.from = pkt.from;
+      return m;
+    });
+  }
+
+  // ── panes ────────────────────────────────────────────────────────────
+  var panes = { write: 'poPaneWrite', in: 'poPaneIn', out: 'poPaneOut', who: 'poPaneWho', link: 'poPaneLink' };
+  var tabs = { write: 'poWrite', in: 'poIn', out: 'poOut', who: 'poWho', link: 'poLink' };
+  function show(which) {
+    Object.keys(panes).forEach(function (k) {
+      $(panes[k]).hidden = k !== which;
+      $(tabs[k]).classList.toggle('on', k === which);
+    });
+  }
+  Object.keys(tabs).forEach(function (k) { $(tabs[k]).onclick = function () { show(k); render(); }; });
+
+  function who(addr) {
+    var f = st.who.filter(function (w) { return w.addr === addr; })[0];
+    return f ? f.name : (addr || '').slice(0, 16) + '…';
+  }
+  function when(t) { return new Date(t).toLocaleString(); }
+
+  function render() {
+    // contacts everywhere they are needed
+    var to = $('poTo');
+    to.innerHTML = '';
+    st.who.forEach(function (w) {
+      var o = document.createElement('option');
+      o.value = w.addr; o.textContent = w.name;
+      to.appendChild(o);
+    });
+    if (!st.who.length) {
+      var o2 = document.createElement('option');
+      o2.value = ''; o2.textContent = 'Add someone in Contacts first';
+      to.appendChild(o2);
+    }
+    $('poMe').value = address();
+    var peer = $('poPeer');
+    if (peer) {
+      var keep = peer.value;
+      peer.innerHTML = '';
+      st.who.forEach(function (w) {
+        var o = document.createElement('option');
+        o.value = w.addr;
+        o.textContent = w.name + (w.code ? ' · known' : '');
+        peer.appendChild(o);
+      });
+      if (!st.who.length) {
+        var o3 = document.createElement('option');
+        o3.value = ''; o3.textContent = 'Anyone (add contacts to remember them)';
+        peer.appendChild(o3);
+      }
+      if (keep) peer.value = keep;
+    }
+
+    list('poWhoList', st.who, function (w, li) {
+      li.innerHTML = '<span class="grow1"></span><span class="poWhen"></span><button class="x">×</button>';
+      li.children[0].textContent = w.name;
+      li.children[1].textContent = w.addr.slice(0, 22) + '…';
+      li.querySelector('.x').onclick = function () {
+        st.who = st.who.filter(function (x) { return x !== w; }); save(); render();
+      };
+    }, 'Nobody yet. Add someone with their address.');
+
+    list('poInList', st.inbox, function (m, li) {
+      li.className = 'clist' && (m.read ? '' : 'unread');
+      li.innerHTML = '<span class="grow1"></span><span class="poWhen"></span><button class="x">×</button>';
+      li.children[0].textContent = (m.s || '(no subject)') + ' — ' + who(m.from);
+      li.children[1].textContent = when(m.at);
+      li.children[0].onclick = function () {
+        m.read = 1; save();
+        Sys.toast(m.t, { ms: 14000 });
+        render();
+      };
+      li.querySelector('.x').onclick = function () {
+        st.inbox = st.inbox.filter(function (x) { return x !== m; }); save(); render();
+        Trash.add('Message', (m.s || '(no subject)') + ' — ' + who(m.from), m);
+      };
+    }, 'Nothing yet. Open an envelope someone sent you.');
+
+    list('poOutList', st.outbox, function (m, li) {
+      li.innerHTML = '<span class="grow1"></span><span class="poWhen"></span><button class="x">×</button>';
+      li.children[0].textContent = (m.s || '(no subject)') + ' → ' + who(m.to);
+      li.children[1].textContent = m.sent ? 'sent ' + when(m.sent) : 'waiting';
+      li.querySelector('.x').onclick = function () {
+        st.outbox = st.outbox.filter(function (x) { return x !== m; }); save(); render();
+      };
+    }, 'Nothing waiting.');
+  }
+
+  function list(id, arr, fill, empty) {
+    var ul = $(id);
+    ul.innerHTML = '';
+    if (!arr.length) {
+      var e = document.createElement('li');
+      e.className = 'empty'; e.textContent = empty;
+      ul.appendChild(e);
+      return;
+    }
+    arr.slice().reverse().forEach(function (item) {
+      var li = document.createElement('li');
+      fill(item, li);
+      ul.appendChild(li);
+    });
+  }
+
+  // ── writing ──────────────────────────────────────────────────────────
+  function compose() {
+    var to = $('poTo').value, subj = $('poSubj').value.trim(), text = $('poText').value;
+    if (!to) { Sys.toast('Add someone in Contacts first, so there is a key to seal it to.', { ms: 4000 }); return null; }
+    if (!text.trim()) { Sys.toast('There is nothing written yet.', { ms: 2600 }); return null; }
+    return { to: to, s: subj, t: text };
+  }
+  $('poSeal').onclick = function () {
+    var m = compose();
+    if (!m) return;
+    seal(m.to, m.s, m.t).then(function (block) {
+      $('poBlob').value = block;
+      $('poSealed').hidden = false;
+      $('poSealedBtns').hidden = false;
+      st.outbox.push({ to: m.to, s: m.s, t: m.t, at: Date.now(), sent: Date.now(), blob: block });
+      save(); render();
+    }).catch(function (e) { Sys.toast('That address could not be read: ' + e.message, { ms: 5000 }); });
+  };
+  $('poCopy').onclick = function () {
+    $('poBlob').select();
+    document.execCommand('copy');
+    Sys.toast('Copied. Send it any way you like.', { ms: 2600 });
+  };
+  $('poSave').onclick = function () {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([$('poBlob').value], { type: 'text/plain' }));
+    a.download = 'message-' + Date.now() + '.wsp';
+    a.click();
+  };
+  $('poDone').onclick = function () {
+    $('poSealed').hidden = true; $('poSealedBtns').hidden = true;
+    $('poSubj').value = ''; $('poText').value = '';
+  };
+
+  // ── receiving ────────────────────────────────────────────────────────
+  $('poPaste').onclick = function () { $('poDropRow').hidden = false; $('poDropBtns').hidden = false; $('poDrop').focus(); };
+  $('poCancelIn').onclick = function () { $('poDropRow').hidden = true; $('poDropBtns').hidden = true; $('poDrop').value = ''; };
+  $('poOpenFile').onclick = function () { $('poFile').click(); };
+  $('poFile').onchange = function () {
+    var f = this.files[0]; this.value = '';
+    if (!f) return;
+    var fr = new FileReader();
+    fr.onload = function () { takeIn(fr.result); };
+    fr.readAsText(f);
+  };
+  $('poRead').onclick = function () { takeIn($('poDrop').value); };
+
+  function takeIn(block) {
+    open(block).then(function (m) {
+      st.inbox.push(m); save();
+      $('poDropRow').hidden = true; $('poDropBtns').hidden = true; $('poDrop').value = '';
+      show('in'); render();
+      Sys.toast('Message from ' + who(m.from) + '.', { ms: 4000 });
+    }).catch(function (e) { Sys.toast(e.message, { ms: 6000 }); });
+  }
+
+  // ── contacts ─────────────────────────────────────────────────────────
+  $('poAdd').onclick = function () {
+    var n = $('poName').value.trim(), a = $('poAddr').value.trim();
+    if (!n || !a) { Sys.toast('A name and their address, please.', { ms: 2600 }); return; }
+    try { unpack(a); } catch (e) { Sys.toast('That address could not be read.', { ms: 3500 }); return; }
+    st.who.push({ name: n, addr: a }); save();
+    $('poName').value = ''; $('poAddr').value = '';
+    render();
+  };
+  $('poCopyMe').onclick = function () {
+    $('poMe').select(); document.execCommand('copy');
+    Sys.toast('Your address is copied. Give it to anyone who should be able to write to you.', { ms: 4000 });
+  };
+
+  // ── the live link ────────────────────────────────────────────────────
+  // WebRTC with no company doing the introductions: the two machines swap one
+  // code by hand and then talk directly.
+  var pc = null, chan = null;
+  function logLine(t) {
+    var ul = $('poLog'), li = document.createElement('li');
+    li.innerHTML = '<span class="grow1"></span><span class="poWhen"></span>';
+    li.children[0].textContent = t;
+    li.children[1].textContent = new Date().toLocaleTimeString();
+    ul.insertBefore(li, ul.firstChild);
+  }
+  function setState(t, live) {
+    $('poState').textContent = t;
+    $('poState').classList.toggle('live', !!live);
+  }
+  function newPeer() {
+    if (pc) { try { pc.close(); } catch (e) {} }
+    pc = new RTCPeerConnection({ iceServers: [] });    // no helper servers: same network only
+    pc.onconnectionstatechange = function () {
+      setState('Link: ' + pc.connectionState, pc.connectionState === 'connected');
+      logLine('Link ' + pc.connectionState);
+      if (pc.connectionState === 'connected') drain();
+    };
+    return pc;
+  }
+  function wire(c) {
+    chan = c;
+    c.onopen = function () {
+      setState('Link: open', true); logLine('The link is open.'); drain();
+      Sys.link.onState.forEach(function (f) { f(true); });
+    };
+    c.onclose = function () {
+      setState('Link: closed'); logLine('The link closed.');
+      Sys.link.onState.forEach(function (f) { f(false); });
+    };
+    c.onmessage = function (e) {
+      var d = String(e.data || '');
+      if (d.indexOf('WSCHAT1|') === 0) { if (Sys.chatIn) Sys.chatIn(d.slice(8)); return; }
+      takeIn(d);
+    };
+  }
+  // What we learned about reaching someone, kept per contact so the next
+  // connection is one button rather than a procedure.
+  function remembered(addr) {
+    var w = st.who.filter(function (x) { return x.addr === addr; })[0];
+    return w && w.code;
+  }
+  function remember(addr, code) {
+    if (!addr || !code) return;
+    var w = st.who.filter(function (x) { return x.addr === addr; })[0];
+    if (!w) return;
+    w.code = code;
+    w.lastSeen = Date.now();
+    save();
+    render();
+  }
+  function pack(sdp) { return btoa(JSON.stringify(sdp)); }
+  function unpackSdp(code) { return JSON.parse(atob(String(code).replace(/\s+/g, ''))); }
+
+  // One button that knows what stage you are at, so nobody has to remember
+  // who offered and who answered.
+  function step(t) { $('poStep').textContent = t; }
+
+  function makeOffer() {
+    newPeer();
+    wire(pc.createDataChannel('post'));
+    pc.createOffer().then(function (o) { return pc.setLocalDescription(o); }).then(function () {
+      // wait for the machine to work out how it can be reached
+      return new Promise(function (r) {
+        if (pc.iceGatheringState === 'complete') return r();
+        pc.onicegatheringstatechange = function () { if (pc.iceGatheringState === 'complete') r(); };
+        setTimeout(r, 2500);
+      });
+    }).then(function () {
+      $('poCode').value = pack(pc.localDescription);
+      $('poCodeRow').hidden = false; $('poCodeBtns').hidden = false;
+      $('poCodeHint').textContent = 'Send them this code. When they send one back, paste it here and press Use their code.';
+      step('Waiting for their code');
+      logLine('Code ready. Send it to them.');
+    });
+  }
+
+  $('poGo').onclick = function () {
+    var addr = $('poPeer').value;
+    var saved = addr && remembered(addr);
+    $('poCodeRow').hidden = false; $('poCodeBtns').hidden = false;
+    if (saved) {
+      // we have done this before: reuse what we learned and skip the dance
+      $('poCode').value = saved;
+      logLine('Using the code saved for ' + who(addr) + '.');
+      $('poCodeUse').click();
+      return;
+    }
+    if ($('poCode').value.trim()) { $('poCodeUse').click(); return; }   // they went first
+    makeOffer();
+  };
+  $('poCodeUse').onclick = function () {
+    var code;
+    try { code = unpackSdp($('poCode').value); } catch (e) { Sys.toast('That code could not be read.', { ms: 3500 }); return; }
+    if (code.type === 'offer') {
+      newPeer();
+      pc.ondatachannel = function (e) { wire(e.channel); };
+      pc.setRemoteDescription(code).then(function () { return pc.createAnswer(); })
+        .then(function (a) { return pc.setLocalDescription(a); })
+        .then(function () {
+          return new Promise(function (r) {
+            if (pc.iceGatheringState === 'complete') return r();
+            pc.onicegatheringstatechange = function () { if (pc.iceGatheringState === 'complete') r(); };
+            setTimeout(r, 2500);
+          });
+        }).then(function () {
+          $('poCode').value = pack(pc.localDescription);
+          $('poCodeHint').textContent = 'Send this answer back to them. That is the last step.';
+          step('Answer ready — send it back');
+          logLine('Answer ready. Send it back.');
+        });
+    } else {
+      if (!pc) { Sys.toast('Press Connect first, then use their answer.', { ms: 3500 }); return; }
+      pc.setRemoteDescription(code).then(function () {
+        logLine('Answer accepted. Connecting.');
+        step('Connecting');
+        remember($('poPeer').value, $('poCode').value);
+      });
+    }
+  };
+  $('poCodeCopy').onclick = function () {
+    $('poCode').select(); document.execCommand('copy');
+    Sys.toast('Code copied.', { ms: 2200 });
+  };
+  $('poDrop2').onclick = function () {
+    if (chan) { try { chan.close(); } catch (e) {} }
+    if (pc) { try { pc.close(); } catch (e) {} }
+    pc = null; chan = null;
+    setState('');
+    logLine('Hung up.');
+  };
+
+  // anything waiting goes out the moment a link opens
+  // Chat rides the same link: one pipe, two kinds of traffic.
+  Sys.link = {
+    send: function (text) {
+      if (!chan || chan.readyState !== 'open') return false;
+      try { chan.send('WSCHAT1|' + text); return true; } catch (e) { return false; }
+    },
+    open: function () { return !!(chan && chan.readyState === 'open'); },
+    onState: []
+  };
+  function drain() {
+    if (!chan || chan.readyState !== 'open') return;
+    var waiting = st.outbox.filter(function (m) { return !m.delivered && m.blob; });
+    waiting.forEach(function (m) {
+      try { chan.send(m.blob); m.delivered = Date.now(); } catch (e) {}
+    });
+    if (waiting.length) { save(); render(); logLine('Sent ' + waiting.length + ' waiting message(s).'); }
+  }
+  $('poSend').onclick = function () {
+    var m = compose();
+    if (!m) return;
+    seal(m.to, m.s, m.t).then(function (block) {
+      st.outbox.push({ to: m.to, s: m.s, t: m.t, at: Date.now(), blob: block });
+      save(); render();
+      if (chan && chan.readyState === 'open') { drain(); Sys.toast('Sent on the link.', { ms: 2600 }); }
+      else Sys.toast('No link open, so it is waiting in the Outbox.', { ms: 4000 });
+      $('poSubj').value = ''; $('poText').value = '';
+    });
+  };
+
+  Trash.handler('Message', function (m) { st.inbox.push(m); save(); render(); });
+
+  ready().then(function () { render(); });
+  show('write');
+})();
+
+/* ================= Chat =================
+   Live conversation over the same direct link Post uses. Nothing is stored
+   anywhere but these two machines, and nothing passes through anyone else. */
+(function () {
+  var KEY = 'ws.chat';
+  var log = store.get(KEY, []) || [];
+  function save() { store.set(KEY, log.slice(-300)); }
+
+  function when(t) { return new Date(t).toLocaleTimeString(); }
+
+  function draw() {
+    var box = $('chLog');
+    box.innerHTML = '';
+    if (!log.length) {
+      var n = document.createElement('div');
+      n.className = 'chNote';
+      n.textContent = 'Nothing said yet. Open a link in Post, then type here.';
+      box.appendChild(n);
+    }
+    log.forEach(function (m) {
+      var d = document.createElement('div');
+      d.className = 'chMsg ' + (m.me ? 'me' : 'them');
+      d.textContent = m.t;
+      var s = document.createElement('span');
+      s.className = 'chTime';
+      s.textContent = when(m.at);
+      d.appendChild(s);
+      box.appendChild(d);
+    });
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function note(text) {
+    log.push({ note: 1, t: text, at: Date.now() });
+  }
+
+  function state(on) {
+    $('chWho').textContent = on ? 'Connected' : 'Not connected';
+    $('chWho').classList.toggle('live', !!on);
+    $('chIn').disabled = !on;
+    $('chSend').disabled = !on;
+  }
+
+  function send() {
+    var t = $('chIn').value.trim();
+    if (!t) return;
+    if (!Sys.link || !Sys.link.open()) {
+      Sys.toast('No link open. Start one in Post.', { ms: 3500 });
+      return;
+    }
+    if (Sys.link.send(t)) {
+      log.push({ me: 1, t: t, at: Date.now() });
+      save(); draw();
+      $('chIn').value = '';
+    }
+  }
+  $('chSend').onclick = send;
+  $('chIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });
+  $('chClear').onclick = function () {
+    var old = log.slice();
+    log = []; save(); draw();
+    Sys.toast('Cleared.', { ms: 3000, actions: [{ label: 'Undo', fn: function () { log = old; save(); draw(); } }] });
+  };
+
+  // the link hands incoming chat here
+  Sys.chatIn = function (text) {
+    log.push({ me: 0, t: text, at: Date.now() });
+    save(); draw();
+    if (!$('chatFace').classList.contains('front')) {
+      Sys.toast('Message: ' + text.slice(0, 60), { ms: 5000 });
+    }
+  };
+
+  // and tells us when it opens or closes
+  if (Sys.link && Sys.link.onState) Sys.link.onState.push(state);
+  state(Sys.link && Sys.link.open());
+  draw();
 })();
 
 /* ================= Status bar ================= */
