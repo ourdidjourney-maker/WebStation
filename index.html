@@ -2839,6 +2839,13 @@ var Net = (function () {
   // A route is open while something is genuinely reaching out, and the pill says so.
   function open(kind) { live[kind] = (live[kind] || 0) + 1; paint(); }
   function close(kind) { if (live[kind]) live[kind]--; if (!live[kind]) delete live[kind]; paint(); }
+  // Some things are showing one thing at a time rather than stacking up, so
+  // they set their state outright instead of counting up and down.
+  function only(prefix, what) {
+    Object.keys(live).forEach(function (k) { if (k.indexOf(prefix) === 0) delete live[k]; });
+    if (what) live[prefix + what] = 1;
+    paint();
+  }
   function paint() {
     var names = Object.keys(live);
     pill.classList.toggle('open', names.length > 0);
@@ -2849,7 +2856,7 @@ var Net = (function () {
       : 'Nothing is leaving this machine.\n\nNo server, no account, no telemetry. The workspace is sealed.';
   }
   paint();
-  return { ask: ask, open: open, close: close, isQuiet: function () { return quiet; } };
+  return { ask: ask, open: open, close: close, only: only, isQuiet: function () { return quiet; } };
 })();
 
 /* ================= Flip system ================= */
@@ -3327,6 +3334,14 @@ var Sys = (function () {
     frame.src = u; url.value = u; hint.style.display = 'none'; update();
     store.set(KEY, { url: u, t: Date.now() });
   }
+  // closing the panel means the page is gone, so the route closes with it
+  (function () {
+    var p = document.getElementById('browser');
+    if (!p) return;
+    new MutationObserver(function () {
+      if (p.classList.contains('closed') || p.hidden || !p.isConnected) Net.only('The browser, showing ', null);
+    }).observe(p, { attributes: true, attributeFilter: ['class', 'hidden'] });
+  })();
   function go() {
     var u = normalize(url.value);
     if (u === '') return;
@@ -3334,7 +3349,7 @@ var Sys = (function () {
     Net.ask('web', 'The browser is about to load ' + u + ' from the internet.', function () {
       hist = hist.slice(0, idx + 1); hist.push(u); idx = hist.length - 1;
       show(u);
-      Net.open('The browser, showing ' + u);
+      Net.only('The browser, showing ', u);
     });
   }
 
