@@ -11,10 +11,10 @@
   /* Gapless layout: the black background shows through 2px gaps, so every
      panel shares one 2px line with its neighbours. Proportions from the mockup. */
   #app { height: 100vh; display: grid; grid-template-rows: var(--top, 28fr) var(--bot, 72fr) auto; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 2px; background: #000; }
-  #lower { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; min-height: 0; }
+  #lower { display: grid; grid-template-columns: var(--colL, 50fr) var(--colR, 50fr); gap: 2px; min-height: 0; }
   .column { display: grid; gap: 2px; min-height: 0; min-width: 0; }
-  #left  { grid-template-rows: 66.5fr 33.5fr; }
-  #right { grid-template-rows: 42fr 51fr minmax(24px, 7fr); }
+  #left  { grid-template-rows: var(--rowLT, 66.5fr) var(--rowLB, 33.5fr); position: relative; }
+  #right { grid-template-rows: var(--rowRT, 42fr) var(--rowRB, 51fr) minmax(24px, 7fr); position: relative; }
 
   .panel { background: #fff; display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; outline: none; }
   .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; padding: 3px 4px; background: #eee; border-bottom: 1px solid #000; font-size: 12px; flex: 0 0 auto; }
@@ -289,10 +289,25 @@
 
   /* Browser resize handle (sits on the line under the browser) */
   #lower { position: relative; }
+  /* Every seam between panels can be dragged, the same way the browser one always could. */
+  #splitV { position: absolute; top: 0; bottom: 0; left: calc(var(--seam, 50%) - 4px); width: 9px; cursor: col-resize; z-index: 20; touch-action: none; outline: none; }
+  #splitV::after { content: ''; position: absolute; top: 0; bottom: 0; left: 3px; width: 2px; background: transparent; }
+  #splitV:hover::after, #splitV:focus-visible::after, body.resizing #splitV::after { background: #06f; }
+  #splitL { position: absolute; left: 0; right: 0; top: calc(var(--seamL, 66.5%) - 4px); height: 9px; cursor: row-resize; z-index: 20; touch-action: none; outline: none; }
+  #splitR { position: absolute; left: 0; right: 0; top: calc(var(--seamR, 42%) - 4px); height: 9px; cursor: row-resize; z-index: 20; touch-action: none; outline: none; }
+  #splitL::after, #splitR::after { content: ''; position: absolute; left: 0; right: 0; top: 3px; height: 2px; background: transparent; }
+  #splitL:hover::after, #splitR:hover::after, body.resizing #splitL::after, body.resizing #splitR::after { background: #06f; }
+  body.glass #splitV::after, body.glass #splitL::after, body.glass #splitR::after { background: transparent; }
+  body.glass #splitV:hover::after, body.glass #splitL:hover::after, body.glass #splitR:hover::after {
+    background: rgba(126, 170, 255, .85); box-shadow: 0 0 14px rgba(126, 170, 255, .7); }
+  body.saver #splitV, body.saver #splitL, body.saver #splitR { display: none; }
+  @media (max-width: 820px) { #splitV, #splitL, #splitR { display: none; } }
   #splitH { position: absolute; left: 0; right: 0; top: -5px; height: 8px; cursor: row-resize; z-index: 20; touch-action: none; outline: none; }
   #splitH::after { content: ''; position: absolute; left: 0; right: 0; top: 3px; height: 2px; background: transparent; }
   #splitH:hover::after, #splitH:focus-visible::after, body.resizing #splitH::after { background: #06f; }
   body.resizing, body.resizing * { cursor: row-resize !important; user-select: none; }
+  body.resizingV, body.resizingV * { cursor: col-resize !important; user-select: none; }
+  body.resizingV iframe { pointer-events: none; }
   body.resizing iframe { pointer-events: none; }
   @media (max-width: 820px) { #splitH { display: none; } }
 
@@ -1401,6 +1416,46 @@
   body:not(.glass) #netState { color: #333; background: #f0f1f5; border-color: #bbb; }
   body:not(.glass) #netState.open { color: #8a4a00; background: #ffe9cf; border-color: #d99a4a; }
 
+  /* How-to: pick an app, see only that app */
+  .hbPick { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 18px; }
+  .hbPick button { font-size: 12.5px; padding: 6px 12px; border-radius: 9px;
+                   border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06);
+                   color: inherit; cursor: pointer; }
+  .hbPick button:hover { background: rgba(255,255,255,.14); }
+  .hbPick button.on { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95));
+                      color: #071024; border-color: rgba(190,215,255,.5); font-weight: bold; }
+  .hbSecs { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 10px; }
+  .hbSecs button { font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 10px;
+                   border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05);
+                   color: inherit; cursor: pointer; }
+  .hbSecs button.on { background: rgba(126,170,255,.22); border-color: rgba(126,170,255,.6); color: #cfe0ff; }
+  .hbPick { margin-top: 4px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.1); }
+  .hbPick button[hidden] { display: none !important; }
+  .hbApp[hidden] { display: none !important; }
+  .hbApp { animation: hbIn .25s ease both; }
+  @keyframes hbIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .hbApp h3 { margin-bottom: 4px; }
+  .hbWhere { font-size: 12px; opacity: .6; margin: 0 0 14px; }
+  /* a step, with the actual button drawn in it */
+  .hbStep { display: flex; gap: 11px; align-items: flex-start; margin: 0 0 11px; }
+  .hbStep .hbN { flex: none; width: 21px; height: 21px; border-radius: 50%; margin-top: 1px;
+                 background: rgba(126,170,255,.2); border: 1px solid rgba(126,170,255,.45);
+                 color: #9fc2ff; font: bold 11px/19px ui-monospace, Consolas, monospace; text-align: center; }
+  .hbStep p { margin: 0; font-size: 13.5px; }
+  /* buttons shown exactly as they look in the workspace */
+  .hbB { display: inline-block; font: 11px Arial, Helvetica, sans-serif; line-height: 20px; height: 22px;
+         padding: 0 9px; border-radius: 8px; vertical-align: middle; white-space: nowrap;
+         background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); color: #eef2ff; }
+  body:not(.glass) .hbB { background: #fff; border-color: #999; color: #111; }
+  .hbB.lit { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95));
+             color: #071024; border-color: rgba(190,215,255,.5); }
+  .hbB.pink { background: linear-gradient(180deg, rgba(255,168,210,.85), rgba(238,120,180,.85));
+              color: #2a0f1e; border-color: rgba(255,190,220,.6); }
+  .hbB.amber { background: rgba(232,150,58,.2); color: #ffc98a; border-color: rgba(232,150,58,.6); }
+  .hbB.warm { background: linear-gradient(180deg, #ffcf8a, #f0973a); color: #2a1608; border-color: #ffd9a6; }
+  .hbTip { font-size: 12.5px; opacity: .72; margin: 10px 0 0; padding-left: 14px;
+           border-left: 2px solid rgba(126,170,255,.5); }
+
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
   .kmHost.fading { opacity: 0; }
@@ -1549,6 +1604,7 @@
   </section>
 
   <div id="lower">
+    <div id="splitV" role="separator" aria-orientation="vertical" aria-label="Resize the columns" tabindex="0" title="Drag to resize. Double-click to reset."></div>
     <div id="splitH" role="separator" aria-orientation="horizontal" aria-label="Resize browser" tabindex="0" title="Drag to resize. Double-click to reset."></div>
     <div class="column" id="left">
 
@@ -1764,6 +1820,7 @@
       </section>
 
       <!-- ===== Calendar ===== -->
+      <div id="splitL" role="separator" aria-orientation="horizontal" aria-label="Resize the left panels" tabindex="0" title="Drag to resize. Double-click to reset."></div>
       <section class="panel" id="calendar" aria-label="Calendar">
         <div class="card">
           <div class="face front" data-face="calendar" id="calFace" tabindex="-1">
@@ -2020,6 +2077,452 @@
   </div>
 </section>
 
+
+
+
+
+
+
+<section id="howto">
+  <h2>How to use it</h2>
+  <h3>Pick a section, then an app</h3>
+  <p>Every app lives on a <strong>face</strong>. The row of names at the top of a panel is the switcher,
+     so click a name and the card turns over to that app. Below, choose what kind of work you are doing,
+     then the app, and you will get its buttons in order.</p>
+  <div class="hbSecs" id="hbSecs"><button data-sec="art">Art tools</button><button data-sec="av">Sound and video</button><button data-sec="word">Word tools</button><button data-sec="do">Getting things done</button><button data-sec="keep">Keeping things</button><button data-sec="web">Web and privacy</button><button data-sec="space">The workspace</button><button data-sec="tm">Task Manager</button><button data-sec="play">Play</button></div>
+  <div class="hbPick" id="hbPick"><button data-sec="art" data-go="paint" hidden>Paint</button><button data-sec="art" data-go="gallery" hidden>Gallery</button><button data-sec="art" data-go="img" hidden>Image editor</button><button data-sec="art" data-go="gif" hidden>GIF maker</button><button data-sec="art" data-go="chars" hidden>Character map</button><button data-sec="av" data-go="snd" hidden>Sound editor</button><button data-sec="av" data-go="media" hidden>Media player</button><button data-sec="av" data-go="rec" hidden>Recorder</button><button data-sec="word" data-go="wp" hidden>Word processor</button><button data-sec="word" data-go="notes" hidden>Notes</button><button data-sec="word" data-go="slides" hidden>Slides</button><button data-sec="word" data-go="sticky" hidden>Sticky notes</button><button data-sec="word" data-go="sheet" hidden>Spreadsheet</button><button data-sec="word" data-go="code" hidden>Code playground</button><button data-sec="word" data-go="pdf" hidden>PDF viewer</button><button data-sec="do" data-go="tasks" hidden>Tasks</button><button data-sec="do" data-go="cal" hidden>Calendar</button><button data-sec="do" data-go="clock" hidden>Clock</button><button data-sec="do" data-go="time" hidden>Time tracker</button><button data-sec="do" data-go="calc" hidden>Calculator</button><button data-sec="do" data-go="units" hidden>Unit converter</button><button data-sec="keep" data-go="files" hidden>Files</button><button data-sec="keep" data-go="trash" hidden>Trash bin</button><button data-sec="keep" data-go="clip" hidden>Clipboard history</button><button data-sec="keep" data-go="marks" hidden>Bookmarks</button><button data-sec="keep" data-go="pass" hidden>Password generator</button><button data-sec="keep" data-go="vault" hidden>Password vault</button><button data-sec="keep" data-go="backup" hidden>Backup and Restore</button><button data-sec="web" data-go="web" hidden>Web browser</button><button data-sec="web" data-go="net" hidden>Network monitor</button><button data-sec="web" data-go="rss" hidden>News ticker</button><button data-sec="space" data-go="layout" hidden>Layout editor</button><button data-sec="space" data-go="panels" hidden>Panels, zoom and blur</button><button data-sec="space" data-go="look" hidden>Themes and screensaver</button><button data-sec="space" data-go="garden" hidden>The garden</button><button data-sec="space" data-go="wear" hidden>Wear</button><button data-sec="tm" data-go="tm" hidden>Task Manager</button><button data-sec="play" data-go="chk" hidden>Checkers</button></div>
+<div class="hbApp" data-sec="art" data-app="paint" hidden>
+<h3>Paint</h3><p class="hbWhere">Left panel, click Paint</p>
+<div class="hbStep"><span class="hbN">1</span><p>Pick a tool: <span class="hbB lit">Brush</span> <span class="hbB ">Eraser</span> <span class="hbB ">Spray</span> <span class="hbB ">Line</span> <span class="hbB ">Rect</span> <span class="hbB ">Ellipse</span> <span class="hbB ">Fill</span> <span class="hbB ">Picker</span> <span class="hbB ">Text</span></p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>Color</b> is the line, <b>Shape fill</b> is the inside, and <b>Filled shapes</b> decides whether rectangles and ellipses are hollow or solid.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><span class="hbB ">Fill</span> pours colour into whatever you click. <span class="hbB ">Picker</span> grabs a colour off the picture so you can match it.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><span class="hbB ">Text</span>: click where you want it and type. The box shows the words in the colour they will be painted.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><b>Size</b> and <b>Opacity</b> affect every tool. <span class="hbB ">Undo</span> goes back twenty steps.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p><span class="hbB ">Open</span> brings a picture in, <span class="hbB ">Save PNG</span> writes one out. You can paste or drag images straight onto the canvas.</p></div>
+</div>
+<div class="hbApp" data-sec="art" data-app="gallery" hidden>
+<h3>Gallery</h3><p class="hbWhere">Left panel, click Gallery</p>
+<div class="hbStep"><span class="hbN">1</span><p><span class="hbB ">Add images</span> brings in as many pictures as you like at once. You can also drag them onto the panel.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>The strip along the bottom is every picture you have. Click a thumbnail to open it.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><span class="hbB ">Slideshow</span> plays through them. The dropdown beside it sets how long each one stays up, from <b>2 seconds to 1 minute</b>.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>While the slideshow runs, the thumbnail strip and toolbar get out of the way. Click the picture, press <b>Escape</b>, or hit the button again to stop.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><span class="hbB ">Send to Paint</span> flips the panel to Paint with the picture loaded, ready to draw on.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p><span class="hbB ">Remove</span> deletes the one you are looking at. <span class="hbB ">Delete all</span> clears the lot, and everything goes to the bin first.</p></div>
+<p class="hbTip">Anything you make in the Image editor or GIF maker lands here automatically.</p>
+</div>
+<div class="hbApp" data-sec="art" data-app="img" hidden>
+<h3>Image editor</h3><p class="hbWhere">Left panel, click Image editor</p>
+<div class="hbStep"><span class="hbN">1</span><p>Click <span class="hbB ">Open a picture</span>, or drag one onto the dark area, or just paste one in.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>To vignette it:</b> under <i>Looks</i>, click <span class="hbB lit">Vignette</span>, then set <b>Strength</b>. Around 40 to 60 looks natural. That is the whole job.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Other looks work the same way: <span class="hbB ">Black &amp; white</span> <span class="hbB ">Sepia</span> <span class="hbB ">Warm</span> <span class="hbB ">Cool</span> <span class="hbB ">Faded</span> <span class="hbB ">High contrast</span> <span class="hbB ">Blur</span> &mdash; one at a time, and <span class="hbB ">None</span> clears it.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><b>Brightness</b>, <b>Contrast</b> and <b>Colour</b> stack on top of whichever look you chose.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><b>To add words:</b> click <span class="hbB ">Add text</span> then <b>click the picture</b> where you want them. Leave <span class="hbB lit">Outline</span> on and white text stays readable over anything. Drag the words to move them.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p><b>To crop:</b> click <span class="hbB ">Crop</span>, drag a box on the picture, then <span class="hbB lit">Crop to the box</span>.</p></div>
+<div class="hbStep"><span class="hbN">7</span><p>Turn and mirror with <span class="hbB ">&#8630;</span> <span class="hbB ">&#8631;</span> <span class="hbB ">Flip across</span> <span class="hbB ">Flip down</span>.</p></div>
+<div class="hbStep"><span class="hbN">8</span><p><span class="hbB lit">Save the picture</span> saves into the Gallery at full resolution. <span class="hbB ">Back to the original</span> undoes everything; <span class="hbB ">Start over</span> empties the app.</p></div>
+</div>
+<div class="hbApp" data-sec="art" data-app="gif" hidden>
+<h3>GIF maker</h3><p class="hbWhere">Left panel, click GIF maker</p>
+<div class="hbStep"><span class="hbN">1</span><p>Click <span class="hbB ">Choose a video</span> and pick any clip. MP4, WebM and MOV all work.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Drag the <b>two red markers</b> on the strip to the part you want. The line under it tells you where it starts, where it ends, and how many frames that is.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Click <span class="hbB ">Play the part I picked</span> to check your cut before you commit to it.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>Choose the output size. <span class="hbB ">Full size</span> keeps every pixel, <span class="hbB ">Medium &middot; 640 wide</span> is easy to post. The readout shows the real dimensions and a rough file size.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>Click <span class="hbB lit">Make the GIF</span>. A bar counts the frames as it builds, and <span class="hbB ">Stop</span> cancels at any time.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>The GIF appears where the video was and is <b>already in your Gallery</b>. <span class="hbB ">Save to disk</span> writes it out, <span class="hbB ">Back to the video</span> returns to the clip to cut another.</p></div>
+<div class="hbStep"><span class="hbN">7</span><p><span class="hbB ">Start over</span> empties the app and frees the memory.</p></div>
+<p class="hbTip">The browser has to play the video to read it, so a ten-second clip takes about ten seconds. Smaller sizes finish much faster.</p>
+</div>
+<div class="hbApp" data-sec="art" data-app="chars" hidden>
+<h3>Character map</h3><p class="hbWhere">Lower right panel, click Chars</p>
+<div class="hbStep"><span class="hbN">1</span><p>Pick a category: punctuation, currency, maths, arrows, Greek, accented letters, shapes, marks or box drawing.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>Click any character</b> to copy it. Paste it wherever you need it.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Each one shows its Unicode code point, so you can look it up if you need to.</p></div>
+</div>
+<div class="hbApp" data-sec="av" data-app="snd" hidden>
+<h3>Sound editor</h3><p class="hbWhere">Lower right panel, click Sound editor</p>
+<div class="hbStep"><span class="hbN">1</span><p>Click <span class="hbB ">Open a sound</span>. The waveform appears.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>Click and drag on the waveform</b> to move the nearest red marker. Green is what you keep. <span class="hbB ">Play the selection</span> hears just that part.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><span class="hbB ">Trim the quiet ends</span> finds where the sound really starts and stops, and sets both markers for you.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><span class="hbB ">Normalise</span> brings a quiet recording up to full volume without distorting it. Use it before the Volume slider, not instead of it.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>Set <b>Fade in</b> and <b>Fade out</b> in seconds. You can see the ramp drawn on the waveform.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p><b>Speed</b> changes the length. Leave <b>Pitch</b> on <i>Keep the pitch</i> for speech, or switch it for the chipmunk effect.</p></div>
+<div class="hbStep"><span class="hbN">7</span><p>Click <span class="hbB ">Echo is off</span> to turn it on, then shape it with <b>Gap</b>, <b>Repeats</b> and <b>How loud</b>.</p></div>
+<div class="hbStep"><span class="hbN">8</span><p><span class="hbB lit">Save as WAV</span> renders it, then offers <span class="hbB ">Save to disk</span> or <span class="hbB ">Play it</span>.</p></div>
+</div>
+<div class="hbApp" data-sec="av" data-app="media" hidden>
+<h3>Media player</h3><p class="hbWhere">Lower right panel, click Media</p>
+<div class="hbStep"><span class="hbN">1</span><p>Paste a web address or a YouTube link in the box and press <span class="hbB lit">Load</span>. Or click <span class="hbB ">Open file</span> and pick clips off your drive.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><span class="hbB ">Open file</span> takes <b>several files at once</b>, and you can drag a pile of them onto the panel.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><span class="hbB ">Add</span> queues a link <b>without interrupting</b> what is already playing.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><span class="hbB ">Playlist</span> shows the queue floating over the video, so it never shrinks the picture. The counter beside it reads your position, like <b>2 / 5</b>.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>Click any item in the list to jump to it, or use <span class="hbB ">&#9198;</span> <span class="hbB ">&#9197;</span> to step through. When a clip ends the next one starts on its own.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p><span class="hbB ">Loop</span> repeats, <span class="hbB ">Mute</span> silences, the <b>1&times;</b> dropdown changes speed, and <span class="hbB ">Fullscreen</span> fills the screen.</p></div>
+</div>
+<div class="hbApp" data-sec="av" data-app="rec" hidden>
+<h3>Recorder</h3><p class="hbWhere">Lower right panel, click Recorder</p>
+<div class="hbStep"><span class="hbN">1</span><p><span class="hbB ">Voice</span> records from your microphone, with a live meter so you can see the level.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><span class="hbB ">Screen</span> records what is on your screen. <span class="hbB ">Camera</span> records from your webcam.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>With the camera on, <span class="hbB ">Snapshot</span> grabs a still and drops it straight into your Gallery.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>Recordings are listed underneath. <span class="hbB ">Play</span> hands it to the Media player; <span class="hbB ">Save</span> writes it out as a file.</p></div>
+<p class="hbTip">Your browser will ask permission before the microphone, screen or camera is used. Nothing is recorded until you allow it, and nothing is uploaded anywhere.</p>
+</div>
+<div class="hbApp" data-sec="word" data-app="wp" hidden>
+<h3>Word processor</h3><p class="hbWhere">Right panel, click Word</p>
+<div class="hbStep"><span class="hbN">1</span><p>Just start typing. It saves as you go, so there is no save button to remember.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Click <span class="hbB lit">Effects</span> for the hot metal. Every letter lands, heats orange to yellow, cools to white, and sheds molten slag that runs down the panel.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Delete a letter with Effects on and it burns up on the way off the screen.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>The usual formatting is along the top: <span class="hbB ">B</span> <span class="hbB ">I</span> <span class="hbB ">U</span> <span class="hbB ">S</span>, colour, highlight, alignment and lists.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><span class="hbB ">New</span> starts fresh, <span class="hbB ">Open</span> brings in a text or HTML file, <span class="hbB ">Save</span> writes one out.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>Every letter you delete is kept in the bin, gathered into readable passages.</p></div>
+</div>
+<div class="hbApp" data-sec="word" data-app="notes" hidden>
+<h3>Notes</h3><p class="hbWhere">Right panel, click Notes</p>
+<div class="hbStep"><span class="hbN">1</span><p><span class="hbB ">New note</span> starts one. The first line becomes its title automatically.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Type and it saves itself. There is nothing to press.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>The search box filters <b>the full text</b> of every note as you type, not just the titles.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><span class="hbB ">Save .txt</span> writes a note out as a plain file. Deleting one can be undone.</p></div>
+</div>
+<div class="hbApp" data-sec="word" data-app="slides" hidden>
+<h3>Slides</h3><p class="hbWhere">Right panel, click Slides</p>
+<div class="hbStep"><span class="hbN">1</span><p><span class="hbB ">New slide</span> adds one. Click the title or the body <b>on the slide itself</b> and type.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>The strip along the side is your deck. Click a thumbnail to jump to that slide, and drag to reorder.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><span class="hbB lit">Present</span> takes over the whole screen.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>In present mode use the <b>arrow keys</b> or <b>space</b> to move, and <b>Escape</b> to come back.</p></div>
+</div>
+<div class="hbApp" data-sec="word" data-app="sticky" hidden>
+<h3>Sticky notes</h3><p class="hbWhere">Top panel, click Sticky</p>
+<div class="hbStep"><span class="hbN">1</span><p><span class="hbB ">New note</span> drops one on the board. Click it and type.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>Drag a note</b> anywhere on the board. Each is pinned at a slight angle with a curled corner.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>The colour dots on a note change its paper. There are six.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>Deleting a note <b>peels it off the board</b> and tumbles it away. It goes to the bin, so you can put it back.</p></div>
+</div>
+<div class="hbApp" data-sec="word" data-app="sheet" hidden>
+<h3>Spreadsheet</h3><p class="hbWhere">Right panel, click Sheet</p>
+<div class="hbStep"><span class="hbN">1</span><p>Click a cell and type. Start with <b>=</b> for a formula: <code>=A1+B1</code>, <code>=SUM(A1:A10)</code>, <code>=IF(A1&gt;10,"over","under")</code>.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>SUM, AVERAGE, MIN, MAX, COUNT, ROUND, ABS, SQRT and IF all work. A formula that refers to itself is caught and named rather than hanging.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>Drag the edge</b> of a column or row to resize it, or double-click the edge to fit the contents.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><span class="hbB ">Open CSV</span> and <span class="hbB ">Save CSV</span> move data in and out.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><span class="hbB ">Clear</span> empties the sheet, and puts the whole thing in the bin in one piece so you can put it back.</p></div>
+</div>
+<div class="hbApp" data-sec="word" data-app="code" hidden>
+<h3>Code playground</h3><p class="hbWhere">Right panel, click Code</p>
+<div class="hbStep"><span class="hbN">1</span><p>Three tabs: <span class="hbB lit">HTML</span> <span class="hbB ">CSS</span> <span class="hbB ">JS</span>. Write in any of them.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>The preview runs live beside your code. <span class="hbB ">Auto-run</span> updates as you type; turn it off and use <span class="hbB ">Run</span> instead.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><span class="hbB ">Console</span> shows anything you log, plus errors and failed promises, so you can debug without leaving.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><span class="hbB ">Save HTML</span> writes the whole thing out as one file you can open anywhere.</p></div>
+<p class="hbTip">The preview is sandboxed, so nothing you write in here can reach the rest of the workspace.</p>
+</div>
+<div class="hbApp" data-sec="word" data-app="pdf" hidden>
+<h3>PDF viewer</h3><p class="hbWhere">Left panel, click PDF</p>
+<div class="hbStep"><span class="hbN">1</span><p><span class="hbB ">Open PDF</span> picks a file, or you can drag one onto the panel.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>It uses your browser’s own PDF engine, so scrolling, zoom and text selection all work as you expect.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>The file is kept in the workspace, so it is still there next time you open it.</p></div>
+</div>
+<div class="hbApp" data-sec="do" data-app="tasks" hidden>
+<h3>Tasks</h3><p class="hbWhere">Top panel, click Tasks</p>
+<div class="hbStep"><span class="hbN">1</span><p>Type into the box and press <span class="hbB lit">Add</span>.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>The dropdown beside it sets a timer, from <b>5 minutes</b> to <b>6 months</b>.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>The clock <b>starts when you move the task into Doing</b>, not when you create it. It stops if you move it back.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>Drag cards between <b>To do</b>, <b>Doing</b> and <b>Done</b>, or use the arrows on the card. Double-click a card to edit it.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>Hover <span class="hbB amber">Tasks 3</span> at the bottom right for the whole board: what is being worked on, what is waiting, and every live countdown.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>When a timer runs out the workspace dims and offers <span class="hbB ">Mark done</span> <span class="hbB ">More time</span> <span class="hbB ">Dismiss</span>.</p></div>
+<div class="hbStep"><span class="hbN">7</span><p><span class="hbB ">Clear done</span> empties the Done column, and every card goes to the bin.</p></div>
+</div>
+<div class="hbApp" data-sec="do" data-app="cal" hidden>
+<h3>Calendar</h3><p class="hbWhere">Lower left panel, click Calendar</p>
+<div class="hbStep"><span class="hbN">1</span><p>Click any day to select it. <span class="hbB lit">Today</span> jumps back to today.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Type into the box at the bottom and press <span class="hbB ">Add</span>. The time field beside it is optional.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Days with something on them are marked, and the day you have selected lists its events beside the grid.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>The arrows either side of the month name move you through the year.</p></div>
+</div>
+<div class="hbApp" data-sec="do" data-app="clock" hidden>
+<h3>Clock</h3><p class="hbWhere">Lower left panel, click Clock</p>
+<div class="hbStep"><span class="hbN">1</span><p><b>World clocks:</b> add any city and it keeps the time there, properly handling daylight saving.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>Timer:</b> set a length and press start. When it finishes, <b>the whole workspace flashes</b> so you cannot miss it.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>Stopwatch:</b> start, stop, and take laps down to hundredths of a second.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><b>Pomodoro:</b> runs work and break rounds, telling you which one you are in.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><b>Alarms:</b> set a time and it will sound, once a day.</p></div>
+<p class="hbTip">Every sound is generated on the spot with Web Audio. There are no sound files in the workspace.</p>
+</div>
+<div class="hbApp" data-sec="do" data-app="time" hidden>
+<h3>Time tracker</h3><p class="hbWhere">Lower left panel, click Time</p>
+<div class="hbStep"><span class="hbN">1</span><p>Type a project name and press <span class="hbB lit">Start</span>. Press it again to stop.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Each project shows <b>today</b> and its <b>running total</b> separately.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Only one project runs at a time, so starting another stops the last.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><span class="hbB ">Export CSV</span> writes the lot out for invoicing or a timesheet.</p></div>
+</div>
+<div class="hbApp" data-sec="do" data-app="calc" hidden>
+<h3>Calculator</h3><p class="hbWhere">Lower left panel, click Calc</p>
+<div class="hbStep"><span class="hbN">1</span><p>Type or click. It handles brackets and proper operator precedence, so <code>2+3*4</code> gives 14, not 20.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Functions work too: <code>SUM</code>, <code>AVERAGE</code>, <code>MIN</code>, <code>MAX</code>, <code>ROUND</code>, <code>ABS</code>, <code>SQRT</code>.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Mistakes are named rather than silently wrong: you will see #DIV/0!, #VALUE!, #NAME? and the rest.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>The last fifty calculations are kept. Click one to use it again.</p></div>
+</div>
+<div class="hbApp" data-sec="do" data-app="units" hidden>
+<h3>Unit converter</h3><p class="hbWhere">Lower left panel, click Units</p>
+<div class="hbStep"><span class="hbN">1</span><p>Pick what you are converting: length, weight, volume, speed, data, time, area or temperature.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Type in either box and the other follows instantly.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Temperature is done properly with real Celsius, Fahrenheit and Kelvin conversion, not a multiplier.</p></div>
+</div>
+<div class="hbApp" data-sec="keep" data-app="files" hidden>
+<h3>Files</h3><p class="hbWhere">Left panel, click Files</p>
+<div class="hbStep"><span class="hbN">1</span><p><b>The left column is your workspace</b> — every app that holds anything, with its real size. <span class="hbB ">Open in app</span> takes you to it.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>The right column is your actual drive.</b> <span class="hbB ">Choose folder</span> picks one and it reads the whole tree.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>It reads <b>names and sizes only</b>. No file is opened until you click it, and nothing is ever uploaded.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>Your folder is remembered, so it is still there next time without picking it again.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><span class="hbB ">Refresh</span> rescans if you have changed things on disk.</p></div>
+<p class="hbTip">On Chrome and Edge this uses the browser’s folder permission. On Firefox and Safari it falls back to choosing files, and works the same way.</p>
+</div>
+<div class="hbApp" data-sec="keep" data-app="trash" hidden>
+<h3>Trash bin</h3><p class="hbWhere">Left panel, click Trash</p>
+<div class="hbStep"><span class="hbN">1</span><p>Everything you delete anywhere lands here first: notes, tasks, cells, bookmarks, images, clipboard entries, even letters you backspaced out of a document.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><span class="hbB ">Put back</span> returns it to where it came from. Text goes back into your document at the cursor.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>Hover an entry</b> to read the whole thing without opening it.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><span class="hbB ">Safe delete</span> cycles a hold time from <b>1 min</b> to <b>48 hours</b>. With a time set, <span class="hbB ">&times;</span> starts a countdown instead of deleting.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>During a countdown the <span class="hbB ">&times;</span> becomes <span class="hbB ">&#8635;</span>. Click it to call the item back.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>Twenty seconds before anything goes for good, the workspace dims and offers <span class="hbB ">Stop</span> <span class="hbB ">Go to bin</span> <span class="hbB ">Continue</span>.</p></div>
+<div class="hbStep"><span class="hbN">7</span><p>The <span class="hbB pink">Trash</span> button glows pink for half a minute whenever something new lands in it.</p></div>
+</div>
+<div class="hbApp" data-sec="keep" data-app="clip" hidden>
+<h3>Clipboard history</h3><p class="hbWhere">Top panel, click Clipboard</p>
+<div class="hbStep"><span class="hbN">1</span><p>Anything you copy <b>anywhere in the workspace</b> lands here. The last forty are kept.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>Click an entry</b> to copy it back out.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>The search box filters them as you type.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>The <span class="hbB pink">Clipboard</span> button glows pink whenever there is something in it.</p></div>
+</div>
+<div class="hbApp" data-sec="keep" data-app="marks" hidden>
+<h3>Bookmarks</h3><p class="hbWhere">Top panel, click Bookmarks</p>
+<div class="hbStep"><span class="hbN">1</span><p>Paste an address, give it a name, and press <span class="hbB lit">Add</span>.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><span class="hbB ">Open</span> loads it into the browser panel and flips you straight there.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>The search box filters your list as you type.</p></div>
+</div>
+<div class="hbApp" data-sec="keep" data-app="pass" hidden>
+<h3>Password generator</h3><p class="hbWhere">Lower right panel, click Password</p>
+<div class="hbStep"><span class="hbN">1</span><p>Set the length — anywhere from <b>6 to 64</b> characters.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Toggle what goes in: capitals, lowercase, numbers and symbols.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><span class="hbB ">Avoid look-alikes</span> leaves out the characters people confuse, like 1, l, 0 and O.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>The strength bar shows <b>real entropy in bits</b>, not a vague guess.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>Every password you generate is <b>filed into the Vault automatically</b>.</p></div>
+<p class="hbTip">These come from your browser’s cryptographic random source, not an ordinary random number.</p>
+</div>
+<div class="hbApp" data-sec="keep" data-app="vault" hidden>
+<h3>Password vault</h3><p class="hbWhere">Lower right panel, click Vault</p>
+<div class="hbStep"><span class="hbN">1</span><p>Generated passwords arrive on their own. <span class="hbB ">Add</span> puts in one of your own.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Click the site or username <b>on the entry</b> to edit it in place.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Set a renewal period of <b>3, 6, 12 or 24 months</b>. The list sorts by what is due soonest, and <b>anything overdue turns red</b>.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>Passwords are masked. <span class="hbB ">Reveal</span> shows one, and there are separate one-click copies for username and password.</p></div>
+<p class="hbTip">Nothing here ever leaves your machine. There is no sync, no account, and nowhere for it to go.</p>
+</div>
+<div class="hbApp" data-sec="keep" data-app="backup" hidden>
+<h3>Backup and Restore</h3><p class="hbWhere">Bottom right, in the control group</p>
+<div class="hbStep"><span class="hbN">1</span><p><span class="hbB ">Backup</span> writes your <b>entire workspace</b> into one dated file: every document, note, image, PDF, recording and setting.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Keep that file anywhere. It is plain readable JSON, not a locked format.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><span class="hbB ">Restore</span> reads it back. If anything goes wrong mid-way it rolls back completely, so you can never end up half-restored.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><span class="hbB ">Reset OS</span> erases everything and starts fresh. It asks twice, and offers to back up first.</p></div>
+</div>
+<div class="hbApp" data-sec="web" data-app="web" hidden>
+<h3>Web browser</h3><p class="hbWhere">Top panel, click Web</p>
+<div class="hbStep"><span class="hbN">1</span><p>Type an address and press <span class="hbB lit">Go</span>. It keeps its own history, separate from your real browser.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><span class="hbB ">&#9664;</span> and <span class="hbB ">&#9654;</span> move back and forward. It remembers the last page you were on.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Some sites refuse to be shown inside another page. For those, use <span class="hbB ">Open in new tab</span>.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>Zoom the panel with the mouse wheel; past 100% you can drag the page around.</p></div>
+</div>
+<div class="hbApp" data-sec="web" data-app="net" hidden>
+<h3>Network monitor</h3><p class="hbWhere">Bottom right, the first thing in the row next to the clock</p>
+<div class="hbStep"><span class="hbN">1</span><p><span class="hbB ">Sealed</span> means nothing is leaving your machine. Hover it and it says so.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><span class="hbB amber">Network open</span> turns amber the moment anything reaches out. Hover it to see exactly what is connected and what they can see about you.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Before anything connects, a <b>warning drops down from the top</b> and the workspace blurs behind it. Nothing loads until you click <span class="hbB lit">Okay, I understand</span>, and <span class="hbB ">Cancel</span> stops it dead.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>It goes back to <span class="hbB ">Sealed</span> the moment the page is closed.</p></div>
+<p class="hbTip">This file has no server and nothing to upload to. The browser panel and the news ticker are the only things that can reach out, and both ask first.</p>
+</div>
+<div class="hbApp" data-sec="web" data-app="rss" hidden>
+<h3>News ticker</h3><p class="hbWhere">The strip along the very bottom</p>
+<div class="hbStep"><span class="hbN">1</span><p><span class="hbB ">Feeds</span> opens the list. Paste in any RSS or Atom address and add it.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Headlines scroll along the bottom, one row per feed. <b>Hover to pause</b>, click to open a story.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Feeds refresh every ten minutes. Headlines are shown as <b>plain text</b>, never as code, so nothing in a feed can run.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><span class="hbB ">RSS feed</span> in the control group switches it off completely. Off means every request in flight is cut and no new ones are made.</p></div>
+<p class="hbTip">If a site refuses a direct request, the ticker falls back to a public proxy and tells you so on screen. That proxy sees your address and which feed you asked for.</p>
+</div>
+<div class="hbApp" data-sec="space" data-app="layout" hidden>
+<h3>Layout editor</h3><p class="hbWhere">Bottom right, click Layout</p>
+<div class="hbStep"><span class="hbN">1</span><p>Every one of the apps is listed with a dropdown naming <b>which panel it lives in</b>. Change it and it moves there.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><span class="hbB ">Hide App</span> removes one from the switcher entirely. Useful if you never touch the PDF viewer or the checkers board.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><span class="hbB ">Zoom</span> on any row turns the mouse-wheel zoom off for that app alone — handy for apps that scroll themselves.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><span class="hbB lit">Apply</span> reloads into the new arrangement. Your work is saved first, so nothing is lost.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><span class="hbB ">Reset</span> puts every app back where it started.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>If you move every app out of a panel, that panel closes itself. Nothing is left empty.</p></div>
+<p class="hbTip">The arrangement is remembered, so the workspace opens the way you left it.</p>
+</div>
+<div class="hbApp" data-sec="space" data-app="panels" hidden>
+<h3>Panels, zoom and blur</h3><p class="hbWhere">Anywhere on screen</p>
+<div class="hbStep"><span class="hbN">1</span><p><span class="hbB ">&times;</span> at the top right of a panel <b>closes it, and the others grow</b> to fill the space. Closed panels come back from the buttons at the bottom right.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>Drag the divider</b> under the top panel to resize it. Double-click the divider to reset it.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>Mouse wheel</b> over a panel zooms it from 50% to 200%. It only zooms when there is nothing scrollable under your pointer, so lists still scroll normally.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>Past 100%, <b>drag the panel contents</b> to move around. Buttons and text boxes still work while you do.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><span class="hbB lit">Proximity</span> blurs the panels you are not using and sharpens the one you approach. Turn it off and they clear on hover instead.</p></div>
+</div>
+<div class="hbApp" data-sec="space" data-app="look" hidden>
+<h3>Themes and screensaver</h3><p class="hbWhere">Bottom right, in the control group</p>
+<div class="hbStep"><span class="hbN">1</span><p><span class="hbB lit">Glass</span> is the frosted look with depth and motion. Click it for <span class="hbB ">Performance</span>, which strips every effect for older machines.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Performance mode also <b>disables the garden and the wear</b>, so a tired computer has nothing decorative running at all.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><span class="hbB ">Screensaver 1m</span> cycles how long before it starts: <b>1, 5, 20, 30, 60 minutes, or off</b>.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>When it starts, the interface fades away over two seconds and leaves the panels and the garden. Any key or movement brings it back, just as slowly.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>Both themes respect your system setting for reduced motion.</p></div>
+</div>
+<div class="hbApp" data-sec="space" data-app="garden" hidden>
+<h3>The garden</h3><p class="hbWhere">Bottom right, click Katy Mae</p>
+<div class="hbStep"><span class="hbN">1</span><p>Click <span class="hbB lit">Katy Mae</span> to grow flowers inside your panels. The dropdown sets how long a plant takes, from <b>1 to 60 minutes</b>.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>Click any plant</b> to cut it. It springs off the stem, falls away, and another comes up elsewhere.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Each panel gets its own weather and its own seasons. In winter, snow settles along the bottom of the panel.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>When there is snow, a <span class="hbB warm">&#9728;</span> appears in that panel’s toolbar. Click it and a heat lamp warms the panel: the snow keeps falling but cannot settle, the drift melts into water that runs down the glass, and the edges glow warm. It switches itself off after a few minutes.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>Typing in the word processor feeds the garden, nudging the plants along.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>It needs the <span class="hbB lit">Glass</span> theme.</p></div>
+</div>
+<div class="hbApp" data-sec="space" data-app="wear" hidden>
+<h3>Wear</h3><p class="hbWhere">Bottom right, click Wear</p>
+<div class="hbStep"><span class="hbN">1</span><p>With it on, <b>buttons age where you actually press them</b>, like the switches in a cockpit.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>The finish polishes first, then the printed label rubs away, then the paint opens to bare metal — in that order, exactly where your thumb lands.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>It is slow on purpose. A button you press twenty times a day starts to shine in about a week and reaches bare metal in about four months.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>The next two buttons along are the <b>test rate</b>, which compresses months into a few clicks, and <span class="hbB ">Refinish</span>, which restores every button to new.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>The label never wears past readable. That is a hard limit.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>It needs the <span class="hbB lit">Glass</span> theme.</p></div>
+</div>
+<div class="hbApp" data-sec="tm" data-app="tm" hidden>
+<h3>Task Manager</h3><p class="hbWhere">Bottom right, click Task Manager</p>
+<div class="hbStep"><span class="hbN">1</span><p><b>Running now</b> lists everything actually doing something: timers, stopwatches, Pomodoro rounds, recordings, the camera, playing media, tracked projects, a slideshow, and any deletion counting down.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Each has a <span class="hbB ">Stop</span> beside it, so you can end anything from one place without hunting for the app.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>Apps</b> lists every app with the panel it lives in, whether it is on screen, whether it holds any data, and <b>its exact size in bytes</b>.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>That is how you find what is taking up room. Sort through it and you can see at a glance that your Gallery is 40 MB and your notes are 12 KB.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><b>System</b> reports how long the workspace has been open, how many panels, which storage engine is in use, your quota, memory in use, feeds active, tasks and button wear.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>If storage ever falls back from IndexedDB, System says so plainly — including if data is <b>not being saved at all</b>.</p></div>
+<div class="hbStep"><span class="hbN">7</span><p>Press <b>Escape</b> or click outside to close it.</p></div>
+<p class="hbTip">Nothing here is sent anywhere. It is reading your own machine, for you.</p>
+</div>
+<div class="hbApp" data-sec="play" data-app="chk" hidden>
+<h3>Checkers</h3><p class="hbWhere">Lower right panel, click Checkers</p>
+<div class="hbStep"><span class="hbN">1</span><p>You are <b>red</b> and you move first. Click a piece, then click where it goes.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Full rules: captures are forced, multi-jumps chain, and a piece reaching the far row is crowned.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>The dropdown sets the engine: <span class="hbB ">Easy</span> <span class="hbB lit">Normal</span> <span class="hbB ">Hard</span>. Hard thinks six moves ahead.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><span class="hbB ">&#128266;</span> mutes the sound. Every tone is generated on the spot, not a file.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>Your game is saved. Flip away to do real work and the position is exactly as you left it when you come back.</p></div>
+</div>
+</section>
+
+
+<section id="firsts">
+  <h2>What nobody else has done</h2>
+  <h3>The parts of this workspace that did not exist before it</h3>
+  <p>Some of what follows is unusual, and some of it, as far as we can tell, has never been built into
+     an operating environment at all. It is listed plainly so you can judge it for yourself.</p>
+  <div class="hbPick" id="hbFirsts"><button data-go="flip">The flip</button><button data-go="safe">Safe Delete</button><button data-go="catch">Catching deleted text</button><button data-go="weather">Weather, per panel</button><button data-go="lamp">The heat lamp</button><button data-go="blur">Proximity and blur</button><button data-go="net">The network seal</button><button data-go="sealed">Sealed by construction</button><button data-go="wear">Wear</button><button data-go="forge">Hot metal text</button><button data-go="size">All of it, in one file</button></div>
+<div class="hbApp" data-sec="first" data-app="flip" hidden>
+<h3>The flip</h3><p class="hbWhere">Switching apps is a physical turn, not a tab change</p>
+<div class="hbStep"><span class="hbN">1</span><p>The card <b>rotates out</b>, the two apps swap at the midpoint, and it <b>rotates back in</b>. The incoming app is never visible until the card has turned past its own edge, so you never see a half-drawn screen.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Flipping right turns one way and flipping left turns the other, which means the deck has a real spatial order. After a day you stop reading the names and just know that Trash is two to the right of Paint.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Every face behind the card stays alive while it is hidden. A timer keeps counting, a recording keeps recording, a video keeps playing, a garden keeps growing.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><b>Hover any app name</b> and that app appears live in place, framed in blue, without committing to the flip. A short delay stops it flickering as you move along the row.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>This is what made the whole project possible. Five panels of five apps is twenty-five apps on one screen with no window management, no taskbar, no overlapping windows and nothing to arrange.</p></div>
+<p class="hbTip">The peeked app is given its own solid backing, so two transparent apps can never show through each other.</p>
+</div>
+<div class="hbApp" data-sec="first" data-app="safe" hidden>
+<h3>Safe Delete</h3><p class="hbWhere">A bin that gives you the time back, not just the file</p>
+<div class="hbStep"><span class="hbN">1</span><p>Every other trash can is a holding pen: things sit there until you empty it. This one lets you <b>set how long something has left</b>, per item: one minute, thirty minutes, an hour, twelve, twenty-four, forty-eight.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>With a time set, pressing <span class="hbB ">&times;</span> does not delete. The item greys out and a <b>live countdown</b> starts, ticking in hours, minutes and seconds. The <span class="hbB ">&times;</span> becomes <span class="hbB ">&#8635;</span> so you can call it back at any moment.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>Twenty seconds before anything goes for good, the workspace tells you.</b> The entire interface blurs and dims, and the notice is the only sharp thing on screen.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>You get <span class="hbB ">Stop</span>, <span class="hbB ">Go to bin</span> or <span class="hbB ">Continue</span>. Go to bin sharpens just the Trash panel and highlights that exact item, leaving everything else soft.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>Stop halts the clock and leaves the Trash button pulsing until you have actually looked at it. The workspace refuses to quietly forget that something is waiting on you.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>Pending deletions also appear in the Task Manager under Running now, with their countdown, because a deletion in progress <i>is</i> something the machine is doing.</p></div>
+<p class="hbTip">Nothing in this workspace is ever destroyed without a warning, a countdown, and a way back.</p>
+</div>
+<div class="hbApp" data-sec="first" data-app="catch" hidden>
+<h3>Catching deleted text</h3><p class="hbWhere">The only workspace that keeps the words you backspaced out</p>
+<div class="hbStep"><span class="hbN">1</span><p>A browser keeps no record of a deleted character. Once it is gone it is gone, which is why no editor offers this.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>So the keystroke is intercepted <b>before</b> the deletion happens: a one-character range is built behind or in front of the cursor and read while the character still exists.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Holding backspace would then produce hundreds of single-letter entries, which is useless. Deletions within <b>900 milliseconds</b> of each other are merged into one.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>Each character is <b>prepended</b> to the front, because backspace eats backwards. That rebuilds the passage in its original order rather than reversed.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>So holding backspace through a sentence gives you one readable entry: <i>&ldquo;quick brown fox jumps (20 characters)&rdquo;</i>. Pause longer than 900ms and the next deletion starts a fresh entry.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p><span class="hbB ">Put back</span> reinserts the text into your document <b>at your cursor</b>. Hover any entry to read the whole passage without opening it.</p></div>
+<p class="hbTip">The same bin catches cleared spreadsheet cells as one restorable block, sticky notes, tasks, vault entries, bookmarks, slides, gallery images and clipboard history.</p>
+</div>
+<div class="hbApp" data-sec="first" data-app="weather" hidden>
+<h3>Weather, per panel</h3><p class="hbWhere">Every panel has its own sky</p>
+<div class="hbStep"><span class="hbN">1</span><p>Rain, snow, wind, lightning and the seasons are tracked <b>separately for every panel</b>. One can be in a thunderstorm while the panel beside it sits in calm sunlight.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>Rain</b> falls in three depth layers for parallax, each streak a soft gradient rather than a hard line. Each shower rolls its own weight: barely spitting, steady, heavy, or a downpour. Light rain uses thinner, shorter, fainter streaks rather than simply fewer of them.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>Water behaves like water.</b> Beads cling to the glass, heavier ones release sooner, they stretch as they accelerate, wobble off course, and leave a wet trail that thins and dries behind them.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><b>Lightning</b> carries in fewer than half of storms. Three multi-stroke flicker patterns, brightness banded into four distances, and the light falls directionally using screen blending, so it lights the flowers, the rain and the leaves together rather than washing the screen white.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><b>Wind</b> is owned by the panel, so leaves never cross in opposite directions, and it only changes direction when the air is clear. Leaves travel at a capped speed rather than a capped time, so none of them crawl in a narrow panel.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p><b>Seasons scale to the garden.</b> A season runs 1.6 to 2.8 times the growing time you chose, so a plant is never cut down before it has had a chance to bloom.</p></div>
+<p class="hbTip">Storms arrive and leave rather than switching. Snow drifts in over nine seconds; when it passes, the wind drops first, the flakes already falling finish their fall, and the drift melts rather than vanishing.</p>
+</div>
+<div class="hbApp" data-sec="first" data-app="lamp" hidden>
+<h3>The heat lamp</h3><p class="hbWhere">An interface that needs snow clearing</p>
+<div class="hbStep"><span class="hbN">1</span><p>When winter comes to a panel, snow settles along the bottom of it and <b>piles up</b>, with an uneven drifted top edge that deepens as the storm runs.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>A <span class="hbB warm">&#9728;</span> then appears in that panel&rsquo;s toolbar &mdash; and only while there is snow to melt. The control exists when it is meaningful and vanishes when it is not.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>It strikes like a real bulb.</b> Press it and it flashes in spurts, catches, drops out for a moment, then comes up to temperature slowly over seven seconds.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><b>It fights the weather rather than cancelling it.</b> The snow keeps falling. What changes is that it can no longer settle: the drift sinks from the top down and runs off as meltwater beads down the glass.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><b>Water dries faster on hot glass.</b> While the lamp is on, beads run and evaporate in about a third of the usual time. Switch it off and the glass stays warm for a while, drying slower, before returning to normal.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>Switching off is a <b>cooling, not a switch</b>. The warmth falls away over eight seconds. And like any real lamp on a thermostat, it gives up on its own after a few minutes.</p></div>
+<p class="hbTip">A user interface that occasionally requires snow clearing is, as far as anyone can tell, a first.</p>
+</div>
+<div class="hbApp" data-sec="first" data-app="blur" hidden>
+<h3>Proximity and blur</h3><p class="hbWhere">The workspace decides what deserves your attention</p>
+<div class="hbStep"><span class="hbN">1</span><p>Panels you are not using <b>blur, desaturate, dim and fade</b>. The one you approach sharpens as your pointer nears it. All four properties animate together from a single ratio with an eased falloff.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Reach is measured from the panel&rsquo;s <b>shorter side</b>, not its diagonal, so a full-width panel does not clear from across the screen.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>This is why a screen this dense is not exhausting. Most software assumes everything should be equally sharp at all times, which gives your eye no permission to ignore anything.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>Two hard problems had to be solved for it. Embedded pages swallow every mouse event, so a transparent tracking layer sits over blurred panels. And CSS filters apply to every descendant, so the unblur control had to live outside the element it unblurs.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>The garden blurs and wakes <b>in lockstep</b> with its panel, so the weather never sharpens against a soft panel.</p></div>
+<p class="hbTip">The same idea does the heavy lifting elsewhere: the whole workspace steps back behind a pending deletion, a finished task timer, or a network warning, leaving one sharp thing to answer.</p>
+</div>
+<div class="hbApp" data-sec="first" data-app="net" hidden>
+<h3>The network seal</h3><p class="hbWhere">An OS that tells you the moment it can be overheard</p>
+<div class="hbStep"><span class="hbN">1</span><p>The control group carries a live state: <span class="hbB ">Sealed</span> when nothing is leaving your machine, and <span class="hbB amber">Network open</span> the moment anything reaches out. Hover it and it names exactly what is connected.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>Before</b> anything connects, a warning drops from the top of the screen and the workspace blurs behind it. It names what is about to happen and what it exposes: your IP address, your rough location, your device and browser, the time you asked and what you asked for.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Nothing loads until you answer. <span class="hbB ">Cancel</span> stops it dead, and the workspace stays sealed.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>Only two things in the entire file can reach out: the browser panel and the news ticker. Both ask. Everything else &mdash; every app, every document, every picture &mdash; has nowhere to go and no code to get there.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><span class="hbB ">RSS feed</span> switches the ticker off outright: every request in flight is <b>aborted mid-flight</b>, new ones are refused at the source, and the cache is cleared. Verified at zero outside requests.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>Scanned with an independent privacy analyser, the workspace reports <b>0 external connections, 0 trackers, 0 corporate owners</b>, and an exposure score of <b>0 out of 100</b>.</p></div>
+<p class="hbTip">Compare that with an ordinary news website, which typically pulls in thirty or more scripts from a dozen companies before you have read a word.</p>
+</div>
+<div class="hbApp" data-sec="first" data-app="sealed" hidden>
+<h3>Sealed by construction</h3><p class="hbWhere">Not a setting. There is nothing there to switch on.</p>
+<div class="hbStep"><span class="hbN">1</span><p><b>No server.</b> Not a slow one, not a private one. There is nothing to breach, nothing to leak, nothing to subpoena and nothing to go down.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>No accounts.</b> No sign-up, no email, no session, no cookie, no fingerprint, no analytics, no telemetry, no crash reporting. The file has no idea who you are and no way to find out.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>No third-party code.</b> Not one line. Which means <b>zero supply-chain risk</b>: no dependency can be compromised upstream, because there are no dependencies.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><b>No code execution.</b> <code>eval</code> and <code>new Function</code> appear zero times in the whole document. Nothing you paste, import or restore can become running code.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><b>Your files stay yours.</b> The disk browser reads names and sizes only, and there is no upload path in the code because there is nowhere to upload to.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p><b>You can audit it yourself.</b> It is one readable text file with no minification and no obfuscation. Open it in any editor and search it. Try that with a native application or a cloud service.</p></div>
+<p class="hbTip">Backup writes everything you own into a single readable file you keep. No export fee, no lock-in, no proprietary format, no service to keep paying. If this project vanished tomorrow, your copy would keep working.</p>
+</div>
+<div class="hbApp" data-sec="first" data-app="wear" hidden>
+<h3>Wear</h3><p class="hbWhere">Buttons that age where your thumb actually lands</p>
+<div class="hbStep"><span class="hbN">1</span><p>Talk to a pilot and they can tell you which switches get used without reading a label, because the panel tells them. Thousands of presses polish the finish, rub the legend away, and open the paint to bare metal.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Every button&rsquo;s face is divided into a <b>9 &times; 5 grid</b>, and each press deposits wear into the exact cell the pointer landed in, with a little bleeding into its neighbours.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>Wear accumulates, it never moves.</b> Hit the left edge and later the right edge and you get two distinct worn patches, exactly as you would on metal.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>It ages in the order real surfaces fail: the finish <b>polishes</b> first, then the printed <b>legend</b> rubs off, then the <b>paint</b> thins, then <b>bare alloy</b> shows with a dark rim where the paint lifted.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>The curve is logarithmic and slow on purpose. A button you press twenty times a day starts to shine in about a week, shows obvious polish in a month, and reaches metal at about four months.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>So after a month of real use, <b>your workspace shows you where your hands live</b>. It is the most honest telemetry there is, because it never leaves your machine and it is for you.</p></div>
+<p class="hbTip">The legend never wears past readable &mdash; that is a hard limit. And <span class="hbB ">Refinish</span> restores the whole panel to new, like sending it out for respray.</p>
+</div>
+<div class="hbApp" data-sec="first" data-app="forge" hidden>
+<h3>Hot metal text</h3><p class="hbWhere">Words that arrive at temperature</p>
+<div class="hbStep"><span class="hbN">1</span><p>Type with <span class="hbB lit">Effects</span> on and each character <b>lands in its normal colour first</b>, so your eye reads the letter before the effect starts. Then it heats through orange into blazing yellow and cools back to white.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Fast typing leaves a glowing wake behind the cursor with <b>every letter at a different temperature</b>.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>And the letters shed slag.</b> Molten beads run off and fall down the panel under gravity, cooling from white-yellow through gold and orange to dull red as they drift and die out.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>The slag is deliberately <b>uneven</b>. Some letters barely drip, a few really run, and about one in five <b>holds a bead and lets it go up to two seconds later</b> &mdash; so drips keep arriving from letters you typed a moment ago.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><b>Deleted letters burn up.</b> Backspace throws the character off the screen, igniting orange and burning through yellow to white as it tumbles.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>Sticky notes get the same treatment: deleting one <b>peels it off the board</b> from its top-left corner like tape letting go, then tumbles it away with its own spin and distance.</p></div>
+<p class="hbTip">This was refined by an animator who said the first version was not turbulent enough, and she was right: every letter was dripping in lockstep, which read as a wave.</p>
+</div>
+<div class="hbApp" data-sec="first" data-app="size" hidden>
+<h3>All of it, in one file</h3><p class="hbWhere">Thirty apps and no dependencies</p>
+<div class="hbStep"><span class="hbN">1</span><p>The whole workspace is <b>one HTML file</b>. No install, no runtime, no package manager, no build step, no CDN, no framework.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>A typical web app ships a framework before it ships a single feature. Most bundles are other people&rsquo;s code with a thin layer of yours on top. <b>Here every byte is a feature.</b></p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>There are no assets.</b> Not one image, font, sprite sheet or sound file. Every flower is drawn from paths at run time, every snowflake and spark is generated, and every chime is synthesised with Web Audio.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>Which is why it is small enough to be startling: <b>a single photograph from a phone is larger than this entire operating system</b>, apps, weather, encoders and all.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>And the engineering inside is not light: a GIF encoder with median-cut quantization and hand-written LZW, a spreadsheet with a real formula parser, a checkers engine with alpha-beta pruning, a WAV writer, an overlap-add time stretcher, and a per-panel weather and season system.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>It runs from a USB stick. It runs with the network unplugged. It would run on a Raspberry Pi.</p></div>
+</div>
+</section>
 
 <!-- ══════════════════════════════════ ARCHITECTURE ══════════════════════════════════ -->
 <section id="arch">
@@ -2452,6 +2955,7 @@ paused, then deleted again
       </section>
 
       <!-- ===== Media player ===== -->
+      <div id="splitR" role="separator" aria-orientation="horizontal" aria-label="Resize the right panels" tabindex="0" title="Drag to resize. Double-click to reset."></div>
       <section class="panel" id="media" aria-label="Media player">
         <div class="card">
           <div class="face front" data-face="media" id="mediaFace" tabindex="-1" style="position:absolute">
@@ -3287,8 +3791,19 @@ var Sys = (function () {
 
 /* ================= Browser resize handle ================= */
 (function () {
-  var app = $('app'), h = $('splitH'), ui = store.get('ws.ui', {}), MIN = 10, MAX = 80, DEF = 28;
-  function apply(pct) {
+  var app = $('app'), h = $('splitH'), ui = store.get('ws.ui', {}), MIN = 10, MAX = 80, DEF = 28, SNAP = 3.5;
+  // This seam only exists while the browser and something below it are both open.
+  function bothOpen() {
+    var b = $('browser');
+    if (!b || b.classList.contains('closed')) return false;
+    return ['paint', 'calendar', 'word', 'media'].some(function (p) {
+      var n = $(p);
+      return n && !n.classList.contains('closed');
+    });
+  }
+  function apply(pct, magnet) {
+    // near the position it ships with, it pulls home
+    if (magnet && bothOpen() && Math.abs(pct - DEF) < SNAP) pct = DEF;
     pct = Math.max(MIN, Math.min(MAX, pct));
     app.style.setProperty('--top', pct + 'fr');
     app.style.setProperty('--bot', (100 - pct) + 'fr');
@@ -3305,7 +3820,7 @@ var Sys = (function () {
     h.setPointerCapture(e.pointerId);   // keeps the drag even when the pointer crosses an iframe
     document.body.classList.add('resizing');
   });
-  h.addEventListener('pointermove', function (e) { if (h.hasPointerCapture(e.pointerId)) cur = apply(pctAt(e.clientY)); });
+  h.addEventListener('pointermove', function (e) { if (h.hasPointerCapture(e.pointerId)) cur = apply(pctAt(e.clientY), true); });
   function end() { if (!document.body.classList.contains('resizing')) return; document.body.classList.remove('resizing'); commit(cur); }
   h.addEventListener('pointerup', end);
   h.addEventListener('pointercancel', end);
@@ -3315,6 +3830,80 @@ var Sys = (function () {
     if (!d) return;
     e.preventDefault(); cur = apply(cur + d); commit(cur);
   });
+})();
+
+/* ================= The other panel dividers =================
+   Same idea as the browser handle: every seam between panels can be dragged,
+   the grid is all fr units so the panels either side simply flex. */
+(function () {
+  var ui = store.get('ws.ui', {});
+
+  function handle(id, target, varTop, varBot, seamVar, def, vertical, measure, sides) {
+    var h = $(id), el = $(target);
+    if (!h || !el) return;
+    var MIN = 12, MAX = 88, SNAP = 3.5, cur;
+    // A seam between a closed panel and an open one is not a seam at all, so there
+    // is nothing for it to snap back to.
+    function bothOpen() {
+      return sides.every(function (p) {
+        var n = $(p);
+        return n && !n.classList.contains('closed');
+      });
+    }
+    function apply(pct, magnet) {
+      // The workspace ships with these positions. Come close to one while dragging
+      // and it pulls home, so you can always get exactly back to how it started.
+      if (magnet && bothOpen() && Math.abs(pct - def) < SNAP) pct = def;
+      pct = Math.max(MIN, Math.min(MAX, pct));
+      el.style.setProperty(varTop, pct + 'fr');
+      el.style.setProperty(varBot, (100 - pct) + 'fr');
+      el.style.setProperty(seamVar, pct + '%');       // the handle rides on the seam it moves
+      h.setAttribute('aria-valuenow', String(Math.round(pct)));
+      return pct;
+    }
+    function commit(p) { ui[id] = p; store.set('ws.ui', ui); }
+    cur = apply(ui[id] || def);
+    h.setAttribute('aria-valuemin', String(MIN));
+    h.setAttribute('aria-valuemax', String(MAX));
+    h.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      h.setPointerCapture(e.pointerId);     // hold the drag even across an embedded page
+      document.body.classList.add(vertical ? 'resizingV' : 'resizing');
+    });
+    h.addEventListener('pointermove', function (e) {
+      if (h.hasPointerCapture(e.pointerId)) cur = apply(measure(e), true);
+    });
+    function end() {
+      document.body.classList.remove('resizing');
+      document.body.classList.remove('resizingV');
+      commit(cur);
+    }
+    h.addEventListener('pointerup', end);
+    h.addEventListener('pointercancel', end);
+    h.addEventListener('dblclick', function () { cur = apply(def); commit(cur); });
+    h.addEventListener('keydown', function (e) {
+      var d = (e.key === 'ArrowUp' || e.key === 'ArrowLeft') ? -2
+            : (e.key === 'ArrowDown' || e.key === 'ArrowRight') ? 2 : 0;
+      if (!d) return;
+      e.preventDefault(); cur = apply(cur + d); commit(cur);
+    });
+  }
+
+  // the seam between the two columns
+  handle('splitV', 'lower', '--colL', '--colR', '--seam', 50, true, function (e) {
+    var r = $('lower').getBoundingClientRect();
+    return (e.clientX - r.left) / r.width * 100;
+  }, ['paint', 'calendar', 'word', 'media']);
+  // the seam above the lower panel in each column
+  handle('splitL', 'left', '--rowLT', '--rowLB', '--seamL', 66.5, false, function (e) {
+    var r = $('left').getBoundingClientRect();
+    return (e.clientY - r.top) / r.height * 100;
+  }, ['paint', 'calendar']);
+  handle('splitR', 'right', '--rowRT', '--rowRB', '--seamR', 42, false, function (e) {
+    var r = $('right').getBoundingClientRect();
+    return (e.clientY - r.top) / r.height * 100;
+  }, ['word', 'media']);
 })();
 
 /* ================= Browser ================= */
@@ -9541,6 +10130,62 @@ var Wear = (function () {
     var t = document.getElementById(this.value);
     if (t) body.scrollTop = t.offsetTop - body.offsetTop - 8;
   };
+  // The how-to shows one app at a time, so nobody has to scroll past nine others.
+  var pick = body.querySelector('#hbPick');
+  if (pick) {
+    var cards = [].slice.call(body.querySelectorAll('.hbApp'));
+    pick.addEventListener('click', function (e) {
+      var k = e.target.getAttribute && e.target.getAttribute('data-go');
+      if (!k) return;
+      cards.forEach(function (c) { c.hidden = c.dataset.app !== k; });
+      [].forEach.call(pick.children, function (b) { b.classList.toggle('on', b.getAttribute('data-go') === k); });
+    });
+    pick.firstChild.click();          // something is always showing
+  }
+
+  // Sections choose which app tabs are offered, and one app is always showing.
+  var secBar = body.querySelector('#hbSecs'), pick = body.querySelector('#hbPick');
+  if (secBar && pick) {
+    var cards = [].slice.call(body.querySelectorAll('.hbApp'));
+    var tabs = [].slice.call(pick.children);
+    function showApp(k) {
+      cards.forEach(function (c) { c.hidden = c.dataset.app !== k; });
+      tabs.forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-go') === k); });
+    }
+    function showSec(sec) {
+      [].forEach.call(secBar.children, function (b) { b.classList.toggle('on', b.getAttribute('data-sec') === sec); });
+      var first = null;
+      tabs.forEach(function (b) {
+        var mine = b.getAttribute('data-sec') === sec;
+        b.hidden = !mine;
+        if (mine && !first) first = b.getAttribute('data-go');
+      });
+      if (first) showApp(first);
+    }
+    secBar.addEventListener('click', function (e) {
+      var sec = e.target.getAttribute && e.target.getAttribute('data-sec');
+      if (sec) showSec(sec);
+    });
+    pick.addEventListener('click', function (e) {
+      var k = e.target.getAttribute && e.target.getAttribute('data-go');
+      if (k) showApp(k);
+    });
+    showSec('art');
+  }
+
+  // the firsts section has its own row of tabs
+  var fw = body.querySelector('#hbFirsts');
+  if (fw) {
+    var fcards = [].slice.call(body.querySelectorAll('.hbApp[data-sec="first"]'));
+    fw.addEventListener('click', function (e) {
+      var k = e.target.getAttribute && e.target.getAttribute('data-go');
+      if (!k) return;
+      fcards.forEach(function (c) { c.hidden = c.dataset.app !== k; });
+      [].forEach.call(fw.children, function (b) { b.classList.toggle('on', b.getAttribute('data-go') === k); });
+    });
+    fw.firstChild.click();
+  }
+
   find.addEventListener('input', function () {
     var q = find.value.trim().toLowerCase();
     secs.forEach(function (sec) {
