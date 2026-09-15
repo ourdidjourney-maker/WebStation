@@ -2410,11 +2410,9 @@
 
 
 <section id="firsts">
-  <h2>What nobody else has done</h2>
-  <h3>The parts of this workspace that did not exist before it</h3>
-  <p>Some of what follows is unusual, and some of it, as far as we can tell, has never been built into
-     an operating environment at all. It is listed plainly so you can judge it for yourself.</p>
-  <div class="hbPick" id="hbFirsts"><button data-go="flip">The flip</button><button data-go="safe">Safe Delete</button><button data-go="catch">Catching deleted text</button><button data-go="weather">Weather, per panel</button><button data-go="lamp">The heat lamp</button><button data-go="blur">Proximity and blur</button><button data-go="net">The network seal</button><button data-go="sealed">Sealed by construction</button><button data-go="wear">Wear</button><button data-go="forge">Hot metal text</button><button data-go="size">All of it, in one file</button></div>
+  <h2>Features</h2>
+  <h3>The systems that make this workspace what it is</h3>
+  <div class="hbPick" id="hbFirsts"><button data-go="flip">The flip</button><button data-go="peek">Hover peek</button><button data-go="safe">Safe Delete</button><button data-go="catch">Catching deleted text</button><button data-go="weather">Weather, per panel</button><button data-go="lamp">The heat lamp</button><button data-go="blur">Proximity and blur</button><button data-go="net">The network seal</button><button data-go="sealed">Sealed by construction</button><button data-go="wear">Wear</button><button data-go="forge">Hot metal text</button><button data-go="data">The data lights</button><button data-go="store">Storage that degrades instead of failing</button><button data-go="panels">Panels that get out of the way</button><button data-go="zoom">Zoom that knows what you meant</button><button data-go="saver">The screensaver</button><button data-go="sound">Every sound is generated</button><button data-go="size">All of it, in one file</button></div>
 <div class="hbApp" data-sec="first" data-app="flip" hidden>
 <h3>The flip</h3><p class="hbWhere">Switching apps is a physical turn, not a tab change</p>
 <div class="hbStep"><span class="hbN">1</span><p>The card <b>rotates out</b>, the two apps swap at the midpoint, and it <b>rotates back in</b>. The incoming app is never visible until the card has turned past its own edge, so you never see a half-drawn screen.</p></div>
@@ -2423,6 +2421,16 @@
 <div class="hbStep"><span class="hbN">4</span><p><b>Hover any app name</b> and that app appears live in place, framed in blue, without committing to the flip. A short delay stops it flickering as you move along the row.</p></div>
 <div class="hbStep"><span class="hbN">5</span><p>This is what made the whole project possible. Five panels of five apps is twenty-five apps on one screen with no window management, no taskbar, no overlapping windows and nothing to arrange.</p></div>
 <p class="hbTip">The peeked app is given its own solid backing, so two transparent apps can never show through each other.</p>
+</div>
+<div class="hbApp" data-sec="first" data-app="peek" hidden>
+<h3>Hover peek</h3><p class="hbWhere">See an app without opening it</p>
+<div class="hbStep"><span class="hbN">1</span><p>Hover any app name in a switcher and <b>that app appears, live, in place</b>, framed in blue. Not a preview, not a thumbnail, not a tooltip &mdash; the running app, in the panel, with its real contents.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Move your pointer away and it is gone. Nothing was opened, nothing was closed, and whatever you were doing is still exactly where you left it.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>This is the other half of what made twenty-five apps on one screen possible. The flip gave them somewhere to live; <b>peek meant you never have to leave what you are doing to check something.</b></p></div>
+<div class="hbStep"><span class="hbN">4</span><p>You can run your eye along a switcher and watch five apps go past in a second. Is there anything in the bin? Did that recording save? What was on that sticky note? Answered without a single click.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>A <b>180 millisecond delay</b> stops it flickering as you move along a row, so brushing past a switcher on the way somewhere else never sets it off.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>The peeked app gets its own solid frosted backing, so two transparent apps can never show through each other and leave you reading a double image.</p></div>
+<p class="hbTip">Combined with the flip, this is why the workspace has no taskbar, no window list, no minimise and nothing to arrange. You look at what you want to look at.</p>
 </div>
 <div class="hbApp" data-sec="first" data-app="safe" hidden>
 <h3>Safe Delete</h3><p class="hbWhere">A bin that gives you the time back, not just the file</p>
@@ -2512,6 +2520,54 @@
 <div class="hbStep"><span class="hbN">5</span><p><b>Deleted letters burn up.</b> Backspace throws the character off the screen, igniting orange and burning through yellow to white as it tumbles.</p></div>
 <div class="hbStep"><span class="hbN">6</span><p>Sticky notes get the same treatment: deleting one <b>peels it off the board</b> from its top-left corner like tape letting go, then tumbles it away with its own spin and distance.</p></div>
 <p class="hbTip">This was refined by an animator who said the first version was not turbulent enough, and she was right: every letter was dripping in lockstep, which read as a wave.</p>
+</div>
+<div class="hbApp" data-sec="first" data-app="data" hidden>
+<h3>The data lights</h3><p class="hbWhere">Every app tells you whether it is holding anything</p>
+<div class="hbStep"><span class="hbN">1</span><p>A small <b>green light</b> appears on an app&rsquo;s button when that app contains something. Notes you have written, images in the Gallery, a game in progress, passwords in the vault.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>It is checked continuously, so it is always current. In Glass mode the lights pulse gently rather than sitting flat.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>It answers a question every other operating system makes you go and look for: <b>where is my stuff?</b> One glance at a switcher tells you which apps have something in them and which are empty.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>The same information is in the Files app and the Task Manager with exact byte counts, but the light is the version you read without stopping.</p></div>
+</div>
+<div class="hbApp" data-sec="first" data-app="store" hidden>
+<h3>Storage that degrades instead of failing</h3><p class="hbWhere">It will not lose your work quietly</p>
+<div class="hbStep"><span class="hbN">1</span><p>Everything is saved through a single layer with <b>three tiers</b>. IndexedDB is the default, with a large quota and room for images, PDFs and recordings.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>If IndexedDB is blocked &mdash; private browsing, a locked-down machine, an odd browser &mdash; it falls back to <b>localStorage</b> automatically. No error, no lost work.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>If even that is unavailable it runs from <b>memory</b>, so the workspace still works. And the Task Manager says so in plain language: <i>data is not being saved</i>.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>That last part matters. Most software either pretends everything is fine or refuses to start. This tells you the truth and keeps working.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>Everything sits behind an in-memory cache, so all thirty apps read instantly after boot with no waiting on storage.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p><b>Backup</b> writes every key and every binary file into one dated file. <b>Restore</b> reads it back inside a single transaction that <b>rolls back completely</b> if anything fails, so you can never end up half-restored.</p></div>
+</div>
+<div class="hbApp" data-sec="first" data-app="panels" hidden>
+<h3>Panels that get out of the way</h3><p class="hbWhere">Close one and the others simply grow</p>
+<div class="hbStep"><span class="hbN">1</span><p>Click <span class="hbB ">&times;</span> on any panel and it closes &mdash; and the remaining panels <b>expand to fill the space</b>. No empty frame, no dead area, no restart.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Closed panels park as buttons in the control group. Click one and it comes back, with everything exactly as it was.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Move every app out of a panel in the Layout editor and <b>that panel closes itself</b>. Nothing is ever left sitting there empty.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><b>Every seam is draggable.</b> Trade space between the browser and everything below it, between the two columns, or between the panels in a column.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>Each seam <b>magnets to the position the workspace ships with</b>, so you can always get back to the original layout by feel. Double-click resets just that seam.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>Every app can be moved to any panel, hidden entirely, or have zoom switched off individually. The arrangement is remembered.</p></div>
+</div>
+<div class="hbApp" data-sec="first" data-app="zoom" hidden>
+<h3>Zoom that knows what you meant</h3><p class="hbWhere">The wheel does the right thing without being told</p>
+<div class="hbStep"><span class="hbN">1</span><p>Roll the wheel over a panel and it zooms from 50% to 200%. But it <b>only zooms when there is nothing genuinely scrollable</b> under your pointer, so long lists, the spreadsheet and text areas still scroll normally.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>Past 100%, the content grows inside a wrapper sized to the zoom, so there is <b>real space to move through</b> rather than a squashed image. Drag it around with a grab cursor.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Dragging never hijacks anything you might want to click: buttons, inputs, cells, cards and notes all stay live while you pan.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><b>The embedded page problem.</b> A web page inside a panel is a sealed box that swallows every mouse event, so the browser panel could not zoom or pan at all.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>The answer is a transparent layer that appears over it <b>only while zoomed past 100%</b>, catching the wheel as zoom and drags as panning. Return to 100% and the layer removes itself entirely, leaving the page fully interactive.</p></div>
+</div>
+<div class="hbApp" data-sec="first" data-app="saver" hidden>
+<h3>The screensaver</h3><p class="hbWhere">The interface leaves, the world stays</p>
+<div class="hbStep"><span class="hbN">1</span><p>After a while with no input, the entire interface <b>fades away over two seconds</b> &mdash; every panel, the ticker, the status bar. What is left is the glass and the garden.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>The garden then runs fuller than it ever does while you are working: every panel gets planted, more flowers at once, and the seasons keep turning.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Any movement or keypress brings it all back, just as slowly. Nothing snaps.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>You choose the wait: <b>1, 5, 20, 30 or 60 minutes, or off entirely</b>. Off means no timer is scheduled at all.</p></div>
+<p class="hbTip">It is the only screensaver that is showing you something the machine was already doing, rather than a separate program pretending to be busy.</p>
+</div>
+<div class="hbApp" data-sec="first" data-app="sound" hidden>
+<h3>Every sound is generated</h3><p class="hbWhere">There are no audio files in this workspace</p>
+<div class="hbStep"><span class="hbN">1</span><p>The timer chime, the alarm, the checkers pieces, the crowning fanfare, the win and lose motifs &mdash; <b>none of them are recordings</b>.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>They are synthesised on the spot with Web Audio: an oscillator, an envelope, a frequency. A few lines each.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Which is why a workspace with this much in it is still small enough to be startling. Sound files are heavy; the instructions to make a sound are almost nothing.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>It also means they cannot go missing, cannot fail to load, and work with the network unplugged.</p></div>
 </div>
 <div class="hbApp" data-sec="first" data-app="size" hidden>
 <h3>All of it, in one file</h3><p class="hbWhere">Thirty apps and no dependencies</p>
