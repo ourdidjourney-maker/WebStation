@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebStationOS</title>
+<title>Workspace</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; background: #000; font-family: Arial, Helvetica, sans-serif; color: #000; }
@@ -1371,7 +1371,7 @@
   .seRow input[type=range] { flex: 1; min-width: 0; }
   .seRow select { flex: 1; min-width: 0; }
   .seRow output { flex: none; width: 46px; text-align: right; font: 11px ui-monospace, Consolas, monospace; }
-  #seSide button[aria-pressed=true], .sePrimary { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
+  body.glass #seSide button[aria-pressed=true] { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
   #seTimes { flex: 0 0 auto; display: flex; gap: 14px; flex-wrap: wrap; padding: 6px 10px; font-size: 12px;
              opacity: .8; border-top: 1px solid rgba(128,128,128,.28); }
   #seTimes b { font-family: ui-monospace, Consolas, monospace; }
@@ -1472,6 +1472,29 @@
 
 
   /* Post */
+  #llHead { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; padding: 9px 11px;
+            border: 1px solid rgba(255,255,255,.12); border-radius: 12px; background: rgba(255,255,255,.04);
+            margin: 4px 0 10px; }
+  .llLamp { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; }
+  .llLamp i { width: 11px; height: 11px; border-radius: 50%; background: #6b7280;
+              box-shadow: 0 0 0 3px rgba(107,114,128,.18); transition: background .4s ease, box-shadow .4s ease; }
+  .llLamp.on i { background: #5af0af; box-shadow: 0 0 10px 2px rgba(90,240,175,.55), 0 0 0 3px rgba(90,240,175,.18);
+                 animation: llBreathe 2.6s ease-in-out infinite; }
+  .llLamp.busy i { background: #ffc46b; box-shadow: 0 0 0 3px rgba(255,196,107,.2); }
+  @keyframes llBreathe { 0%,100% { opacity: .75; } 50% { opacity: 1; } }
+  .llTraffic { display: flex; align-items: center; gap: 6px; font-size: 11.5px; opacity: .78; }
+  .llTraffic b { font: 11.5px ui-monospace, Consolas, monospace; opacity: 1; }
+  .llDot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.18);
+           transition: background .12s linear, box-shadow .12s linear; }
+  .llDot.flash { background: #7eaaff; box-shadow: 0 0 8px 2px rgba(126,170,255,.7); }
+  .llDot.rx.flash { background: #5af0af; box-shadow: 0 0 8px 2px rgba(90,240,175,.7); }
+  #poLog li { cursor: default; }
+  #poLog li.sent .grow1::before { content: '→ '; opacity: .6; }
+  #poLog li.recv .grow1::before { content: '← '; opacity: .6; }
+
+  .seg button[data-flip="post"].waiting { animation: chSoft 2.4s ease-in-out infinite; }
+  body.glass .seg button[data-flip="post"].waiting { animation: chSoftG 2.4s ease-in-out infinite; }
+
   #poBody { overflow: auto; padding: 10px 12px 14px; }
   .poPane[hidden] { display: none !important; }
   .poRow { display: flex; gap: 7px; align-items: center; margin: 7px 0; flex-wrap: wrap; }
@@ -1484,7 +1507,20 @@
   .poHint { font-size: 12px; opacity: .62; }
   #poState { font-size: 11.5px; opacity: .8; margin-left: 4px; }
   #poState.live { color: #7ef0b0; }
-  .poPrimary { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
+  body.glass .poPrimary, body.glass .sePrimary {
+    background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95));
+    color: #071024; border-color: rgba(190,215,255,.5);
+  }
+  /* the pane tabs read like every other switcher in the workspace */
+  body.glass #postFace .bar button.on, body.glass #chatFace .bar button.on {
+    background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95));
+    color: #071024; border-color: rgba(190,215,255,.5);
+  }
+  #postFace .bar button.on, #chatFace .bar button.on { font-weight: bold; }
+  /* the chat formatting bar matches the word processor's toolbar */
+  body.glass #chFmt button[aria-pressed=true] {
+    background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024;
+  }
   #poInList li.unread .grow1 { font-weight: bold; }
   .poWhen { font-size: 11px; opacity: .55; }
 
@@ -1502,17 +1538,63 @@
   }
 
   #chBody { display: flex; flex-direction: column; min-height: 0; padding: 0; }
-  #chLog { flex: 1 1 auto; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 7px; }
-  .chMsg { max-width: 78%; padding: 7px 11px; border-radius: 13px; font-size: 13.5px; line-height: 1.45;
+  #chMain { flex: 1 1 auto; display: flex; min-height: 0; }
+  #chLog { flex: 1 1 auto; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;
+           align-items: stretch; }
+  #chLog > * { max-width: 560px; }                 /* a readable column, not the whole wall */
+  #chLog .chMsg.me { margin-left: auto; }
+  #chDetail { flex: 0 0 auto; width: 240px; overflow-y: auto; padding: 12px 13px;
+              border-left: 1px solid rgba(128,128,128,.28); }
+  #chDetail h4 { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; opacity: .5; margin: 0 0 8px; }
+  #chDetailBody { font-size: 11.5px; line-height: 1.6; }
+  #chDetailBody.chEmpty { opacity: .45; }
+  #chDetail .chK { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px;
+                   padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+  #chDetail .chK span { opacity: .6; }
+  #chDetail .chK b { font: 11px ui-monospace, Consolas, monospace; text-align: right; }
+  .chWire { display: flex; align-items: center; gap: 6px; font-size: 11.5px; opacity: .8; margin-bottom: 6px; }
+  .chWire b { font: 11.5px ui-monospace, Consolas, monospace; opacity: 1; }
+  #chDetailBody .chQuote { margin-top: 10px; padding: 8px 10px; border-radius: 9px;
+                           background: rgba(255,255,255,.06); font-size: 12.5px; line-height: 1.5;
+                           max-height: 140px; overflow: auto; word-break: break-word; }
+  .chMsg { cursor: pointer; }
+  .chMsg.picked { outline: 2px solid rgba(126,170,255,.7); outline-offset: 2px; }
+  @media (max-width: 900px) { #chDetail { display: none; } }
+  #chSide { flex: 0 0 auto; width: 186px; overflow-y: auto; padding: 12px 13px;
+            border-left: 1px solid rgba(128,128,128,.28); }
+  #chSide h4 { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; opacity: .5;
+               margin: 0 0 7px; }
+  #chSide h4 + .chStat { margin-top: 0; }
+  #chSide h4:not(:first-child) { margin-top: 15px; }
+  .chStat { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px;
+            padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .chStat span { opacity: .6; }
+  .chStat b { font: 11.5px ui-monospace, Consolas, monospace; text-align: right;
+              overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 108px; }
+  .chStat b.live { color: #7ef0b0; }
+  .chMsg { max-width: 76%; padding: 7px 11px; border-radius: 12px; font-size: 12.5px; line-height: 1.5;
            word-break: break-word; }
   .chMsg.them { align-self: flex-start; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14); }
-  .chMsg.me { align-self: flex-end; background: linear-gradient(180deg, rgba(126,170,255,.9), rgba(86,128,240,.9)); color: #071024; }
-  .chMsg .chTime { display: block; font-size: 10.5px; opacity: .55; margin-top: 3px; }
+  .chMsg.me { align-self: flex-end; background: linear-gradient(180deg, rgba(126,170,255,.92), rgba(86,128,240,.92)); color: #071024; }
+  .chMsg .chFrom { font-weight: bold; opacity: .92; }
+  .chMsg .chTime { display: block; font-size: 10.5px; opacity: .6; margin-top: 5px;
+                   font-family: ui-monospace, Consolas, monospace; }
+  .chMsg b, .chMsg strong { font-weight: bold; }
+  .chMsg code { font-family: ui-monospace, Consolas, monospace; font-size: .9em;
+                background: rgba(0,0,0,.25); border-radius: 4px; padding: 1px 5px; }
+  .chMsg blockquote { margin: 4px 0 4px 8px; padding-left: 9px; border-left: 3px solid currentColor;
+                      opacity: .85; }
   .chNote { align-self: center; font-size: 11.5px; opacity: .55; }
+  #chFmt { flex: 0 0 auto; display: flex; gap: 4px; align-items: center; flex-wrap: wrap;
+           padding: 7px 12px; border-top: 1px solid rgba(128,128,128,.28); }
+  #chFmt button { font-size: 12px; min-width: 28px; padding: 3px 8px; }
+  #chFmt select { font-size: 12px; }
+  #chFmt input[type=color] { width: 30px; height: 24px; padding: 0; }
   #chBar { flex: 0 0 auto; display: flex; gap: 7px; padding: 9px 12px; border-top: 1px solid rgba(128,128,128,.28); }
-  #chIn { flex: 1; min-width: 0; }
+  #chIn { flex: 1; min-width: 0; font-size: 13px; }
   #chWho { font-size: 11.5px; opacity: .75; }
   #chWho.live { color: #7ef0b0; }
+  @media (max-width: 700px) { #chSide { display: none; } }
 
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
@@ -1712,6 +1794,15 @@
     </div>
 
     <div class="poPane" id="poPaneLink" hidden>
+      <div id="llHead">
+        <div class="llLamp" id="llLamp"><i></i><span id="llLampT">Closed</span></div>
+        <div class="llTraffic"><i class="llDot" id="llTx"></i><span>sent</span><b id="llSent">0</b>
+          <i class="llDot" id="llRx"></i><span>received</span><b id="llRecv">0</b></div>
+        <div class="llTraffic"><span>carried</span><b id="llBytes">0 B</b><span>since</span><b id="llSince">—</b></div>
+        <div class="llTraffic"><span>peer</span><b id="llPeer">—</b></div>
+        <div class="llTraffic"><span>ice</span><b id="llIce">—</b><span>gather</span><b id="llGather">—</b><span>signal</span><b id="llSig">—</b></div>
+        <div class="llTraffic"><span>candidates</span><b id="llCand">0 host · 0 srflx</b></div>
+      </div>
       <p class="poHint">A direct link between the two machines. Nothing in the middle, nobody to ask.</p>
       <div class="poRow">
         <select id="poPeer"></select>
@@ -1727,6 +1818,7 @@
         <button id="poCodeUse" class="poPrimary">Use their code</button>
         <span class="poHint" id="poCodeHint"></span>
       </div>
+      <div class="poRow"><span class="poHint" id="llCount"></span><button id="llClear">Clear the history</button></div>
       <ul id="poLog" class="clist"></ul>
     </div>
 
@@ -1738,7 +1830,56 @@
     <button id="chClear">Clear</button>
   </div>
   <div class="body" id="chBody">
-    <div id="chLog"></div>
+    <div id="chMain">
+      <div id="chLog"></div>
+      <div id="chDetail">
+        <h4>Traffic</h4>
+        <div class="chWire">
+          <i class="llDot" id="chTx"></i><span>out</span><b id="chOut">0</b>
+          <i class="llDot rx" id="chRx"></i><span>in</span><b id="chInN">0</b>
+        </div>
+        <div class="chK"><span>on the link</span><b id="chLinkB">0 B</b></div>
+        <div class="chK"><span>state</span><b id="chIce">—</b></div>
+        <div class="chK"><span>route</span><b>direct, peer to peer</b></div>
+        <div class="chK"><span>through</span><b>nobody</b></div>
+        <h4>Sealed with</h4>
+        <div class="chK"><span>channel</span><b>DTLS</b></div>
+        <div class="chK"><span>messages</span><b>ECDH P-256</b></div>
+        <div class="chK"><span>cipher</span><b>AES-GCM 256</b></div>
+        <div class="chK"><span>signed</span><b>ECDSA P-256</b></div>
+        <h4>Message</h4>
+        <div id="chDetailBody" class="chEmpty">Click any message to inspect it.</div>
+      </div>
+      <div id="chSide">
+        <h4>This conversation</h4>
+        <div class="chStat"><span>Messages</span><b id="chsN">0</b></div>
+        <div class="chStat"><span>You sent</span><b id="chsMe">0</b></div>
+        <div class="chStat"><span>They sent</span><b id="chsThem">0</b></div>
+        <div class="chStat"><span>Words</span><b id="chsW">0</b></div>
+        <div class="chStat"><span>Carried</span><b id="chsB">0 B</b></div>
+        <div class="chStat"><span>Started</span><b id="chsStart">—</b></div>
+        <div class="chStat"><span>Last</span><b id="chsLast">—</b></div>
+        <h4>Who</h4>
+        <div class="chStat"><span>You are</span><b id="chsYou">—</b></div>
+        <div class="chStat"><span>They are</span><b id="chsWho">—</b></div>
+        <div class="chStat"><span>Link</span><b id="chsLink">closed</b></div>
+      </div>
+    </div>
+    <div id="chFmt">
+      <button data-f="b"><b>B</b></button>
+      <button data-f="i"><i>I</i></button>
+      <button data-f="u" style="text-decoration:underline">U</button>
+      <button data-f="s" style="text-decoration:line-through">S</button>
+      <button data-f="code">&lt;/&gt;</button>
+      <button data-f="quote">&ldquo;</button>
+      <span class="sep"></span>
+      <select id="chSize"><option value="11">Small</option><option value="12.5" selected>Normal</option><option value="14">Large</option><option value="16">Huge</option></select>
+      <input type="color" id="chColor" value="#eef2ff" title="Colour">
+      <span class="sep"></span>
+      <label for="chName" style="font-size:12px;opacity:.7">Your name</label>
+      <input type="text" id="chName" placeholder="What they see" style="width:120px">
+      <button id="chClearAll">Clear the conversation</button>
+    </div>
     <div id="chBar">
       <input type="text" id="chIn" placeholder="Type and press Enter" autocomplete="off">
       <button id="chSend" class="poPrimary">Send</button>
@@ -6246,6 +6387,47 @@ var Sys = (function () {
       }).join('\n') || '(bin is empty)'; } },
     { key: 'ws.marks', name: 'Bookmarks', app: 'marks', count: function (v) { return (v || []).length; },
       text: function (v) { return (v || []).map(function (m) { return (m.t || '(unnamed)') + '\n  ' + m.u; }).join('\n') || '(no bookmarks)'; } },
+    { key: 'ws.post', name: 'Post', app: 'post',
+      count: function (v) { return ((v && v.inbox) || []).length + ((v && v.outbox) || []).length; },
+      text: function (v) {
+        if (!v) return '(nothing yet)';
+        var lines = [];
+        lines.push('Your address');
+        lines.push('  ' + (v.me ? 'WS1 keypair held on this machine' : 'not yet generated'));
+        lines.push('');
+        lines.push('Contacts  ' + ((v.who || []).length));
+        (v.who || []).forEach(function (w) {
+          lines.push('  ' + w.name + (w.code ? '  (link remembered)' : ''));
+        });
+        lines.push('');
+        lines.push('Inbox  ' + ((v.inbox || []).length) + '   Outbox  ' + ((v.outbox || []).length));
+        (v.inbox || []).slice(-8).forEach(function (m) {
+          lines.push('  in   ' + (m.s || '(no subject)'));
+        });
+        (v.outbox || []).slice(-8).forEach(function (m) {
+          lines.push('  out  ' + (m.s || '(no subject)') + (m.delivered ? '  delivered' : '  waiting'));
+        });
+        if (v.link) {
+          lines.push('');
+          lines.push('Live link');
+          lines.push('  sent ' + (v.link.sent || 0) + ' · received ' + (v.link.recv || 0) +
+                     ' · ' + (v.link.bytes || 0) + ' bytes carried');
+          lines.push('  ' + ((v.link.hist || []).length) + ' entries in the history');
+        }
+        return lines.join('\n');
+      } },
+    { key: 'ws.chat', name: 'Chat', app: 'chat',
+      count: function (v) { return (v || []).length; },
+      text: function (v) {
+        v = v || [];
+        if (!v.length) return '(nothing said yet)';
+        var me = v.filter(function (m) { return m.me; }).length;
+        var out = ['Messages  ' + v.length + '   you ' + me + '   them ' + (v.length - me), ''];
+        v.slice(-12).forEach(function (m) {
+          out.push((m.me ? '> ' : '< ') + String(m.t).replace(/\s+/g, ' ').slice(0, 60));
+        });
+        return out.join('\n');
+      } },
     { key: 'ws.wear', name: 'Button wear', app: 'web',
       count: function (v) { return Object.keys(v || {}).length; },
       text: function (v) {
@@ -12272,9 +12454,21 @@ var soundEditorAPI = {};
   };
   $('poRead').onclick = function () { takeIn($('poDrop').value); };
 
+  function poWaiting(on) {
+    document.querySelectorAll('.seg button[data-flip="post"]').forEach(function (b) {
+      b.classList.toggle('waiting', !!on);
+    });
+  }
+  // opening the Inbox is reading it
+  $('poIn').addEventListener('click', function () { poWaiting(false); });
+  $('postFace').addEventListener('faceshown', function () {
+    if (!$('poPaneIn').hidden) poWaiting(false);
+  });
+
   function takeIn(block) {
     open(block).then(function (m) {
       st.inbox.push(m); save();
+      if (!$('postFace').classList.contains('front') || $('poPaneIn').hidden) poWaiting(true);
       $('poDropRow').hidden = true; $('poDropBtns').hidden = true; $('poDrop').value = '';
       show('in'); render();
       Sys.toast('Message from ' + who(m.from) + '.', { ms: 4000 });
@@ -12299,12 +12493,113 @@ var soundEditorAPI = {};
   // WebRTC with no company doing the introductions: the two machines swap one
   // code by hand and then talk directly.
   var pc = null, chan = null;
+  // The history is kept, so you can see what this link has carried.
+  st.link = st.link || { hist: [], sent: 0, recv: 0, bytes: 0, since: 0 };
+  function blen(t) { return new Blob([String(t)]).size; }
+  function two(n) { return (n < 10 ? '0' : '') + n; }
+  function stampFull(t) {
+    var d = new Date(t);
+    return d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate()) +
+           ' ' + two(d.getHours()) + ':' + two(d.getMinutes()) + ':' + two(d.getSeconds());
+  }
+  function human(n) { return n < 1024 ? n + ' B' : (n / 1024).toFixed(1) + ' KB'; }
+
+  function flash(which) {
+    var d = $(which === 'tx' ? 'llTx' : 'llRx');
+    if (!d) return;
+    d.classList.add('flash');
+    setTimeout(function () { d.classList.remove('flash'); }, 170);
+  }
+
+  // A record of one thing crossing the link, with enough detail to inspect it.
+  function record(dir, kind, label, blob) {
+    var n = blob ? blen(blob) : 0;
+    var item = { dir: dir, kind: kind, label: label, at: Date.now(), n: n };
+    if (blob) {
+      var raw = String(blob).replace(/-----[A-Z ]+-----/g, '').replace(/\s+/g, '');
+      item.head = raw.slice(0, 96);
+      try {
+        var pkt = JSON.parse(atob(raw));
+        item.crypt = { v: pkt.v, from: pkt.from, iv: pkt.iv, sig: String(pkt.sig).slice(0, 44), ct: String(pkt.ct).length };
+      } catch (e) {}
+    }
+    st.link.hist.push(item);
+    if (st.link.hist.length > 300) st.link.hist = st.link.hist.slice(-300);
+    if (dir === 'sent') { st.link.sent++; flash('tx'); } else if (dir === 'recv') { st.link.recv++; flash('rx'); }
+    if (Sys.link && Sys.link.onWire && dir !== 'note') Sys.link.onWire(dir === 'sent' ? 'out' : 'in');
+    st.link.bytes += n;
+    if (!st.link.since) st.link.since = Date.now();
+    save();
+    drawLog();
+    meter();
+  }
+
+  function meter() {
+    var L = st.link;
+    $('llSent').textContent = L.sent;
+    $('llRecv').textContent = L.recv;
+    $('llBytes').textContent = human(L.bytes);
+    $('llSince').textContent = L.since ? stampFull(L.since).slice(11) : '—';
+    var known = st.who.filter(function (w) { return w.code; })[0];
+    $('llPeer').textContent = known ? known.name : (st.who[0] ? st.who[0].name : '—');
+    $('llCount').textContent = L.hist.length + ' entries';
+  }
+
+  function lamp(kind, text) {
+    var el = $('llLamp');
+    el.classList.toggle('on', kind === 'on');
+    el.classList.toggle('busy', kind === 'busy');
+    $('llLampT').textContent = text;
+  }
+
+  function drawLog() {
+    var ul = $('poLog');
+    ul.innerHTML = '';
+    var h = st.link.hist;
+    if (!h.length) {
+      var e = document.createElement('li');
+      e.className = 'empty';
+      e.textContent = 'Nothing has crossed this link yet.';
+      ul.appendChild(e);
+      return;
+    }
+    h.slice().reverse().forEach(function (it) {
+      var li = document.createElement('li');
+      li.className = it.dir === 'sent' ? 'sent' : (it.dir === 'recv' ? 'recv' : '');
+      li.innerHTML = '<span class="grow1"></span><span class="poWhen"></span>';
+      li.children[0].textContent = it.label;
+      li.children[1].textContent = stampFull(it.at).slice(11) + (it.n ? '  ·  ' + human(it.n) : '');
+      // hover shows the message and how it was sealed
+      var tip = [];
+      tip.push(it.kind + ' · ' + (it.dir === 'sent' ? 'sent' : it.dir === 'recv' ? 'received' : 'event'));
+      tip.push(stampFull(it.at));
+      if (it.n) tip.push('size: ' + human(it.n));
+      if (it.crypt) {
+        tip.push('');
+        tip.push('SEALED WITH');
+        tip.push('  format      WS' + (it.crypt.v || 1) + '  ECDH P-256 + AES-GCM 256');
+        tip.push('  signature   ECDSA P-256 over the ciphertext');
+        tip.push('  iv          ' + it.crypt.iv);
+        tip.push('  sig         ' + it.crypt.sig + '…');
+        tip.push('  ciphertext  ' + it.crypt.ct + ' chars');
+        tip.push('  from        ' + String(it.crypt.from).slice(0, 40) + '…');
+      }
+      if (it.head) { tip.push(''); tip.push('ON THE WIRE'); tip.push('  ' + it.head + '…'); }
+      li.dataset.full = tip.join('\n');
+      ul.appendChild(li);
+    });
+  }
+
+  $('llClear').onclick = function () {
+    var old = st.link;
+    st.link = { hist: [], sent: 0, recv: 0, bytes: 0, since: 0 };
+    save(); drawLog(); meter();
+    Sys.toast('Link history cleared.', { ms: 4000, actions: [{ label: 'Undo', fn: function () { st.link = old; save(); drawLog(); meter(); } }] });
+  };
+
   function logLine(t) {
-    var ul = $('poLog'), li = document.createElement('li');
-    li.innerHTML = '<span class="grow1"></span><span class="poWhen"></span>';
-    li.children[0].textContent = t;
-    li.children[1].textContent = new Date().toLocaleTimeString();
-    ul.insertBefore(li, ul.firstChild);
+    st.link.hist.push({ dir: 'note', kind: 'Link', label: t, at: Date.now(), n: 0 });
+    save(); drawLog(); meter();
   }
   function setState(t, live) {
     $('poState').textContent = t;
@@ -12313,8 +12608,36 @@ var soundEditorAPI = {};
   function newPeer() {
     if (pc) { try { pc.close(); } catch (e) {} }
     pc = new RTCPeerConnection({ iceServers: [] });    // no helper servers: same network only
+    function dbg() {
+      if (!pc) return;
+      $('llIce').textContent = pc.iceConnectionState;
+      $('llGather').textContent = pc.iceGatheringState;
+      $('llSig').textContent = pc.signalingState;
+    }
+    var cands = { host: 0, srflx: 0, relay: 0 };
+    pc.onicecandidate = function (e) {
+      if (!e.candidate) { logLine('Candidate gathering finished.'); dbg(); return; }
+      var t = (e.candidate.candidate.match(/ typ (\w+)/) || [])[1] || 'other';
+      cands[t] = (cands[t] || 0) + 1;
+      $('llCand').textContent = (cands.host || 0) + ' host · ' + (cands.srflx || 0) + ' srflx' +
+                                (cands.relay ? ' · ' + cands.relay + ' relay' : '');
+    };
+    pc.oniceconnectionstatechange = function () {
+      dbg();
+      logLine('ICE ' + pc.iceConnectionState);
+      if (pc.iceConnectionState === 'failed') logLine('ICE failed: no route found between the two machines.');
+    };
+    pc.onicegatheringstatechange = dbg;
+    pc.onsignalingstatechange = dbg;
+    pc.onicecandidateerror = function (e) {
+      logLine('Candidate error ' + (e.errorCode || '') + ' ' + (e.errorText || ''));
+    };
     pc.onconnectionstatechange = function () {
+      dbg();
       setState('Link: ' + pc.connectionState, pc.connectionState === 'connected');
+      lamp(pc.connectionState === 'connected' ? 'on' :
+           pc.connectionState === 'connecting' ? 'busy' : 'off',
+           pc.connectionState.charAt(0).toUpperCase() + pc.connectionState.slice(1));
       logLine('Link ' + pc.connectionState);
       if (pc.connectionState === 'connected') drain();
     };
@@ -12323,16 +12646,25 @@ var soundEditorAPI = {};
   function wire(c) {
     chan = c;
     c.onopen = function () {
-      setState('Link: open', true); logLine('The link is open.'); drain();
+      setState('Link: open', true); lamp('on', 'Open'); logLine('The link is open.'); drain();
       Sys.link.onState.forEach(function (f) { f(true); });
     };
     c.onclose = function () {
-      setState('Link: closed'); logLine('The link closed.');
+      setState('Link: closed'); lamp('off', 'Closed'); logLine('The link closed.');
       Sys.link.onState.forEach(function (f) { f(false); });
     };
     c.onmessage = function (e) {
       var d = String(e.data || '');
-      if (d.indexOf('WSCHAT1|') === 0) { if (Sys.chatIn) Sys.chatIn(d.slice(8)); return; }
+      if (d.indexOf('WSCHAT1|') === 0) {
+        var t = d.slice(8), shown = t;
+        try { shown = JSON.parse(t).t; } catch (x) {}
+        st.link.bytes += blen(t);
+        record('recv', 'Chat', String(shown).slice(0, 60), null);
+        save(); meter();
+        if (Sys.chatIn) Sys.chatIn(t);
+        return;
+      }
+      record('recv', 'Message', 'A sealed message arrived', d);
       takeIn(d);
     };
   }
@@ -12437,16 +12769,31 @@ var soundEditorAPI = {};
   Sys.link = {
     send: function (text) {
       if (!chan || chan.readyState !== 'open') return false;
-      try { chan.send('WSCHAT1|' + text); return true; } catch (e) { return false; }
+      try {
+        chan.send('WSCHAT1|' + text);
+        var shown = text;
+        try { shown = JSON.parse(text).t; } catch (x) {}
+        st.link.bytes += blen(text);
+        record('sent', 'Chat', String(shown).slice(0, 60), null);
+        save(); meter();
+        return true;
+      } catch (e) { return false; }
     },
     open: function () { return !!(chan && chan.readyState === 'open'); },
-    onState: []
+    onState: [],
+    onWire: null,
+    stats: function () {
+      return { bytes: human(st.link.bytes), state: pc ? pc.iceConnectionState : 'closed' };
+    }
   };
   function drain() {
     if (!chan || chan.readyState !== 'open') return;
     var waiting = st.outbox.filter(function (m) { return !m.delivered && m.blob; });
     waiting.forEach(function (m) {
-      try { chan.send(m.blob); m.delivered = Date.now(); } catch (e) {}
+      try {
+        chan.send(m.blob); m.delivered = Date.now();
+        record('sent', 'Message', (m.s || '(no subject)') + ' → ' + who(m.to), m.blob);
+      } catch (e) {}
     });
     if (waiting.length) { save(); render(); logLine('Sent ' + waiting.length + ' waiting message(s).'); }
   }
@@ -12464,7 +12811,7 @@ var soundEditorAPI = {};
 
   Trash.handler('Message', function (m) { st.inbox.push(m); save(); render(); });
 
-  ready().then(function () { render(); });
+  ready().then(function () { render(); drawLog(); meter(); lamp('off', 'Closed'); });
   show('write');
 })();
 
@@ -12474,9 +12821,44 @@ var soundEditorAPI = {};
 (function () {
   var KEY = 'ws.chat';
   var log = store.get(KEY, []) || [];
-  function save() { store.set(KEY, log.slice(-300)); }
+  function save() { store.set(KEY, log.slice(-400)); }
 
-  function when(t) { return new Date(t).toLocaleTimeString(); }
+  function two(n) { return (n < 10 ? '0' : '') + n; }
+  function stamp(t) {
+    var d = new Date(t);
+    return d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate()) +
+           ' ' + two(d.getHours()) + ':' + two(d.getMinutes()) + ':' + two(d.getSeconds());
+  }
+  function bytes(n) { return n < 1024 ? n + ' B' : (n / 1024).toFixed(1) + ' KB'; }
+  function size(t) { return new Blob([t]).size; }
+
+  // Who each side is. Post owns the identities, so we ask it.
+  function myName() {
+    var n = (store.get('ws.ui', {}) || {}).chatName;
+    return (n && n.trim()) || 'Someone';
+  }
+  function theirName() {
+    var post = store.get('ws.post', null);
+    if (!post || !post.who || !post.who.length) return 'Them';
+    var known = post.who.filter(function (w) { return w.code; })[0] || post.who[0];
+    return known ? known.name : 'Them';
+  }
+
+  // A small, safe subset: the sender's marks are rebuilt here rather than
+  // trusting anything that arrives, so nothing from the wire can run.
+  function esc(t) {
+    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function marks(t) {
+    var h = esc(t);
+    h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
+    h = h.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+    h = h.replace(/(^|\s)\*([^*]+)\*/g, '$1<i>$2</i>');
+    h = h.replace(/__([^_]+)__/g, '<span style="text-decoration:underline">$1</span>');
+    h = h.replace(/~~([^~]+)~~/g, '<span style="text-decoration:line-through">$1</span>');
+    h = h.replace(/(^|\n)&gt; ?([^\n]*)/g, '$1<blockquote>$2</blockquote>');
+    return h.replace(/\n/g, '<br>');
+  }
 
   function draw() {
     var box = $('chLog');
@@ -12490,69 +12872,158 @@ var soundEditorAPI = {};
     log.forEach(function (m) {
       var d = document.createElement('div');
       d.className = 'chMsg ' + (m.me ? 'me' : 'them');
-      d.textContent = m.t;
+      if (m.size) d.style.fontSize = m.size + 'px';
+      if (m.color && !m.me) d.style.color = m.color;
+
+      var body = document.createElement('span');
+      body.innerHTML = '<b class="chFrom">' + esc(m.me ? myName() : (m.who || theirName())) + ':</b> ' + marks(m.t);
+      d.appendChild(body);
+
       var s = document.createElement('span');
       s.className = 'chTime';
-      s.textContent = when(m.at);
+      s.textContent = 'Sent ' + stamp(m.at) + '  ·  ' + bytes(m.b || size(m.t)) +
+                      '  ·  ' + String(m.t).length + ' chars  ·  ' +
+                      (m.me ? 'sent over the live link' : 'received over the live link');
       d.appendChild(s);
+      d.onclick = function () {
+        box.querySelectorAll('.chMsg.picked').forEach(function (x) { x.classList.remove('picked'); });
+        d.classList.add('picked');
+        detail(m);
+      };
       box.appendChild(d);
     });
     box.scrollTop = box.scrollHeight;
+    stats();
   }
 
-  function note(text) {
-    log.push({ note: 1, t: text, at: Date.now() });
+  function detail(m) {
+    var b = $('chDetailBody');
+    b.classList.remove('chEmpty');
+    function row(k, v) { return '<div class="chK"><span>' + k + '</span><b>' + v + '</b></div>'; }
+    var words = String(m.t).trim().split(/\s+/).filter(Boolean).length;
+    b.innerHTML =
+      row('from', m.me ? myName() : (m.who || theirName())) +
+      row('direction', m.me ? 'sent' : 'received') +
+      row('date', stamp(m.at).slice(0, 10)) +
+      row('time', stamp(m.at).slice(11)) +
+      row('size', bytes(m.b || size(m.t))) +
+      row('characters', String(m.t).length) +
+      row('words', words) +
+      row('text size', (m.size || 12.5) + 'px') +
+      row('carried by', 'the live link') +
+      row('through', 'nobody') +
+      '<div class="chQuote"></div>';
+    b.querySelector('.chQuote').textContent = m.t;
+  }
+
+  function stats() {
+    var me = log.filter(function (m) { return m.me; }).length;
+    var them = log.length - me;
+    var words = log.reduce(function (a, m) { return a + String(m.t).trim().split(/\s+/).filter(Boolean).length; }, 0);
+    var carried = log.reduce(function (a, m) { return a + (m.b || size(m.t)); }, 0);
+    $('chsN').textContent = log.length;
+    $('chsMe').textContent = me;
+    $('chsThem').textContent = them;
+    $('chsW').textContent = words;
+    $('chsB').textContent = bytes(carried);
+    $('chsStart').textContent = log.length ? stamp(log[0].at).slice(5) : '—';
+    $('chsLast').textContent = log.length ? stamp(log[log.length - 1].at).slice(11) : '—';
+    $('chsYou').textContent = myName();
+    $('chsWho').textContent = theirName();
+    var on = Sys.link && Sys.link.open();
+    $('chsLink').textContent = on ? 'open' : 'closed';
+    $('chsLink').classList.toggle('live', !!on);
   }
 
   function state(on) {
-    $('chWho').textContent = on ? 'Connected' : 'Not connected';
+    $('chWho').textContent = on ? 'Connected to ' + theirName() : 'Not connected';
     $('chWho').classList.toggle('live', !!on);
     $('chIn').disabled = !on;
     $('chSend').disabled = !on;
+    stats();
   }
 
+  // the formatting bar wraps whatever is selected, or drops marks at the cursor
+  var MARKS = { b: ['**', '**'], i: ['*', '*'], u: ['__', '__'], s: ['~~', '~~'],
+                code: ['`', '`'], quote: ['\n> ', ''] };
+  $('chFmt').addEventListener('click', function (e) {
+    var f = e.target.closest('button') && e.target.closest('button').getAttribute('data-f');
+    if (!f || !MARKS[f]) return;
+    var i = $('chIn'), a = i.selectionStart, b = i.selectionEnd, v = i.value;
+    i.value = v.slice(0, a) + MARKS[f][0] + v.slice(a, b) + MARKS[f][1] + v.slice(b);
+    i.focus();
+    i.setSelectionRange(a + MARKS[f][0].length, b + MARKS[f][0].length);
+  });
+
   function send() {
-    var t = $('chIn').value.trim();
-    if (!t) return;
+    var t = $('chIn').value;
+    if (!t.trim()) return;
     if (!Sys.link || !Sys.link.open()) {
       Sys.toast('No link open. Start one in Post.', { ms: 3500 });
       return;
     }
-    if (Sys.link.send(t)) {
-      log.push({ me: 1, t: t, at: Date.now() });
+    var m = { t: t, size: +$('chSize').value, color: $('chColor').value, who: myName() };
+    if (Sys.link.send(JSON.stringify(m))) {
+      log.push({ me: 1, t: t, at: Date.now(), b: size(t), size: m.size, color: m.color });
       save(); draw();
       $('chIn').value = '';
     }
   }
   $('chSend').onclick = send;
   $('chIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });
-  $('chClear').onclick = function () {
+  $('chClearAll').onclick = function () {
     var old = log.slice();
     log = []; save(); draw();
-    Sys.toast('Cleared.', { ms: 3000, actions: [{ label: 'Undo', fn: function () { log = old; save(); draw(); } }] });
+    Sys.toast('Conversation cleared.', { ms: 4000, actions: [{ label: 'Undo', fn: function () { log = old; save(); draw(); } }] });
   };
+  $('chClear').onclick = function () { $('chClearAll').click(); };
 
-  // the link hands incoming chat here
   function waiting(on) {
     document.querySelectorAll('.seg button[data-flip="chat"]').forEach(function (b) {
       b.classList.toggle('waiting', !!on);
     });
   }
-  Sys.chatIn = function (text) {
-    log.push({ me: 0, t: text, at: Date.now() });
+  Sys.chatIn = function (raw) {
+    var m;
+    try { m = JSON.parse(raw); } catch (e) { m = { t: String(raw) }; }
+    if (typeof m.t !== 'string') m = { t: String(raw) };
+    log.push({ me: 0, t: m.t, at: Date.now(), b: size(m.t),
+               size: m.size, color: m.color, who: m.who || theirName() });
     save(); draw();
     if (!$('chatFace').classList.contains('front')) {
-      waiting(true);                               // breathe until it has been seen
-      Sys.toast('Message: ' + text.slice(0, 60), { ms: 5000 });
+      waiting(true);
+      Sys.toast('Message: ' + m.t.slice(0, 60), { ms: 5000 });
     }
   };
-  // opening Chat is reading it
-  $('chatFace').addEventListener('faceshown', function () { waiting(false); });
+  $('chatFace').addEventListener('faceshown', function () { waiting(false); stats(); });
   document.addEventListener('faceshown', function () {
     if ($('chatFace').classList.contains('front')) waiting(false);
   }, true);
 
-  // and tells us when it opens or closes
+  var nameBox = $('chName');
+  nameBox.value = (store.get('ws.ui', {}) || {}).chatName || '';
+  nameBox.oninput = function () {
+    var u = store.get('ws.ui', {});
+    u.chatName = this.value;
+    store.set('ws.ui', u);
+    draw();
+  };
+
+  // Any traffic at all makes the lamp flash — chat, sealed messages, anything.
+  function wire(dir) {
+    var d = $(dir === 'out' ? 'chTx' : 'chRx');
+    if (!d) return;
+    d.classList.add('flash');
+    setTimeout(function () { d.classList.remove('flash'); }, 170);
+    var box = $(dir === 'out' ? 'chOut' : 'chInN');
+    box.textContent = (+box.textContent || 0) + 1;
+    if (Sys.link && Sys.link.stats) {
+      $('chLinkB').textContent = Sys.link.stats().bytes;
+      $('chIce').textContent = Sys.link.stats().state;
+    }
+  }
+  if (Sys.link) Sys.link.onWire = wire;
+
   if (Sys.link && Sys.link.onState) Sys.link.onState.push(state);
   state(Sys.link && Sys.link.open());
   draw();
