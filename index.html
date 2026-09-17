@@ -1928,6 +1928,7 @@
       <div class="poRow">
         <select id="poPeer"></select>
         <button id="poGo" class="poPrimary">Connect</button>
+        <button id="poPing">Ping</button>
         <button id="poDrop2">Hang up</button>
         <span class="poHint" id="poStep"></span>
       </div>
@@ -12776,6 +12777,18 @@ var soundEditorAPI = {};
     };
     c.onmessage = function (e) {
       var d = String(e.data || '');
+      if (d.indexOf('WSPING1|') === 0) {
+        var msg = d.slice(8) || 'wants you';
+        Sys.toast(msg, { ms: 9000, actions: [{ label: 'Open Chat', fn: function () {
+          var b = document.querySelector('.seg button[data-flip="chat"]');
+          if (b) b.click();
+        } }] });
+        document.querySelectorAll('.seg button[data-flip="chat"]').forEach(function (b) {
+          b.classList.add('waiting');
+        });
+        logLine('Ping received.');
+        return;
+      }
       if (d.indexOf('WSCHAT1|') === 0) {
         var t = d.slice(8), shown = t;
         try { shown = JSON.parse(t).t; } catch (x) {}
@@ -12877,6 +12890,18 @@ var soundEditorAPI = {};
     $('poCode').select(); document.execCommand('copy');
     Sys.toast('Code copied.', { ms: 2200 });
   };
+  $('poPing').onclick = function () {
+    if (!chan || chan.readyState !== 'open') {
+      Sys.toast('No link open to ping down. Press Connect first.', { ms: 3500 });
+      return;
+    }
+    var me = (store.get('ws.ui', {}) || {}).chatName || 'Someone';
+    var what = prompt('What should it say?', me + ' wants a word.');
+    if (what === null) return;
+    chan.send('WSPING1|' + what);
+    logLine('Ping sent.');
+    Sys.toast('Ping sent.', { ms: 2500 });
+  };
   $('poDrop2').onclick = function () {
     if (chan) { try { chan.close(); } catch (e) {} }
     if (pc) { try { pc.close(); } catch (e) {} }
@@ -12932,7 +12957,19 @@ var soundEditorAPI = {};
 
   Trash.handler('Message', function (m) { st.inbox.push(m); save(); render(); });
 
-  ready().then(function () { render(); drawLog(); meter(); lamp('off', 'Closed'); });
+  ready().then(function () {
+    render(); drawLog(); meter(); lamp('off', 'Closed');
+    // Anyone we have linked to before gets a quiet attempt at reconnecting, so
+    // that when both machines are open the link is simply there.
+    setTimeout(function () {
+      var known = st.who.filter(function (w) { return w.code; })[0];
+      if (!known || (chan && chan.readyState === 'open')) return;
+      logLine('Trying the link saved for ' + known.name + '.');
+      $('poPeer').value = known.addr;
+      $('poCode').value = known.code;
+      $('poCodeUse').click();
+    }, 2500);
+  });
   show('write');
 })();
 
