@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebStation OS</title>
+<title>Workspace</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; background: #000; font-family: Arial, Helvetica, sans-serif; color: #000; }
@@ -793,10 +793,15 @@
   /* The wet trail it leaves behind, thinning as it dries */
   .kmTrail {
     position: absolute; width: 2px; border-radius: 2px; transform-origin: 50% 0;
-    background: linear-gradient(to bottom, rgba(200,225,250,.32), rgba(200,225,250,.12) 55%, rgba(200,225,250,0));
-    opacity: 0; animation: kmTrail var(--rdur, 2.4s) linear forwards;
+    background: linear-gradient(to bottom, rgba(200,225,250,0), rgba(200,225,250,.12) 45%, rgba(200,225,250,.34));
+    opacity: 0; animation: kmTrail var(--rdur, 2.4s) cubic-bezier(.42,0,.85,.55) forwards;
   }
-  @keyframes kmTrail { 0% { opacity: 0; transform: scaleY(0); } 12% { opacity: .9; } 100% { opacity: 0; transform: scaleY(1); } }
+  @keyframes kmTrail {
+    0%   { opacity: 0;  transform: scaleY(0); }
+    10%  { opacity: .9; }
+    88%  { opacity: .7; transform: scaleY(1); }     /* it arrives with the bead */
+    100% { opacity: 0;  transform: scaleY(1); }     /* then dries where it lies */
+  }
 
   /* Plants move more in the wind and wet */
   #kmRain.on { background: linear-gradient(180deg, #bcd9f5, #8fb9e8); color: #0b2238; border-color: #a8cdf0; box-shadow: none; }
@@ -2919,7 +2924,7 @@
 <section id="firsts">
   <h2>Features</h2>
   <h3>The systems that make this workspace what it is</h3>
-  <div class="hbPick" id="hbFirsts"><button data-go="flip">The flip</button><button data-go="peek">Hover peek</button><button data-go="safe">Safe Delete</button><button data-go="catch">Catching deleted text</button><button data-go="weather">Weather, per panel</button><button data-go="lamp">The heat lamp</button><button data-go="blur">Proximity and blur</button><button data-go="net">The network seal</button><button data-go="sealed">Sealed by construction</button><button data-go="wear">Wear</button><button data-go="forge">Hot metal text</button><button data-go="data">The data lights</button><button data-go="store">Storage that degrades instead of failing</button><button data-go="panels">Panels that get out of the way</button><button data-go="zoom">Zoom that knows what you meant</button><button data-go="saver">The screensaver</button><button data-go="sound">Every sound is generated</button><button data-go="mail">Messages with no provider</button><button data-go="mesh">A link with no introducer</button><button data-go="night">Night</button><button data-go="parent">Parental mode</button><button data-go="size">All of it, in one file</button></div>
+  <div class="hbPick" id="hbFirsts"><button data-go="flip">The flip</button><button data-go="peek">Hover peek</button><button data-go="safe">Safe Delete</button><button data-go="catch">Catching deleted text</button><button data-go="weather">Weather, per panel</button><button data-go="lamp">The heat lamp</button><button data-go="blur">Proximity and blur</button><button data-go="net">The network seal</button><button data-go="sealed">Sealed by construction</button><button data-go="wear">Wear</button><button data-go="forge">Hot metal text</button><button data-go="data">The data lights</button><button data-go="store">Storage that degrades instead of failing</button><button data-go="panels">Panels that get out of the way</button><button data-go="zoom">Zoom that knows what you meant</button><button data-go="saver">The screensaver</button><button data-go="sound">Every sound is generated</button><button data-go="mail">Messages with no provider</button><button data-go="mesh">A link with no introducer</button><button data-go="night">Night</button><button data-go="parent">Parental mode</button><button data-go="living">A workspace that reacts to you</button><button data-go="size">All of it, in one file</button></div>
 <div class="hbApp" data-sec="first" data-app="flip" hidden>
 <h3>The flip</h3><p class="hbWhere">Switching apps is a physical turn, not a tab change</p>
 <div class="hbStep"><span class="hbN">1</span><p>The card <b>rotates out</b>, the two apps swap at the midpoint, and it <b>rotates back in</b>. The incoming app is never visible until the card has turned past its own edge, so you never see a half-drawn screen.</p></div>
@@ -3116,6 +3121,16 @@
 <div class="hbStep"><span class="hbN">3</span><p>Delete controls grey out and stop responding, so it is visibly out of service rather than silently ignoring people.</p></div>
 <div class="hbStep"><span class="hbN">4</span><p>No account, no password, no subscription, no dashboard, and nothing reported anywhere. It is a switch on one machine.</p></div>
 <div class="hbStep"><span class="hbN">5</span><p>The point it makes is how small the honest version of this is. Most of what is sold to parents is surveillance; this is simply a workspace where a child’s work cannot be lost.</p></div>
+</div>
+<div class="hbApp" data-sec="first" data-app="living" hidden>
+<h3>A workspace that reacts to you</h3><p class="hbWhere">The environment answers what you are actually doing</p>
+<div class="hbStep"><span class="hbN">1</span><p><b>Typing feeds the garden.</b> The word processor reports the rhythm of your keystrokes to the biome, and the plants in that panel take it as sunlight &mdash; a long writing session visibly pushes them along. Stop for an hour and they go back to their own pace.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>Your buttons age where your hands live.</b> Wear is recorded in the exact cell of a button you pressed, so after a month the panel shows your habits back to you. It is the most honest telemetry there is, because it never leaves the machine and it is for you.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>The interface decides what deserves attention.</b> Panels you are not using blur, desaturate and dim; the one you approach sharpens as your pointer nears it. The workspace grants you permission to ignore things, which is why a screen this dense is not exhausting.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p><b>Weather answers back.</b> Each panel has its own sky and its own season. When snow settles, a heat lamp appears in that panel&rsquo;s toolbar &mdash; and only while there is snow to melt. Switch it on and the drift melts into water that runs down the glass, and the glass stays warm for a while afterwards so the next drops dry faster.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><b>At night, the light is a thing you touch.</b> Push a bulb and it swings, and the pool of light swings with it. Insects find the lit bulbs on their own, scatter when you disturb the light, and drift back when it settles.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p><b>Nothing waits silently.</b> The Trash button glows when something lands in it, the Clipboard glows while it holds something, the Chat button breathes when a message arrives, and a lamp button only exists while there is something for it to do. The workspace tells you what it is holding rather than making you go and look.</p></div>
+<p class="hbTip">None of this is decoration for its own sake. Every one of these is the environment reporting a real state &mdash; what you typed, where you pressed, what you are looking at, what the panel is holding &mdash; back to you without a dialog or a notification.</p>
 </div>
 <div class="hbApp" data-sec="first" data-app="size" hidden>
 <h3>All of it, in one file</h3><p class="hbWhere">Thirty apps and no dependencies</p>
@@ -3719,7 +3734,7 @@ paused, then deleted again
       <section class="panel" id="status" aria-label="Status">
         <span id="stClock"><span id="sysTime">--</span> / <span id="footprint">--</span></span>
         <span id="stDock" aria-label="Closed panels"></span>
-        <span id="netState" tabindex="0"></span><span id="stTasks" tabindex="0"></span><span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="lockBtn" title="Parental mode: nothing can be deleted">Parental</button><button id="niteBtn" title="Night: the panels go dark and each one gets its own lamp">Night</button><button id="niteTest" title="Test the flicker" hidden style="display:none">Flicker test</button><button id="niteBugs" title="Bring the bugs in now" hidden style="display:none">Bugs now</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden>×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Test mode: force winter and snow on every panel" hidden>Snow test</button><button id="saverBtn" title="How long before the screensaver starts">Screensaver</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button><button id="wipeBtn" title="Erase everything and start the workspace fresh">Reset OS</button></span>
+        <span id="netState" tabindex="0"></span><span id="stTasks" tabindex="0"></span><span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="lockBtn" title="Parental mode: nothing can be deleted">Parental</button><button id="niteBtn" title="Night: the panels go dark and each one gets its own lamp">Night</button><button id="niteTest" title="Test the flicker" hidden style="display:none">Flicker test</button><button id="niteBugs" title="Bring the bugs in now" hidden style="display:none">Bugs now</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden>×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Test mode: force winter and snow on every panel" hidden>Snow</button><button id="saverBtn" title="How long before the screensaver starts">Screensaver</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button><button id="wipeBtn" title="Erase everything and start the workspace fresh">Reset</button></span>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
     </div>
@@ -3963,7 +3978,7 @@ var Net = (function () {
   function paint() {
     var names = Object.keys(live);
     pill.classList.toggle('open', names.length > 0);
-    pill.textContent = names.length ? 'Network open' : 'Sealed';
+    pill.textContent = names.length ? 'Open' : 'Sealed';
     pill.dataset.full = names.length
       ? 'Reaching out right now:\n\n' + names.map(function (n) { return '  ' + n; }).join('\n') +
         '\n\nThey can see your IP address, your device, and what you asked for.'
@@ -7767,7 +7782,7 @@ var Sys = (function () {
   function set(on) {
     document.body.classList.toggle('glass', on);
     btn.classList.toggle('on', on);
-    btn.textContent = on ? 'Glass' : 'Performance';
+    btn.textContent = on ? 'Glass' : 'Perf';
     btn.title = on ? 'Glass theme is on. Click for performance mode.' : 'Performance mode is on. Click for the glass theme.';
     btn.setAttribute('aria-pressed', String(on));
     ui.glass = on; store.set('ws.ui', ui);
@@ -8857,7 +8872,11 @@ var Garden = (function () {
       if (gone) return;
       gone = true;
       b.remove(); tr.remove();
-      if (wet[pid] && layer.isConnected) addBead(layer, pid, W, H, rnd(200, test ? 1500 : 6000));   // a new bead forms
+      var host = layer.closest ? layer.closest('.kmHost') : null;
+      var stillRaining = host && host.classList.contains('raining');
+      if (wet[pid] && stillRaining && layer.isConnected) {
+        addBead(layer, pid, W, H, rnd(200, test ? 1500 : 6000));   // a new bead forms
+      }
     }
     b.addEventListener('animationend', done);
     var t = setTimeout(function () {
@@ -8998,6 +9017,7 @@ var Garden = (function () {
     hostFor(pid).classList.add('raining');
   }
   function stopRain(pid) {
+    hostFor(pid).classList.remove('raining');   // no rain: no new water on the glass
     setLamp(pid, false);            // nothing left to melt
     stopBolts(pid);
     delete wet[pid];
