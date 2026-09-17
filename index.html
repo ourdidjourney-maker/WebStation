@@ -1572,11 +1572,11 @@
   .chStat b { font: 11.5px ui-monospace, Consolas, monospace; text-align: right;
               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 108px; }
   .chStat b.live { color: #7ef0b0; }
-  .chMsg { max-width: 76%; padding: 7px 11px; border-radius: 12px; font-size: 12.5px; line-height: 1.5;
+  .chMsg { max-width: 76%; padding: 6px 10px; border-radius: 11px; font-size: 10.5px; line-height: 1.5;
            word-break: break-word; }
   .chMsg.them { align-self: flex-start; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14); }
   .chMsg.me { align-self: flex-end; background: linear-gradient(180deg, rgba(126,170,255,.92), rgba(86,128,240,.92)); color: #071024; }
-  .chMsg .chFrom { font-weight: bold; opacity: .92; }
+  .chMsg .chFrom { font-weight: bold; opacity: .92; font-size: .92em; }
   .chMsg .chTime { display: block; font-size: 10.5px; opacity: .6; margin-top: 5px;
                    font-family: ui-monospace, Consolas, monospace; }
   .chMsg b, .chMsg strong { font-weight: bold; }
@@ -1595,6 +1595,121 @@
   #chWho { font-size: 11.5px; opacity: .75; }
   #chWho.live { color: #7ef0b0; }
   @media (max-width: 700px) { #chSide { display: none; } }
+
+  /* ── Night ────────────────────────────────────────────────────────────
+     The room goes dark. Every panel gets a bulb on a cord, and the light it
+     throws falls off toward the edges, so the corners stay in shadow. */
+  body.nite { background: #040405 !important; }
+  body.nite::before { display: none !important; }
+  body.nite .panel .card { background: #030304 !important; color: #b9bfc6; }
+  body.nite .panel > .card { position: relative; }
+  body.nite .panel > .card::after {
+    content: ''; position: absolute; inset: 0; z-index: 39; pointer-events: none;
+    background: rgba(0,0,0,.90); border-radius: inherit; transition: background .5s ease;
+  }
+  body.nite .panel.lampOn > .card::after {
+    background: rgba(0,0,0,calc(.90 - .58 * var(--niteAmp, 1))); }
+  .niteBug { position: absolute; width: 2px; height: 2px; border-radius: 50%; z-index: 45;
+             background: rgba(255,222,168,.8); box-shadow: 0 0 2px 1px rgba(255,200,120,.22);
+             pointer-events: none; will-change: transform; top: 0; left: 0; }
+  .niteBug.big { width: 3px; height: 3px; box-shadow: 0 0 3px 1px rgba(255,200,120,.26); }
+  .niteDial { display: none; width: 66px; vertical-align: middle; }
+  body.nite .niteDial { display: inline-block; }
+  body.nite .panel { border-color: rgba(255,255,255,.05) !important; }
+  body.nite #status, body.nite #ticker { background: #030304 !important; }
+  /* the room comes up and goes down, it does not snap */
+  body .panel > .card::after { transition: background .8s ease; }
+  body.niteOut .panel > .card::after { background: rgba(0,0,0,0) !important; }
+  body.niteOut .niteLight, body.niteOut .niteBulb, body.niteOut .niteBug {
+    opacity: 0 !important; transition: opacity .8s ease; }
+  /* in night, the screensaver hides the workspace and leaves the lamps burning */
+  body.nite.saver .panel > .card { opacity: 0; transition: opacity 2.2s ease; }
+  body.nite.saver .panel > .card::after { background: rgba(0,0,0,0) !important; }
+  body.nite.saver .niteLight, body.nite.saver .niteBulb, body.nite.saver .niteBug { opacity: 1 !important; }
+  body.nite.saver .panel { border-color: transparent !important; box-shadow: none !important; }
+  body.nite .kmHost, body.nite .kmRain, body.nite .kmWind, body.nite .kmFlash,
+  body.nite .kmSnow, body.nite .kmDrift, body.nite .kmLeaf, body.nite .kmFlower {
+    display: none !important; }
+  body.nite .panel, body.nite .panel:focus-within, body.nite .panel.blurred {
+    border-color: rgba(255,255,255,.05) !important;
+    box-shadow: 0 18px 44px rgba(0,0,0,.7) !important;
+  }
+  body.nite button:focus-visible, body.nite select:focus-visible, body.nite input:focus-visible,
+  body.nite .fvList li:focus-visible, body.nite #sGrid td.sel {
+    outline-color: rgba(255,210,150,.75) !important;
+  }
+  body.nite input[type=range] { accent-color: #f0a83c !important; }
+  body.nite .seg button.on, body.nite #stBtns button.on, body.nite .bar button.on {
+    background: linear-gradient(180deg, rgba(255,214,140,.85), rgba(240,168,60,.85)) !important;
+    color: #221503 !important; border-color: rgba(255,230,180,.45) !important;
+  }
+  body.nite #splitH::after, body.nite #splitV::after,
+  body.nite #splitL::after, body.nite #splitR::after { background: transparent !important; }
+  body.nite #splitH:hover::after, body.nite #splitV:hover::after,
+  body.nite #splitL:hover::after, body.nite #splitR:hover::after,
+  body.nite.resizing #splitH::after, body.nite.resizingV #splitV::after,
+  body.nite.resizing #splitL::after, body.nite.resizing #splitR::after {
+    background: rgba(255,200,130,.6) !important; }
+  body.nite #tipBox, body.nite #toasts > *, body.nite .toast, body.nite #netWarn,
+  body.nite #tkDue, body.nite .kmChip, body.nite .unblurChip {
+    background: #000 !important; border-color: rgba(255,255,255,.14) !important;
+    color: #e6e2da !important; box-shadow: 0 16px 40px rgba(0,0,0,.8) !important; }
+  body.nite #toasts button, body.nite #netWarn button {
+    background: #111 !important; color: #e6e2da !important; border-color: rgba(255,255,255,.18) !important; }
+  body.nite .panel { --niteX: 50%; --niteY: 8%; }
+  .niteLight { position: absolute; inset: 0; pointer-events: none; z-index: 41; border-radius: inherit;
+               opacity: 0; transition: opacity .5s ease; overflow: hidden; }
+  .niteLight.on { opacity: 1; }
+  /* the pool of light, thrown from wherever the bulb is hanging */
+  .niteLight i {
+    position: absolute; inset: 0; display: block;
+    background: radial-gradient(calc(88% * var(--niteAmp, 1)) calc(90% * var(--niteAmp, 1))
+      at var(--niteX, 50%) var(--niteY, 8%),
+      rgba(255,232,178,calc(.46 * var(--niteAmp, 1))) 0%,
+      rgba(255,220,150,calc(.33 * var(--niteAmp, 1))) 24%,
+      rgba(255,202,120,calc(.19 * var(--niteAmp, 1))) 48%,
+      rgba(250,190,108,calc(.09 * var(--niteAmp, 1))) 70%, rgba(0,0,0,0) 92%);
+  }
+  /* and the shadow that never quite lifts from the corners */
+  .niteLight u {
+    position: absolute; inset: 0; display: block; text-decoration: none;
+    box-shadow: inset 0 0 120px 40px rgba(0,0,0,.72), inset 0 0 40px 10px rgba(0,0,0,.5);
+  }
+  .niteBulb { position: absolute; left: 50%; top: 0; z-index: 43; width: 0; height: 0;
+              pointer-events: none; transform-origin: 0 0; }
+  .niteBulb .cord { position: absolute; left: -1px; top: 0; width: 2px; height: var(--cord, 54px);
+                    background: linear-gradient(#3a3f47, #23262b); }
+  .niteBulb .glass { position: absolute; left: -9px; top: calc(var(--cord, 54px) - 2px);
+                     width: 18px; height: 24px; border-radius: 50% 50% 46% 46%;
+                     background: radial-gradient(circle at 40% 34%, #4a4640, #26241f);
+                     border: 1px solid rgba(255,255,255,.08); cursor: grab; pointer-events: auto; }
+  .niteBulb.lit .glass {
+    background: radial-gradient(circle at 40% 34%, #fff6d8, #ffd98a 45%, #f0a83c);
+    box-shadow: 0 0 calc(26px * var(--niteAmp, 1)) calc(8px * var(--niteAmp, 1))
+                rgba(255,205,120,calc(.5 * var(--niteAmp, 1)));
+    border-color: rgba(255,230,180,.5);
+    filter: brightness(calc(.06 + .94 * var(--niteAmp, 1) * var(--niteAmp, 1)))
+            saturate(calc(.3 + .7 * var(--niteAmp, 1))); }
+  .niteBulb .cap { position: absolute; left: -5px; top: calc(var(--cord, 54px) - 8px);
+                   width: 10px; height: 8px; border-radius: 2px; background: #6b6f76; }
+  body.nite .panel .card { transition: background .5s ease; }
+  /* the little lamp button that appears in every toolbar */
+  .niteBtnIn { display: none; }
+  body.nite .niteBtnIn { display: inline-block; }
+  body.nite .niteBtnIn.on { background: linear-gradient(180deg, #ffd98a, #f0a83c); color: #2a1c06; border-color: #ffe6b4; }
+  #niteBtn.on, #niteTest.on { background: linear-gradient(180deg, #ffd98a, #f0a83c); color: #2a1c06; border-color: #ffe6b4; }
+
+  /* Parental mode: the delete controls are visibly out of service */
+  #lockBtn.on { background: linear-gradient(180deg, rgba(126,220,150,.95), rgba(60,170,100,.95));
+                color: #04210f; border-color: rgba(190,255,215,.5); }
+  body.locked .x, body.locked #tbPurge, body.locked #tbEmpty, body.locked #resetBtn,
+  body.locked #gDelAll, body.locked #gRemove, body.locked #sClear, body.locked #pClear,
+  body.locked #chClearAll, body.locked #chClear, body.locked #llClear, body.locked #clipClear,
+  body.locked #ieClear, body.locked #gmClear, body.locked #seClear, body.locked #tkClearDone,
+  body.locked button[data-del] {
+    opacity: .3 !important; pointer-events: none !important; }
+  body.locked #lockNote { display: block; }
+  #lockNote { display: none; }
 
   /* Katy Mae — the garden */
   .kmHost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; border-radius: inherit; transition: opacity 1.2s ease; }
@@ -1873,7 +1988,7 @@
       <button data-f="code">&lt;/&gt;</button>
       <button data-f="quote">&ldquo;</button>
       <span class="sep"></span>
-      <select id="chSize"><option value="11">Small</option><option value="12.5" selected>Normal</option><option value="14">Large</option><option value="16">Huge</option></select>
+      <select id="chSize"><option value="9">Small</option><option value="10.5" selected>Normal</option><option value="12">Large</option><option value="14">Huge</option></select>
       <input type="color" id="chColor" value="#eef2ff" title="Colour">
       <span class="sep"></span>
       <label for="chName" style="font-size:12px;opacity:.7">Your name</label>
@@ -3451,7 +3566,7 @@ paused, then deleted again
       <section class="panel" id="status" aria-label="Status">
         <span id="stClock"><span id="sysTime">--</span> / <span id="footprint">--</span></span>
         <span id="stDock" aria-label="Closed panels"></span>
-        <span id="netState" tabindex="0"></span><span id="stTasks" tabindex="0"></span><span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden>×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Test mode: force winter and snow on every panel" hidden>Snow test</button><button id="saverBtn" title="How long before the screensaver starts">Screensaver</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button><button id="wipeBtn" title="Erase everything and start the workspace fresh">Reset OS</button></span>
+        <span id="netState" tabindex="0"></span><span id="stTasks" tabindex="0"></span><span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="lockBtn" title="Parental mode: nothing can be deleted">Parental</button><button id="niteBtn" title="Night: the panels go dark and each one gets its own lamp">Night</button><button id="niteTest" title="Test the flicker" hidden style="display:none">Flicker test</button><button id="niteBugs" title="Bring the bugs in now" hidden style="display:none">Bugs now</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden>×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Test mode: force winter and snow on every panel" hidden>Snow test</button><button id="saverBtn" title="How long before the screensaver starts">Screensaver</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button><button id="wipeBtn" title="Erase everything and start the workspace fresh">Reset OS</button></span>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
     </div>
@@ -9288,7 +9403,7 @@ var Garden = (function () {
     document.body.classList.remove('saver');
     clearTimeout(wakeT);
     wakeT = setTimeout(function () { document.body.classList.remove('waking'); }, 2400);
-    Garden.saver(false);
+    if (!document.body.classList.contains('nite')) Garden.saver(false);
   }
   function poke() {
     if (active) leave();
@@ -13027,6 +13142,425 @@ var soundEditorAPI = {};
   if (Sys.link && Sys.link.onState) Sys.link.onState.push(state);
   state(Sys.link && Sys.link.open());
   draw();
+})();
+
+/* ================= Night =================
+   The workspace goes dark and every panel gets a bulb hanging on a cord. The
+   light falls off toward the edges so the corners stay in shadow, the way a
+   real room lights. Bulbs flicker on their own schedule, and you can push one
+   with the mouse to swing it — the light swings with it. */
+var Nite = (function () {
+  var on = false, test = false, lamps = {}, timers = [];
+  function ui() { return store.get('ws.ui', {}); }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function track(t) { timers.push(t); return t; }
+
+  function panelOf(el) { return el.closest ? el.closest('.panel') : el.parentNode; }
+  function parts(panel) {
+    var L = panel.querySelector(':scope > .niteLight');
+    if (!L) {
+      L = document.createElement('div');
+      L.className = 'niteLight';
+      L.innerHTML = '<i></i><u></u>';
+      panel.appendChild(L);
+    }
+    var B = panel.querySelector(':scope > .niteBulb');
+    if (!B) {
+      B = document.createElement('div');
+      B.className = 'niteBulb';
+      B.innerHTML = '<span class="cord"></span><span class="cap"></span><span class="glass"></span>';
+      var h = panel.getBoundingClientRect().height || 300;
+      B.style.setProperty('--cord', Math.round(h * rnd(0.34, 0.44)) + 'px');
+      panel.appendChild(B);
+      swing(panel, B);
+    }
+    return { L: L, B: B };
+  }
+
+  // Pushing the bulb sets it swinging, and the pool of light swings with it.
+  function swing(panel, B) {
+    var glass = B.querySelector('.glass');
+    var a = 0, v = 0, raf = 0, dragging = false, lastX = 0;
+    function frame() {
+      if (!dragging) {
+        v += -a * 0.030;            // pulled back toward centre, harder
+        v *= 0.996;                 // and it keeps going for a good while
+        a += v;
+      }
+      B.style.transform = 'rotate(' + a.toFixed(2) + 'deg)';
+      if (Math.abs(v) > 0.6) scatter(panel.id);
+      // the light comes from where the bulb actually is
+      var cord = parseFloat(getComputedStyle(B).getPropertyValue('--cord')) || 54;
+      var rad = a * Math.PI / 180;
+      var dx = Math.sin(rad) * cord;            // where the bulb actually hangs
+      var dy = Math.cos(rad) * cord;
+      panel.style.setProperty('--niteX', 'calc(50% + ' + dx.toFixed(1) + 'px)');
+      panel.style.setProperty('--niteY', dy.toFixed(1) + 'px');
+      if (Math.abs(a) > 0.05 || Math.abs(v) > 0.05 || dragging) raf = requestAnimationFrame(frame);
+      else { raf = 0; a = 0; v = 0; B.style.transform = ''; }
+    }
+    function start() { if (!raf) raf = requestAnimationFrame(frame); }
+    glass.addEventListener('pointerdown', function (e) {
+      dragging = true; lastX = e.clientX;
+      glass.setPointerCapture(e.pointerId);
+      glass.style.cursor = 'grabbing';
+      start();
+    });
+    glass.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      var d = e.clientX - lastX;
+      lastX = e.clientX;
+      a = Math.max(-58, Math.min(58, a + d * 1.15));
+      v = d * 0.72;
+    });
+    function stop() { dragging = false; glass.style.cursor = 'grab'; start(); }
+    glass.addEventListener('pointerup', stop);
+    glass.addEventListener('pointercancel', stop);
+    // a nudge on hover, so it feels alive even without dragging
+    glass.addEventListener('pointerenter', function () { if (!raf && Math.abs(a) < 0.1) { v = rnd(-3.2, 3.2); start(); } });
+  }
+
+  // Bulbs are not reliable. Each one runs its own pattern on its own clock.
+  function flicker(pid) {
+    var p = $(pid);
+    if (!p || !lamps[pid] || !on) return;
+    var g = parts(p);
+    var pattern = Math.random();
+    var burst = pattern < 0.34 ? [40, 70, 30, 90, 40, 60, 25, 110]              // a rough stutter
+              : pattern < 0.67 ? [25, 45, 30, 60, 90, 35, 55, 30, 70, 40, 120]  // a bad connection
+                               : [30, 900, 40, 60, 30, 700, 50];                // long drop outs
+    var at = 0;
+    burst.forEach(function (ms, i) {
+      at += ms;
+      track(setTimeout(function () {
+        if (!lamps[pid] || !on) return;
+        g.L.style.opacity = (i % 2 === 0) ? '0.12' : '1';
+        g.B.classList.toggle('lit', i % 2 !== 0);
+      }, at));
+    });
+    track(setTimeout(function () {
+      if (!lamps[pid] || !on) return;
+      g.L.style.opacity = '';
+      g.B.classList.add('lit');
+    }, at + 80));
+    // and it will do it again, whenever it feels like it
+    track(setTimeout(function () { flicker(pid); }, test ? rnd(1500, 4000) : rnd(25000, 140000)));
+  }
+
+
+  // ── The bugs ──────────────────────────────────────────────────────────
+  // They find a lit bulb eventually, circle it, and scatter the moment it
+  // moves. When it settles they take their time coming back.
+  var swarms = {};
+
+  function bugsFor(pid) {
+    var p = $(pid);
+    if (!p || !on || !lamps[pid] || swarms[pid]) return;
+    var n = Math.round(rnd(1, 26)), list = [];
+    for (var i = 0; i < n; i++) {
+      var el = document.createElement('i');
+      el.className = 'niteBug' + (Math.random() < 0.3 ? ' big' : '');
+      p.appendChild(el);
+      list.push({
+        el: el,
+        r: Math.random() < 0.72 ? rnd(8, 70)        // most crowd the bulb
+             : Math.random() < 0.7 ? rnd(80, 190)    // some keep their distance
+                                   : rnd(190, 340),  // and a couple are barely interested
+        a: rnd(0, Math.PI * 2),
+        sp: rnd(2.5, 9) * (Math.random() < 0.5 ? -1 : 1),
+        tilt: rnd(0.25, 1),
+        wob: rnd(2, 9),                 // they never hold a line
+        wph: rnd(0, 6),
+        wsp: rnd(4, 16),                // and each twitches at its own rate
+        dart: 0,
+        fly: null
+      });
+    }
+    swarms[pid] = { list: list };
+  }
+
+  function clearBugs(pid) {
+    var sw = swarms[pid];
+    if (!sw) return;
+    sw.list.forEach(function (b) { if (b.el.parentNode) b.el.remove(); });
+    delete swarms[pid];
+  }
+
+  function scatter(pid) {
+    var sw = swarms[pid];
+    if (!sw) return;
+    sw.list.forEach(function (b) {
+      if (b.fly) return;
+      var ang = rnd(0, Math.PI * 2);
+      b.fly = { vx: Math.cos(ang) * rnd(2.4, 6), vy: Math.sin(ang) * rnd(2.4, 6), life: 1 };
+    });
+    sw.fled = true;
+  }
+
+  function bugFrame(t) {
+    Object.keys(swarms).forEach(function (pid) {
+      var p = $(pid), sw = swarms[pid];
+      if (!p || !sw) return;
+      var rect = p.getBoundingClientRect();
+      var B = p.querySelector('.niteBulb');
+      var cord = B ? (parseFloat(getComputedStyle(B).getPropertyValue('--cord')) || 54) : 54;
+      var m = /calc\(50% \+ (-?[\d.]+)px\)/.exec(p.style.getPropertyValue('--niteX') || '');
+      var bx = rect.width / 2 + (m ? parseFloat(m[1]) : 0);
+      var by = parseFloat(p.style.getPropertyValue('--niteY')) || cord;
+      var alive = 0;
+      sw.list.forEach(function (b) {
+        if (b.fly) {
+          b.x = (b.x || bx) + b.fly.vx;
+          b.y = (b.y || by) + b.fly.vy;
+          b.fly.life -= 0.012;
+          b.el.style.opacity = Math.max(0, b.fly.life).toFixed(2);
+          if (b.fly.life > 0) alive++;
+        } else {
+          if (--b.dart <= 0) {          // every so often it changes its mind
+            b.dart = Math.round(rnd(4, 34));
+            b.sp += rnd(-7, 7);
+            if (Math.random() < 0.18) b.sp = -b.sp;      // and sometimes turns right around
+            b.sp = Math.max(-16, Math.min(16, b.sp));
+            b.r += rnd(-26, 26);
+            b.r = Math.max(6, Math.min(340, b.r));
+            b.wob = rnd(2, 12);
+            b.wsp = rnd(4, 22);
+          }
+          b.a += b.sp * 0.02;
+          var wob = Math.sin(t / (1000 / b.wsp) + b.wph) * b.wob
+                  + Math.sin(t / 97 + b.wph * 3) * (b.wob * 0.4);
+          b.x = bx + Math.cos(b.a) * (b.r + wob);
+          b.y = by + Math.sin(b.a) * (b.r + wob) * b.tilt + Math.sin(t / 61 + b.wph) * 2;
+          alive++;
+        }
+        b.el.style.transform = 'translate(' + b.x.toFixed(1) + 'px,' + b.y.toFixed(1) + 'px)';
+      });
+      if (sw.fled && !alive) {
+        clearBugs(pid);
+        track(setTimeout(function () { bugsFor(pid); }, test ? rnd(4000, 12000) : rnd(60000, 600000)));
+      }
+    });
+    if (on) requestAnimationFrame(bugFrame);
+  }
+
+  function light(pid, v) {
+    var p = $(pid);
+    if (!p) return;
+    var g = parts(p);
+    lamps[pid] = !!v;
+    p.classList.toggle('lampOn', !!v);
+    if (v) {
+      // striking: it catches, drops, then holds
+      g.L.classList.add('on');
+      g.B.classList.add('lit');
+      g.L.style.opacity = '0.2';
+      track(setTimeout(function () { g.L.style.opacity = '1'; }, 90));
+      track(setTimeout(function () { g.L.style.opacity = '0.3'; }, 170));
+      track(setTimeout(function () { g.L.style.opacity = ''; }, 260));
+      track(setTimeout(function () { flicker(pid); }, test ? rnd(1200, 3000) : rnd(20000, 90000)));
+      track(setTimeout(function () { bugsFor(pid); }, test ? rnd(2500, 7000) : rnd(60000, 600000)));
+    } else {
+      g.L.classList.remove('on');
+      g.B.classList.remove('lit');
+      scatter(pid);                      // nudged off, not vanished
+    }
+    var u = ui();
+    u.nite = u.nite || {};
+    u.nite[pid] = !!v;
+    store.set('ws.ui', u);
+    paintButtons();
+  }
+
+  function paintButtons() {
+    Panels.ids.forEach(function (pid) {
+      var p = $(pid);
+      if (!p) return;
+      p.querySelectorAll('.niteBtnIn').forEach(function (b) {
+        b.classList.toggle('on', !!lamps[pid]);
+        b.dataset.tip = lamps[pid] ? 'Turn this lamp off' : 'Turn this lamp on';
+      });
+    });
+  }
+
+  function addButtons() {
+    document.querySelectorAll('.face').forEach(function (f) {
+      var bar = f.querySelector('.bar');
+      if (!bar || bar.querySelector('.niteBtnIn')) return;
+      var b = document.createElement('button');
+      b.className = 'niteBtnIn';
+      b.textContent = '\u25CF';
+      b.onclick = function () {
+        var pid = f.closest('.panel').id;
+        light(pid, !lamps[pid]);
+      };
+      bar.appendChild(b);
+      var dial = document.createElement('input');
+      dial.type = 'range'; dial.min = '20'; dial.max = '200'; dial.value = '100';
+      dial.className = 'niteDial';
+      dial.title = 'How bright this lamp burns';
+      dial.oninput = function () { bright(f.closest('.panel').id, +this.value); };
+      bar.appendChild(dial);
+    });
+  }
+
+  // How hard the bulb is driven, per panel.
+  function bright(pid, v) {
+    var p = $(pid);
+    if (!p) return;
+    p.style.setProperty('--niteAmp', (v / 100).toFixed(2));
+    var u = ui();
+    u.niteB = u.niteB || {};
+    u.niteB[pid] = v;
+    store.set('ws.ui', u);
+    p.querySelectorAll('.niteDial').forEach(function (d) { d.value = v; });
+  }
+
+  function set(v) {
+    on = !!v;
+    document.body.classList.toggle('nite', on);
+    timers.forEach(clearTimeout);
+    timers = [];
+    addButtons();
+    if (on) {
+      requestAnimationFrame(bugFrame);
+      var saved = (ui().nite) || {};
+      Panels.ids.forEach(function (pid) {
+        parts($(pid));
+        light(pid, saved[pid] !== false);       // the room comes up lit by default
+        bright(pid, ((ui().niteB || {})[pid]) || 100);
+      });
+    } else {
+      Panels.ids.forEach(function (pid) {
+        var p = $(pid);
+        if (!p) return;
+          clearBugs(pid);
+          p.classList.remove('lampOn');
+        p.querySelectorAll('.niteLight, .niteBulb, .niteBug').forEach(function (n) { n.remove(); });
+      });
+      lamps = {};
+    }
+    var u = ui();
+    u.niteOn = on;
+    store.set('ws.ui', u);
+    paintButtons();
+  }
+
+  document.addEventListener('faceshown', function () { if (on) { addButtons(); paintButtons(); } }, true);
+
+  return {
+    set: set,
+    isOn: function () { return on; },
+    bugsNow: function () {
+      Panels.ids.forEach(function (pid) {
+        if (!lamps[pid]) return;
+        clearBugs(pid);
+        bugsFor(pid);
+      });
+    },
+    test: function (v) {
+      test = !!v;
+      if (!on) return;
+      timers.forEach(clearTimeout);
+      timers = [];
+      Panels.ids.forEach(function (pid) {
+        if (!lamps[pid]) return;
+        flicker(pid);
+        clearBugs(pid);
+        track(setTimeout(function () { bugsFor(pid); }, test ? rnd(1500, 5000) : rnd(60000, 600000)));
+      });
+    },
+    testing: function () { return test; }
+  };
+})();
+
+(function () {
+  var b = $('niteBtn'), t = $('niteTest');
+  function paint() {
+    b.classList.toggle('on', Nite.isOn());
+    t.hidden = true;
+    $('niteBugs').hidden = true;
+    t.classList.toggle('on', Nite.testing());
+  }
+  $('niteBugs').onclick = function () {
+    Nite.bugsNow();
+    Sys.toast('Bugs in. Swing a bulb and watch them go.', { ms: 3000 });
+  };
+  b.onclick = function () {
+    if (Nite.isOn()) {                      // let it fade before the lights go
+      document.body.classList.add('niteOut');
+      setTimeout(function () {
+        document.body.classList.remove('niteOut');
+        Nite.set(false);
+        paint();
+      }, 800);
+      Sys.toast('Lights up.', { ms: 3000 });
+      return;
+    }
+    Nite.set(true);
+    paint();
+    Sys.toast(Nite.isOn() ? 'Night. Each panel has its own lamp.' : 'Lights up.', { ms: 3000 });
+  };
+  t.onclick = function () {
+    Nite.test(!Nite.testing());
+    paint();
+    Sys.toast(Nite.testing() ? 'Flicker test: the bulbs misbehave every few seconds.' : 'Normal flicker.', { ms: 3000 });
+  };
+  if ((store.get('ws.ui', {}) || {}).niteOn) Nite.set(true);
+  paint();
+})();
+
+/* ================= Parental mode =================
+   One switch that takes away every way of destroying something. It is not a
+   password or a spy tool: it simply means nothing in this workspace can be
+   deleted while it is on. */
+var Lock = (function () {
+  var on = !!(store.get('ws.ui', {}) || {}).locked;
+
+  // Anything whose job is to remove something is stopped before it runs. This
+  // is done at the document, in the capture phase, so no app has to know.
+  var WORDS = /^(delete|delete all|delete this text|remove|clear|clear all|clear done|clear the conversation|clear the history|empty|empty the bin|reset os|start over|×|✕|x)$/i;
+  document.addEventListener('click', function (e) {
+    if (!on) return;
+    var b = e.target.closest && e.target.closest('button, a');
+    if (!b) return;
+    var t = (b.textContent || '').trim();
+    var isX = b.classList.contains('x') || b.hasAttribute('data-del');
+    if (isX || WORDS.test(t)) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      Sys.toast('Parental mode is on. Nothing can be deleted.', { ms: 3000 });
+    }
+  }, true);
+
+  // and the keyboard routes that bypass buttons
+  document.addEventListener('keydown', function (e) {
+    if (!on) return;
+    if ((e.key === 'Delete' || e.key === 'Backspace') && e.shiftKey) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
+
+  function set(v) {
+    on = !!v;
+    document.body.classList.toggle('locked', on);
+    var u = store.get('ws.ui', {});
+    u.locked = on;
+    store.set('ws.ui', u);
+    $('lockBtn').classList.toggle('on', on);
+    $('lockBtn').textContent = on ? 'Parental on' : 'Parental';
+  }
+  return { set: set, isOn: function () { return on; } };
+})();
+
+(function () {
+  $('lockBtn').onclick = function () {
+    Lock.set(!Lock.isOn());
+    Sys.toast(Lock.isOn()
+      ? 'Parental mode on. Nothing in the workspace can be deleted.'
+      : 'Parental mode off.', { ms: 4000 });
+  };
+  Lock.set(Lock.isOn());
 })();
 
 /* ================= Status bar ================= */
