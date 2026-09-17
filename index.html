@@ -499,6 +499,12 @@
     transition: background .35s cubic-bezier(.22,.7,.3,1), border-color .35s cubic-bezier(.22,.7,.3,1),
                 box-shadow .35s cubic-bezier(.22,.7,.3,1), transform .18s cubic-bezier(.22,.7,.3,1), color .35s ease;
   }
+    body.glass #stBtns #feedBtn.on {
+    background: linear-gradient(180deg, #8fd8ff, #4aaee8);
+    color: #061522;
+    border-color: #a9e3ff;
+    box-shadow: none;
+  }
   body.glass .bar button:hover:not(:disabled), body.glass .clist button:hover:not(:disabled), body.glass .crow2 button:hover:not(:disabled),
   body.glass .fvColHead button:hover:not(:disabled), body.glass #stBtns button:hover, body.glass #stDock button:hover,
   body.glass #tkBtn:hover, body.glass .tmHead button:hover, body.glass #tmApps td.act button:hover, body.glass #tmRun button:hover, body.glass .fvGo:hover {
@@ -1133,7 +1139,7 @@
     background: repeating-linear-gradient(92deg, rgba(255,255,255,.055) 0 1px, rgba(0,0,0,.045) 1px 2px);
     mix-blend-mode: overlay;
   }
-  #wearRate.on, #wearBtn.on { background: linear-gradient(180deg, #d8c9a8, #b8a179); color: #2a2114; border-color: #e2d6bb; }
+  #wearRate.on, body.glass #stBtns #wearBtn.on { background: linear-gradient(180deg, #d8c9a8, #b8a179); color: #2a2114; border-color: #e2d6bb; }
 
   /* Tooltips, in the workspace's own clothes rather than the browser's */
   #tipBox { position: fixed; z-index: 1400; max-width: 320px; padding: 7px 10px; pointer-events: none;
@@ -1720,10 +1726,10 @@
   .niteBtnIn { display: none; }
   body.nite .niteBtnIn { display: inline-block; }
   body.nite .niteBtnIn.on { background: linear-gradient(180deg, #ffd98a, #f0a83c); color: #2a1c06; border-color: #ffe6b4; }
-  #niteBtn.on, #niteTest.on { background: linear-gradient(180deg, #ffd98a, #f0a83c); color: #2a1c06; border-color: #ffe6b4; }
+  body.glass #stBtns #niteBtn.on, #niteTest.on { background: linear-gradient(180deg, #ffd98a, #f0a83c); color: #2a1c06; border-color: #ffe6b4; }
 
   /* Parental mode: the delete controls are visibly out of service */
-  #lockBtn.on { background: linear-gradient(180deg, rgba(126,220,150,.95), rgba(60,170,100,.95));
+  body.glass #stBtns #lockBtn.on { background: linear-gradient(180deg, rgba(126,220,150,.95), rgba(60,170,100,.95));
                 color: #04210f; border-color: rgba(190,255,215,.5); }
   body.locked .x, body.locked #tbPurge, body.locked #tbEmpty, body.locked #resetBtn,
   body.locked #gDelAll, body.locked #gRemove, body.locked #sClear, body.locked #pClear,
@@ -1799,7 +1805,7 @@
     100% { transform: rotate(calc(var(--r0, 0deg) + var(--rq, 90deg) * 4)) scaleX(1) scaleY(1); }
   }
   body.glass .kmFlower { filter: drop-shadow(0 3px 10px rgba(0,0,0,.35)); }
-  #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff87b6); color: #3d1026; border-color: #ff9ec4; box-shadow: none; }
+body.glass #stBtns #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff87b6); color: #3d1026; border-color: #ff9ec4; box-shadow: none; }
   body.glass #kmBtn.on { box-shadow: none; }
   #kmTest.on { background: #000; color: #fff; border-color: #000; }
   body.glass #kmTest.on { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
