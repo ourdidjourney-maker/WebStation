@@ -1610,9 +1610,14 @@
   body.nite .panel.lampOn > .card::after {
     background: rgba(0,0,0,calc(.90 - .45 * var(--niteAmp, 1))); }
   .niteBug { position: absolute; width: 2px; height: 2px; border-radius: 50%; z-index: 45;
-             background: rgba(255,222,168,.8); box-shadow: 0 0 2px 1px rgba(255,200,120,.22);
+             background: rgba(var(--lampRGB, 255,222,168), .8);
+             box-shadow: 0 0 2px 1px rgba(var(--lampRGB, 255,200,120), .22);
              pointer-events: none; will-change: transform; top: 0; left: 0; }
-  .niteBug.big { width: 3px; height: 3px; box-shadow: 0 0 3px 1px rgba(255,200,120,.26); }
+  .niteBug.big { width: 3px; height: 3px; box-shadow: 0 0 3px 1px rgba(var(--lampRGB, 255,200,120), .26); }
+  .niteHue { display: none; width: 26px; height: 22px; padding: 0; vertical-align: middle; }
+  .niteHueBack { display: none; }
+  body.nite .niteHueBack { display: inline-block; padding: 2px 6px; font-size: 12px; }
+  body.nite .niteHue { display: inline-block; }
   .niteDial { display: none; width: 66px; vertical-align: middle; }
   body.nite .niteDial { display: inline-block; }
   body.nite .panel { border-color: rgba(255,255,255,.05) !important; }
@@ -1671,10 +1676,10 @@
     position: absolute; inset: 0; display: block;
     background: radial-gradient(calc(68% * var(--niteAmp, 1)) calc(70% * var(--niteAmp, 1))
       at var(--niteX, 50%) var(--niteY, 8%),
-      rgba(255,228,166,calc(.32 * var(--niteAmp, 1))) 0%,
-      rgba(255,216,144,calc(.22 * var(--niteAmp, 1))) 23%,
-      rgba(255,200,118,calc(.11 * var(--niteAmp, 1))) 46%,
-      rgba(250,188,106,calc(.045 * var(--niteAmp, 1))) 66%, rgba(0,0,0,0) 85%);
+      rgba(var(--lampRGB, 255,228,166), calc(.32 * var(--niteAmp, 1))) 0%,
+      rgba(var(--lampRGB, 255,216,144), calc(.22 * var(--niteAmp, 1))) 23%,
+      rgba(var(--lampRGB, 255,200,118), calc(.11 * var(--niteAmp, 1))) 46%,
+      rgba(var(--lampRGB, 250,188,106), calc(.045 * var(--niteAmp, 1))) 66%, rgba(0,0,0,0) 85%);
   }
   /* and the shadow that never quite lifts from the corners */
   .niteLight u {
@@ -1690,9 +1695,11 @@
                      background: radial-gradient(circle at 40% 34%, #4a4640, #26241f);
                      border: 1px solid rgba(255,255,255,.08); cursor: grab; pointer-events: auto; }
   .niteBulb.lit .glass {
-    background: radial-gradient(circle at 40% 34%, #fff6d8, #ffd98a 45%, #f0a83c);
+    background: radial-gradient(circle at 40% 34%,
+      rgba(255,255,255,.92), rgba(var(--lampRGB, 255,217,138), 1) 45%,
+      rgba(var(--lampDeep, 240,168,60), 1));
     box-shadow: 0 0 calc(26px * var(--niteAmp, 1)) calc(8px * var(--niteAmp, 1))
-                rgba(255,205,120,calc(.5 * var(--niteAmp, 1)));
+                rgba(var(--lampRGB, 255,205,120), calc(.5 * var(--niteAmp, 1)));
     border-color: rgba(255,230,180,.5);
     filter: brightness(calc(.06 + .94 * var(--niteAmp, 1) * var(--niteAmp, 1)))
             saturate(calc(.3 + .7 * var(--niteAmp, 1))); }
@@ -13437,6 +13444,19 @@ var Nite = (function () {
         light(pid, !lamps[pid]);
       };
       bar.appendChild(b);
+      var pick = document.createElement('input');
+      pick.type = 'color';
+      pick.className = 'niteHue';
+      pick.value = '#ffd98a';
+      pick.title = 'The colour this lamp burns';
+      pick.oninput = function () { hue(f.closest('.panel').id, this.value); };
+      bar.appendChild(pick);
+      var back = document.createElement('button');
+      back.className = 'niteHueBack';
+      back.textContent = '\u21BA';
+      back.title = 'Back to the colour it came with';
+      back.onclick = function () { hue(f.closest('.panel').id, '#ffd98a'); };
+      bar.appendChild(back);
       var dial = document.createElement('input');
       dial.type = 'range'; dial.min = '20'; dial.max = '200'; dial.value = '100';
       dial.className = 'niteDial';
@@ -13444,6 +13464,23 @@ var Nite = (function () {
       dial.oninput = function () { bright(f.closest('.panel').id, +this.value); };
       bar.appendChild(dial);
     });
+  }
+
+  // What colour this lamp burns. One value drives the glass, the light it
+  // throws and the bugs that come to it, so they can never disagree.
+  function hue(pid, hex) {
+    var p = $(pid);
+    if (!p) return;
+    var n = parseInt(String(hex).replace('#', ''), 16);
+    var r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    p.style.setProperty('--lampRGB', r + ',' + g + ',' + b);
+    p.style.setProperty('--lampDeep',
+      Math.round(r * 0.72) + ',' + Math.round(g * 0.62) + ',' + Math.round(b * 0.52));
+    var u = ui();
+    u.niteH = u.niteH || {};
+    u.niteH[pid] = hex;
+    store.set('ws.ui', u);
+    p.querySelectorAll('.niteHue').forEach(function (i) { i.value = hex; });
   }
 
   // How hard the bulb is driven, per panel.
@@ -13471,6 +13508,7 @@ var Nite = (function () {
         parts($(pid));
         light(pid, saved[pid] !== false);       // the room comes up lit by default
         bright(pid, ((ui().niteB || {})[pid]) || 100);
+        hue(pid, ((ui().niteH || {})[pid]) || '#ffd98a');
       });
     } else {
       Panels.ids.forEach(function (pid) {
