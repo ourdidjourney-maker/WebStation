@@ -1608,7 +1608,7 @@
     background: rgba(0,0,0,.90); border-radius: inherit; transition: background .5s ease;
   }
   body.nite .panel.lampOn > .card::after {
-    background: rgba(0,0,0,calc(.90 - .45 * var(--niteAmp, 1))); }
+    background: rgba(0,0,0,calc(.90 - .45 * var(--niteAmp, 1) * var(--niteFlick, 1))); }
   .niteBug { position: absolute; width: 2px; height: 2px; border-radius: 50%; z-index: 45;
              background: rgba(var(--lampRGB, 255,222,168), .8);
              box-shadow: 0 0 2px 1px rgba(var(--lampRGB, 255,200,120), .22);
@@ -13519,13 +13519,16 @@ var Nite = (function () {
       at += ms;
       track(setTimeout(function () {
         if (!lamps[pid] || !on) return;
-        g.L.style.opacity = (i % 2 === 0) ? '0.12' : '1';
-        g.B.classList.toggle('lit', i % 2 !== 0);
+        var lit = i % 2 !== 0;
+        g.L.style.opacity = lit ? '1' : '0.12';
+        p.style.setProperty('--niteFlick', lit ? '1' : '0.12');
+        g.B.classList.toggle('lit', lit);
       }, at));
     });
     track(setTimeout(function () {
       if (!lamps[pid] || !on) return;
       g.L.style.opacity = '';
+      p.style.setProperty('--niteFlick', '1');
       g.B.classList.add('lit');
     }, at + 80));
     // and it will do it again, whenever it feels like it
@@ -13638,10 +13641,10 @@ var Nite = (function () {
       // striking: it catches, drops, then holds
       g.L.classList.add('on');
       g.B.classList.add('lit');
-      g.L.style.opacity = '0.2';
-      track(setTimeout(function () { g.L.style.opacity = '1'; }, 90));
-      track(setTimeout(function () { g.L.style.opacity = '0.3'; }, 170));
-      track(setTimeout(function () { g.L.style.opacity = ''; }, 260));
+      g.L.style.opacity = '0.2'; p.style.setProperty('--niteFlick', '0.2');
+      track(setTimeout(function () { g.L.style.opacity = '1'; p.style.setProperty('--niteFlick', '1'); }, 90));
+      track(setTimeout(function () { g.L.style.opacity = '0.3'; p.style.setProperty('--niteFlick', '0.3'); }, 170));
+      track(setTimeout(function () { g.L.style.opacity = ''; p.style.setProperty('--niteFlick', '1'); }, 260));
       track(setTimeout(function () { flicker(pid); }, test ? rnd(1200, 3000) : rnd(20000, 90000)));
       track(setTimeout(function () { bugsFor(pid); }, test ? rnd(2500, 7000) : rnd(60000, 600000)));
     } else {
