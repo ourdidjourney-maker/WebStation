@@ -1696,8 +1696,9 @@
                      border: 1px solid rgba(255,255,255,.08); cursor: grab; pointer-events: auto; }
   .niteBulb.lit .glass {
     background: radial-gradient(circle at 40% 34%,
-      rgba(255,255,255,.92), rgba(var(--lampRGB, 255,217,138), 1) 45%,
-      rgba(var(--lampDeep, 240,168,60), 1));
+      rgba(var(--lampRGB, 255,217,138), 1) 0%,
+      rgba(var(--lampRGB, 255,217,138), 1) 42%,
+      rgba(var(--lampDeep, 240,168,60), 1) 100%);
     box-shadow: 0 0 calc(26px * var(--niteAmp, 1)) calc(8px * var(--niteAmp, 1))
                 rgba(var(--lampRGB, 255,205,120), calc(.5 * var(--niteAmp, 1)));
     border-color: rgba(255,230,180,.5);
@@ -12622,6 +12623,72 @@ var soundEditorAPI = {};
   // WebRTC with no company doing the introductions: the two machines swap one
   // code by hand and then talk directly.
   var pc = null, chan = null;
+  // Everyone else in the room. Each is a direct connection; they are introduced
+  // to each other over the links that already exist, so nobody needs a server.
+  var peers = {};                     // id -> { pc, chan, name }
+  var direct = {};                    // ids we already have a plain link to
+  var myId = Math.random().toString(36).slice(2, 10);
+
+  function allChannels() {
+    var out = [];
+    if (chan && chan.readyState === 'open') out.push(chan);
+    Object.keys(peers).forEach(function (id) {
+      var p = peers[id];
+      if (p.chan && p.chan.readyState === 'open') out.push(p.chan);
+    });
+    return out;
+  }
+
+  function sendAll(text, except) {
+    allChannels().forEach(function (c) {
+      if (c === except) return;
+      try { c.send(text); } catch (e) {}
+    });
+  }
+
+  // Signalling for a newcomer travels down an existing link as ordinary traffic.
+  function relay(obj, except) { sendAll('WSMESH1|' + JSON.stringify(obj), except); }
+
+  function meshPeer(id, initiator, via) {
+    if (peers[id] || id === myId) return peers[id];
+    var p = { pc: new RTCPeerConnection({ iceServers: [] }), chan: null, name: id };
+    peers[id] = p;
+    p.pc.onicegatheringstatechange = function () {
+      if (p.pc.iceGatheringState !== 'complete' || p.sent) return;
+      p.sent = true;
+      relay({ to: id, from: myId, sdp: p.pc.localDescription }, null);
+    };
+    p.pc.onconnectionstatechange = function () {
+      logLine('Mesh peer ' + id + ' ' + p.pc.connectionState);
+      if (p.pc.connectionState === 'failed' || p.pc.connectionState === 'closed') delete peers[id];
+      roomCount();
+    };
+    function attach(c) {
+      p.chan = c;
+      c.onopen = function () { logLine('Room: ' + id + ' joined.'); roomCount(); introduce(); };
+      c.onclose = function () { delete peers[id]; roomCount(); };
+      c.onmessage = function (e) { route(String(e.data || ''), c); };
+    }
+    if (initiator) {
+      attach(p.pc.createDataChannel('room'));
+      p.pc.createOffer().then(function (o) { return p.pc.setLocalDescription(o); });
+    } else {
+      p.pc.ondatachannel = function (e) { attach(e.channel); };
+    }
+    return p;
+  }
+
+  // Tell everyone who else is here, so they can connect to each other.
+  function introduce() {
+    var ids = [myId].concat(Object.keys(peers));
+    sendAll('WSWHO1|' + JSON.stringify({ from: myId, here: ids }));
+  }
+
+  function roomCount() {
+    var n = allChannels().length;
+    var el = $('llPeer');
+    if (el && n > 1) el.textContent = n + ' in the room';
+  }
   // The history is kept, so you can see what this link has carried.
   st.link = st.link || { hist: [], sent: 0, recv: 0, bytes: 0, since: 0 };
   function blen(t) { return new Blob([String(t)]).size; }
@@ -12734,7 +12801,12 @@ var soundEditorAPI = {};
     $('poState').textContent = t;
     $('poState').classList.toggle('live', !!live);
   }
+  var keptN = 0;
   function newPeer() {
+    if (chan && chan.readyState === 'open') {
+      peers['kept' + (++keptN)] = { pc: pc, chan: chan, name: 'peer' };   // keep the room
+      pc = null; chan = null;
+    }
     if (pc) { try { pc.close(); } catch (e) {} }
     pc = new RTCPeerConnection({ iceServers: [] });    // no helper servers: same network only
     function dbg() {
@@ -12776,14 +12848,42 @@ var soundEditorAPI = {};
     chan = c;
     c.onopen = function () {
       setState('Link: open', true); lamp('on', 'Open'); logLine('The link is open.'); drain();
+      try { c.send('WSID1|' + myId); } catch (e) {}
+      setTimeout(introduce, 700);
+      roomCount();
       Sys.link.onState.forEach(function (f) { f(true); });
     };
     c.onclose = function () {
       setState('Link: closed'); lamp('off', 'Closed'); logLine('The link closed.');
       Sys.link.onState.forEach(function (f) { f(false); });
     };
-    c.onmessage = function (e) {
-      var d = String(e.data || '');
+    c.onmessage = function (e) { route(String(e.data || ''), c); };
+  }
+
+  function route(d, c) {
+    {
+      if (d.indexOf('WSID1|') === 0) { direct[d.slice(6)] = c; return; }
+      // mesh signalling, passed along to whoever it is for
+      if (d.indexOf('WSMESH1|') === 0) {
+        var m = JSON.parse(d.slice(8));
+        if (m.to !== myId) { relay(m, c); return; }        // not for us: pass it on
+        if (direct[m.from]) return;                     // already linked to them
+        var p = peers[m.from] || meshPeer(m.from, false, c);
+        if (m.sdp.type === 'answer' && p.pc.signalingState === 'stable') return;
+        p.pc.setRemoteDescription(m.sdp).then(function () {
+          if (m.sdp.type !== 'offer') return;
+          return p.pc.createAnswer().then(function (a) { return p.pc.setLocalDescription(a); });
+        });
+        return;
+      }
+      if (d.indexOf('WSWHO1|') === 0) {
+        var w = JSON.parse(d.slice(7));
+        w.here.forEach(function (id) {
+          // the lower id starts, so two people never both call each other
+          if (id !== myId && !peers[id] && !direct[id] && myId < id) meshPeer(id, true, c);
+        });
+        return;
+      }
       if (d.indexOf('WSPING1|') === 0) {
         var msg = d.slice(8) || 'wants you';
         Sys.toast(msg, { ms: 9000, actions: [{ label: 'Open Chat', fn: function () {
@@ -12797,6 +12897,7 @@ var soundEditorAPI = {};
         return;
       }
       if (d.indexOf('WSCHAT1|') === 0) {
+        sendAll(d, c);                       // pass it to everyone else in the room
         var t = d.slice(8), shown = t;
         try { shown = JSON.parse(t).t; } catch (x) {}
         st.link.bytes += blen(t);
@@ -12807,7 +12908,9 @@ var soundEditorAPI = {};
       }
       record('recv', 'Message', 'A sealed message arrived', d);
       takeIn(d);
-    };
+    }
+  }
+  function unusedWire() {
   }
   // What we learned about reaching someone, kept per contact so the next
   // connection is one button rather than a procedure.
@@ -12921,9 +13024,9 @@ var soundEditorAPI = {};
   // Chat rides the same link: one pipe, two kinds of traffic.
   Sys.link = {
     send: function (text) {
-      if (!chan || chan.readyState !== 'open') return false;
+      if (!allChannels().length) return false;
       try {
-        chan.send('WSCHAT1|' + text);
+        sendAll('WSCHAT1|' + text);
         var shown = text;
         try { shown = JSON.parse(text).t; } catch (x) {}
         st.link.bytes += blen(text);
@@ -12932,7 +13035,7 @@ var soundEditorAPI = {};
         return true;
       } catch (e) { return false; }
     },
-    open: function () { return !!(chan && chan.readyState === 'open'); },
+    open: function () { return allChannels().length > 0; },
     onState: [],
     onWire: null,
     stats: function () {
@@ -13278,7 +13381,7 @@ var Nite = (function () {
     var pattern = Math.random();
     var burst = pattern < 0.34 ? [40, 70, 30, 90, 40, 60, 25, 110]              // a rough stutter
               : pattern < 0.67 ? [25, 45, 30, 60, 90, 35, 55, 30, 70, 40, 120]  // a bad connection
-                               : [30, 900, 40, 60, 30, 700, 50];                // long drop outs
+                               : [30, 150, 40, 60, 30, 130, 50, 90, 35];       // a struggling lamp
     var at = 0;
     burst.forEach(function (ms, i) {
       at += ms;
