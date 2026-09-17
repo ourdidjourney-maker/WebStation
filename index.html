@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Webstation OS</title>
+<title>Workspace</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; background: #000; font-family: Arial, Helvetica, sans-serif; color: #000; }
@@ -17,6 +17,10 @@
   #right { grid-template-rows: var(--rowRT, 42fr) var(--rowRB, 51fr) minmax(24px, 7fr); position: relative; }
 
   .panel { background: #fff; display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; outline: none; }
+  #kmTest,
+#kmWinter {
+  display: none !important;
+}
   .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; padding: 3px 4px; background: #eee; border-bottom: 1px solid #000; font-size: 12px; flex: 0 0 auto; }
   .bar button, .bar select, .bar input[type=text], .bar input[type=time] {
     font: 12px Arial, Helvetica, sans-serif; height: 22px; border: 1px solid #777; background: #fff; color: #000; padding: 0 6px; border-radius: 0;
