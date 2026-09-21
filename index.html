@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebStation OS</title>
+<title>Workspace</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; background: #000; font-family: Arial, Helvetica, sans-serif; color: #000; }
@@ -17,10 +17,6 @@
   #right { grid-template-rows: var(--rowRT, 42fr) var(--rowRB, 51fr) minmax(24px, 7fr); position: relative; }
 
   .panel { background: #fff; display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; outline: none; }
-  #kmTest,
-#kmWinter {
-  display: none !important;
-}
   .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; padding: 3px 4px; background: #eee; border-bottom: 1px solid #000; font-size: 12px; flex: 0 0 auto; }
   .bar button, .bar select, .bar input[type=text], .bar input[type=time] {
     font: 12px Arial, Helvetica, sans-serif; height: 22px; border: 1px solid #777; background: #fff; color: #000; padding: 0 6px; border-radius: 0;
@@ -267,6 +263,29 @@
   }
 
   #status { position: relative; }
+  /* The control group: the clock and the network indicator stay put, everything
+     else lives in a drawer that opens upward while the pointer is over the bar. */
+  #status { overflow: visible !important; z-index: 60; }
+  #stMore { margin-left: auto; font-size: 11px; opacity: .7; padding: 2px 10px; cursor: default;
+            border: 1px solid rgba(128,128,128,.35); border-radius: 999px; white-space: nowrap; }
+  #stBtns, #stTasks, #stDock {
+    display: none !important;
+  }
+  #status:hover #stBtns {
+    display: flex !important; flex-direction: column; align-items: stretch; gap: 3px;
+    position: absolute; right: 8px; bottom: calc(100% - 2px); z-index: 70;
+    padding: 8px; min-width: 150px; max-height: 70vh; overflow-y: auto;
+    background: rgba(12,16,34,.97); border: 1px solid rgba(255,255,255,.14); border-radius: 12px;
+    box-shadow: 0 -12px 40px rgba(0,0,0,.55);
+  }
+  body:not(.glass) #status:hover #stBtns { background: #fff; border-color: #999; }
+  body.nite #status:hover #stBtns { background: #000; border-color: rgba(255,255,255,.12); }
+  #status:hover #stBtns button { width: 100%; text-align: left; height: 24px; }
+  #stBtns button[hidden] { display: none !important; }
+  #stBtns button[style*="display:none"] { display: none !important; }
+  #status:hover #stTasks { display: inline-block !important; }
+  #status:hover #stDock { display: inline-flex !important; }
+  #status:hover #stMore { opacity: 1; }
   /* RSS ticker */
   #ticker { position: relative; display: flex; background: #111; color: #eee; min-height: 24px; font-size: 13px; }
   #tkBtn { flex: 0 0 auto; border: 0; border-right: 1px solid #444; background: #222; color: #fff; font: 12px Arial, Helvetica, sans-serif; padding: 0 10px; cursor: pointer; }
@@ -498,12 +517,6 @@
     border-radius: 9px;
     transition: background .35s cubic-bezier(.22,.7,.3,1), border-color .35s cubic-bezier(.22,.7,.3,1),
                 box-shadow .35s cubic-bezier(.22,.7,.3,1), transform .18s cubic-bezier(.22,.7,.3,1), color .35s ease;
-  }
-    body.glass #stBtns #feedBtn.on {
-    background: linear-gradient(180deg, #8fd8ff, #4aaee8);
-    color: #061522;
-    border-color: #a9e3ff;
-    box-shadow: none;
   }
   body.glass .bar button:hover:not(:disabled), body.glass .clist button:hover:not(:disabled), body.glass .crow2 button:hover:not(:disabled),
   body.glass .fvColHead button:hover:not(:disabled), body.glass #stBtns button:hover, body.glass #stDock button:hover,
@@ -807,10 +820,10 @@
     opacity: 0; animation: kmTrail var(--rdur, 2.4s) cubic-bezier(.42,0,.85,.55) forwards;
   }
   @keyframes kmTrail {
-    0%   { opacity: 0;  transform: scaleY(0); }
-    10%  { opacity: .9; }
-    88%  { opacity: .7; transform: scaleY(1); }     /* it arrives with the bead */
-    100% { opacity: 0;  transform: scaleY(1); }     /* then dries where it lies */
+    0%   { opacity: 0;   transform: scaleY(0); }
+    8%   { opacity: .85; transform: scaleY(.013); }
+    55%  { opacity: .8;  transform: scaleY(.55); }
+    100% { opacity: .55; transform: scaleY(1); }
   }
 
   /* Plants move more in the wind and wet */
@@ -1139,7 +1152,7 @@
     background: repeating-linear-gradient(92deg, rgba(255,255,255,.055) 0 1px, rgba(0,0,0,.045) 1px 2px);
     mix-blend-mode: overlay;
   }
-  #wearRate.on, body.glass #stBtns #wearBtn.on { background: linear-gradient(180deg, #d8c9a8, #b8a179); color: #2a2114; border-color: #e2d6bb; }
+  #wearRate.on, #wearBtn.on { background: linear-gradient(180deg, #d8c9a8, #b8a179); color: #2a2114; border-color: #e2d6bb; }
 
   /* Tooltips, in the workspace's own clothes rather than the browser's */
   #tipBox { position: fixed; z-index: 1400; max-width: 320px; padding: 7px 10px; pointer-events: none;
@@ -1425,7 +1438,8 @@
                                border-color: rgba(255,255,255,.22); border-radius: 9px; }
   #netWarnAgain { display: block; margin-top: 9px; font-size: 12px; opacity: .65; }
   /* the live network state in the control group */
-  #netState { font-size: 11.5px; padding: 2px 9px; margin-right: 6px; cursor: default; white-space: nowrap;
+  #netState { order: -2; flex: 0 0 auto; align-self: center;
+              font-size: 11px; padding: 2px 8px; margin-right: 8px; cursor: default; white-space: nowrap;
               border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: rgba(255,255,255,.05); }
   #netState.open { border-color: rgba(232,150,58,.6); background: rgba(232,150,58,.16); color: #ffc98a; }
   body:not(.glass) #netState { color: #333; background: #f0f1f5; border-color: #bbb; }
@@ -1663,12 +1677,8 @@
     background: rgba(255,214,150,.14) !important;
     color: #d6cdbe !important; border-color: rgba(255,214,150,.22) !important;
   }
-  body.nite #status button.on, body.nite #status .on {
-    background: rgba(255,255,255,.09) !important;
-    color: #9aa0a6 !important; border-color: rgba(255,255,255,.14) !important;
-    box-shadow: none !important;
-  }
-  body.nite #status button { color: #7f858b !important; }
+  body.nite #stBtns { filter: brightness(.62) saturate(.7); transition: filter .4s ease; }
+  body.nite #stBtns:hover { filter: none; }
   body.nite #splitH::after, body.nite #splitV::after,
   body.nite #splitL::after, body.nite #splitR::after { background: transparent !important; }
   body.nite #splitH:hover::after, body.nite #splitV:hover::after,
@@ -1726,10 +1736,10 @@
   .niteBtnIn { display: none; }
   body.nite .niteBtnIn { display: inline-block; }
   body.nite .niteBtnIn.on { background: linear-gradient(180deg, #ffd98a, #f0a83c); color: #2a1c06; border-color: #ffe6b4; }
-  body.glass #stBtns #niteBtn.on, #niteTest.on { background: linear-gradient(180deg, #ffd98a, #f0a83c); color: #2a1c06; border-color: #ffe6b4; }
+  #niteBtn.on, #niteTest.on { background: linear-gradient(180deg, #ffd98a, #f0a83c); color: #2a1c06; border-color: #ffe6b4; }
 
   /* Parental mode: the delete controls are visibly out of service */
-  body.glass #stBtns #lockBtn.on { background: linear-gradient(180deg, rgba(126,220,150,.95), rgba(60,170,100,.95));
+  #lockBtn.on { background: linear-gradient(180deg, rgba(126,220,150,.95), rgba(60,170,100,.95));
                 color: #04210f; border-color: rgba(190,255,215,.5); }
   body.locked .x, body.locked #tbPurge, body.locked #tbEmpty, body.locked #resetBtn,
   body.locked #gDelAll, body.locked #gRemove, body.locked #sClear, body.locked #pClear,
@@ -1805,7 +1815,7 @@
     100% { transform: rotate(calc(var(--r0, 0deg) + var(--rq, 90deg) * 4)) scaleX(1) scaleY(1); }
   }
   body.glass .kmFlower { filter: drop-shadow(0 3px 10px rgba(0,0,0,.35)); }
-body.glass #stBtns #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff87b6); color: #3d1026; border-color: #ff9ec4; box-shadow: none; }
+  #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff87b6); color: #3d1026; border-color: #ff9ec4; box-shadow: none; }
   body.glass #kmBtn.on { box-shadow: none; }
   #kmTest.on { background: #000; color: #fff; border-color: #000; }
   body.glass #kmTest.on { background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024; }
@@ -2521,7 +2531,7 @@ body.glass #stBtns #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff8
      so click a name and the card turns over to that app. Below, choose what kind of work you are doing,
      then the app, and you will get its buttons in order.</p>
   <div class="hbSecs" id="hbSecs"><button data-sec="art">Art tools</button><button data-sec="av">Sound and video</button><button data-sec="word">Word tools</button><button data-sec="do">Getting things done</button><button data-sec="keep">Keeping things</button><button data-sec="web">Web and privacy</button><button data-sec="space">The workspace</button><button data-sec="tm">Task Manager</button><button data-sec="play">Play</button></div>
-  <div class="hbPick" id="hbPick"><button data-sec="art" data-go="paint" hidden>Paint</button><button data-sec="art" data-go="gallery" hidden>Gallery</button><button data-sec="art" data-go="img" hidden>Image editor</button><button data-sec="art" data-go="gif" hidden>GIF maker</button><button data-sec="art" data-go="chars" hidden>Character map</button><button data-sec="av" data-go="snd" hidden>Sound editor</button><button data-sec="av" data-go="theatre" hidden>Theatre</button><button data-sec="av" data-go="media" hidden>Media player</button><button data-sec="av" data-go="rec" hidden>Recorder</button><button data-sec="word" data-go="wp" hidden>Word processor</button><button data-sec="word" data-go="notes" hidden>Notes</button><button data-sec="word" data-go="slides" hidden>Slides</button><button data-sec="word" data-go="sticky" hidden>Sticky notes</button><button data-sec="word" data-go="sheet" hidden>Spreadsheet</button><button data-sec="word" data-go="code" hidden>Code playground</button><button data-sec="word" data-go="pdf" hidden>PDF viewer</button><button data-sec="do" data-go="tasks" hidden>Tasks</button><button data-sec="do" data-go="cal" hidden>Calendar</button><button data-sec="do" data-go="clock" hidden>Clock</button><button data-sec="do" data-go="time" hidden>Time tracker</button><button data-sec="do" data-go="calc" hidden>Calculator</button><button data-sec="do" data-go="units" hidden>Unit converter</button><button data-sec="keep" data-go="files" hidden>Files</button><button data-sec="keep" data-go="trash" hidden>Trash bin</button><button data-sec="keep" data-go="clip" hidden>Clipboard history</button><button data-sec="keep" data-go="marks" hidden>Bookmarks</button><button data-sec="keep" data-go="pass" hidden>Password generator</button><button data-sec="keep" data-go="vault" hidden>Password vault</button><button data-sec="keep" data-go="tm" hidden>Task Manager</button><button data-sec="keep" data-go="backup" hidden>Backup and Restore</button><button data-sec="web" data-go="post" hidden>Post</button><button data-sec="web" data-go="link" hidden>Live link</button><button data-sec="web" data-go="chat" hidden>Chat</button><button data-sec="web" data-go="ping" hidden>Ping</button><button data-sec="web" data-go="web" hidden>Web browser</button><button data-sec="web" data-go="net" hidden>Network monitor</button><button data-sec="web" data-go="rss" hidden>News ticker</button><button data-sec="space" data-go="layout" hidden>Layout editor</button><button data-sec="space" data-go="panels" hidden>Panels, zoom and blur</button><button data-sec="space" data-go="seams" hidden>Resizing the panels</button><button data-sec="space" data-go="look" hidden>Themes and screensaver</button><button data-sec="space" data-go="night" hidden>Night</button><button data-sec="space" data-go="parental" hidden>Parental mode</button><button data-sec="space" data-go="garden" hidden>The garden</button><button data-sec="space" data-go="wear" hidden>Wear</button><button data-sec="tm" data-go="tm" hidden>Task Manager</button><button data-sec="play" data-go="chk" hidden>Checkers</button></div>
+  <div class="hbPick" id="hbPick"><button data-sec="art" data-go="paint" hidden>Paint</button><button data-sec="art" data-go="gallery" hidden>Gallery</button><button data-sec="art" data-go="img" hidden>Image editor</button><button data-sec="art" data-go="gif" hidden>GIF maker</button><button data-sec="art" data-go="chars" hidden>Character map</button><button data-sec="av" data-go="snd" hidden>Sound editor</button><button data-sec="av" data-go="theatre" hidden>Theatre</button><button data-sec="av" data-go="media" hidden>Media player</button><button data-sec="av" data-go="rec" hidden>Recorder</button><button data-sec="word" data-go="wp" hidden>Word processor</button><button data-sec="word" data-go="notes" hidden>Notes</button><button data-sec="word" data-go="slides" hidden>Slides</button><button data-sec="word" data-go="sticky" hidden>Sticky notes</button><button data-sec="word" data-go="sheet" hidden>Spreadsheet</button><button data-sec="word" data-go="code" hidden>Code playground</button><button data-sec="word" data-go="pdf" hidden>PDF viewer</button><button data-sec="do" data-go="tasks" hidden>Tasks</button><button data-sec="do" data-go="cal" hidden>Calendar</button><button data-sec="do" data-go="clock" hidden>Clock</button><button data-sec="do" data-go="time" hidden>Time tracker</button><button data-sec="do" data-go="calc" hidden>Calculator</button><button data-sec="do" data-go="units" hidden>Unit converter</button><button data-sec="keep" data-go="files" hidden>Files</button><button data-sec="keep" data-go="trash" hidden>Trash bin</button><button data-sec="keep" data-go="clip" hidden>Clipboard history</button><button data-sec="keep" data-go="marks" hidden>Bookmarks</button><button data-sec="keep" data-go="pass" hidden>Password generator</button><button data-sec="keep" data-go="vault" hidden>Password vault</button><button data-sec="keep" data-go="tm" hidden>Task Manager</button><button data-sec="keep" data-go="backup" hidden>Backup and Restore</button><button data-sec="web" data-go="post" hidden>Post</button><button data-sec="web" data-go="link" hidden>Live link</button><button data-sec="web" data-go="chat" hidden>Chat</button><button data-sec="web" data-go="ping" hidden>Ping</button><button data-sec="web" data-go="web" hidden>Web browser</button><button data-sec="web" data-go="net" hidden>Network monitor</button><button data-sec="web" data-go="rss" hidden>News ticker</button><button data-sec="space" data-go="controls" hidden>The control group</button><button data-sec="space" data-go="layout" hidden>Layout editor</button><button data-sec="space" data-go="panels" hidden>Panels, zoom and blur</button><button data-sec="space" data-go="seams" hidden>Resizing the panels</button><button data-sec="space" data-go="look" hidden>Themes and screensaver</button><button data-sec="space" data-go="night" hidden>Night</button><button data-sec="space" data-go="parental" hidden>Parental mode</button><button data-sec="space" data-go="garden" hidden>The garden</button><button data-sec="space" data-go="wear" hidden>Wear</button><button data-sec="tm" data-go="tm" hidden>Task Manager</button><button data-sec="play" data-go="chk" hidden>Checkers</button></div>
 <div class="hbApp" data-sec="art" data-app="paint" hidden>
 <h3>Paint</h3><p class="hbWhere">Left panel, click Paint</p>
 <div class="hbStep"><span class="hbN">1</span><p>Pick a tool: <span class="hbB lit">Brush</span> <span class="hbB ">Eraser</span> <span class="hbB ">Spray</span> <span class="hbB ">Line</span> <span class="hbB ">Rect</span> <span class="hbB ">Ellipse</span> <span class="hbB ">Fill</span> <span class="hbB ">Picker</span> <span class="hbB ">Text</span></p></div>
@@ -2755,7 +2765,7 @@ body.glass #stBtns #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff8
 <p class="hbTip">Nothing here ever leaves your machine. There is no sync, no account, and nowhere for it to go.</p>
 </div>
 <div class="hbApp" data-sec="keep" data-app="tm" hidden>
-<h3>Task Manager</h3><p class="hbWhere">Bottom right, click Task Manager</p>
+<h3>Task Manager</h3><p class="hbWhere">Bottom right: hover <b>Controls</b>, then click Task Manager</p>
 <div class="hbStep"><span class="hbN">1</span><p><b>Running now</b> lists everything the workspace is actually doing: timers, stopwatches, recordings, the camera, playing media, tracked projects, slideshows, and any deletion counting down. Each has a <span class="hbB ">Stop</span> beside it.</p></div>
 <div class="hbStep"><span class="hbN">2</span><p><b>Apps</b> lists every app with the panel it lives in, whether it holds data, and <b>its exact size in bytes</b> &mdash; including Post and Chat.</p></div>
 <div class="hbStep"><span class="hbN">3</span><p>That is how you find what is using space. A glance tells you your Gallery is 40 MB and your notes are 12 KB.</p></div>
@@ -2765,7 +2775,7 @@ body.glass #stBtns #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff8
 <p class="hbTip">Nothing here leaves the machine. It reads your own workspace, for you.</p>
 </div>
 <div class="hbApp" data-sec="keep" data-app="backup" hidden>
-<h3>Backup and Restore</h3><p class="hbWhere">Bottom right, in the control group</p>
+<h3>Backup and Restore</h3><p class="hbWhere">Bottom right: hover <b>Controls</b> to open the control group</p>
 <div class="hbStep"><span class="hbN">1</span><p><span class="hbB ">Backup</span> writes your <b>entire workspace</b> into one dated file: every document, note, image, PDF, recording and setting.</p></div>
 <div class="hbStep"><span class="hbN">2</span><p>Keep that file anywhere. It is plain readable JSON, not a locked format.</p></div>
 <div class="hbStep"><span class="hbN">3</span><p><span class="hbB ">Restore</span> reads it back. If anything goes wrong mid-way it rolls back completely, so you can never end up half-restored.</p></div>
@@ -2813,7 +2823,7 @@ body.glass #stBtns #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff8
 <p class="hbTip">Nothing said here touches a server. It goes machine to machine, and only the two machines have it.</p>
 </div>
 <div class="hbApp" data-sec="space" data-app="night" hidden>
-<h3>Night</h3><p class="hbWhere">Bottom right, click Night</p>
+<h3>Night</h3><p class="hbWhere">Bottom right: hover <b>Controls</b>, then click Night</p>
 <div class="hbStep"><span class="hbN">1</span><p>The whole workspace goes almost black, and each panel gets its own <b>bulb hanging on a cord</b>.</p></div>
 <div class="hbStep"><span class="hbN">2</span><p>The <span class="hbB ">&#9679;</span> in a panel toolbar switches that panel’s lamp on and off. Each panel is independent.</p></div>
 <div class="hbStep"><span class="hbN">3</span><p>The <b>colour swatch</b> beside it sets what colour that lamp burns &mdash; any colour at all. The bulb, the light it throws and the insects around it all follow it. <span class="hbB ">&#8634;</span> puts it back to the colour it came with.</p></div>
@@ -2825,7 +2835,7 @@ body.glass #stBtns #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff8
 <p class="hbTip">The garden does not run in Night. The two do not mix, so the room stays a room.</p>
 </div>
 <div class="hbApp" data-sec="space" data-app="parental" hidden>
-<h3>Parental mode</h3><p class="hbWhere">Bottom right, click Parental</p>
+<h3>Parental mode</h3><p class="hbWhere">Bottom right: hover <b>Controls</b>, then click Parental</p>
 <div class="hbStep"><span class="hbN">1</span><p>One press and the button turns green, reading <span class="hbB ">Parental on</span>.</p></div>
 <div class="hbStep"><span class="hbN">2</span><p><b>Nothing in the workspace can be deleted.</b> Every delete, remove, clear, empty and reset control stops working, everywhere, in every app.</p></div>
 <div class="hbStep"><span class="hbN">3</span><p>The controls grey out so it is obvious they are out of service, and anything that tries anyway is caught and refused.</p></div>
@@ -2840,9 +2850,9 @@ body.glass #stBtns #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff8
 <div class="hbStep"><span class="hbN">4</span><p>Zoom the panel with the mouse wheel; past 100% you can drag the page around.</p></div>
 </div>
 <div class="hbApp" data-sec="web" data-app="net" hidden>
-<h3>Network monitor</h3><p class="hbWhere">Bottom right, the first thing in the row next to the clock</p>
-<div class="hbStep"><span class="hbN">1</span><p><span class="hbB ">Sealed</span> means nothing is leaving your machine. Hover it and it says so.</p></div>
-<div class="hbStep"><span class="hbN">2</span><p><span class="hbB amber">Network open</span> turns amber the moment anything reaches out. Hover it to see exactly what is connected and what they can see about you.</p></div>
+<h3>Network monitor</h3><p class="hbWhere">Bottom right, at the left end of the bar, always visible</p>
+<div class="hbStep"><span class="hbN">1</span><p><span class="hbB ">&#9675; Sealed</span> means nothing is leaving your machine. Hover it and it says so. It sits at the left end of the bar and stays there when the controls are closed.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><span class="hbB amber">&#9679; Open</span> turns amber the moment anything reaches out. Hover it to see exactly what is connected and what they can see about you.</p></div>
 <div class="hbStep"><span class="hbN">3</span><p>Before anything connects, a <b>warning drops down from the top</b> and the workspace blurs behind it. Nothing loads until you click <span class="hbB lit">Okay, I understand</span>, and <span class="hbB ">Cancel</span> stops it dead.</p></div>
 <div class="hbStep"><span class="hbN">4</span><p>It goes back to <span class="hbB ">Sealed</span> the moment the page is closed.</p></div>
 <p class="hbTip">This file has no server and nothing to upload to. The browser panel and the news ticker are the only things that can reach out, and both ask first.</p>
@@ -2855,8 +2865,17 @@ body.glass #stBtns #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff8
 <div class="hbStep"><span class="hbN">4</span><p><span class="hbB ">RSS feed</span> in the control group switches it off completely. Off means every request in flight is cut and no new ones are made.</p></div>
 <p class="hbTip">If a site refuses a direct request, the ticker falls back to a public proxy and tells you so on screen. That proxy sees your address and which feed you asked for.</p>
 </div>
+<div class="hbApp" data-sec="space" data-app="controls" hidden>
+<h3>The control group</h3><p class="hbWhere">The bar at the bottom right</p>
+<div class="hbStep"><span class="hbN">1</span><p>The bar along the bottom right always shows three things: <span class="hbB ">&#9675; Sealed</span> on the left, the <b>clock and storage used</b> in the middle, and <span class="hbB ">Controls &#9652;</span> on the right.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p><b>Hover anywhere on that bar</b> and the controls open upward as a list. Move the pointer away and they close.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>Everything that switches the workspace lives in there: <span class="hbB ">Glass</span> <span class="hbB ">Proximity</span> <span class="hbB ">Parental</span> <span class="hbB ">Night</span> <span class="hbB ">Wear</span> <span class="hbB ">RSS feed</span> <span class="hbB ">Katy Mae</span> <span class="hbB ">Screensaver</span> <span class="hbB ">Layout</span> <span class="hbB ">Task Manager</span> <span class="hbB ">Backup</span> <span class="hbB ">Restore</span> <span class="hbB ">Reset OS</span>.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>A button that is on keeps its own colour &mdash; Katy Mae pink, Proximity blue &mdash; so you can see at a glance what is running without opening anything.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>While it is open, the <b>Tasks</b> count and any <b>closed panels</b> waiting to come back appear too.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>In Night the whole row is dimmed so it does not compete with the lamps, and comes up to full brightness when you hover it.</p></div>
+<p class="hbTip">It keeps the switches out of the way until you want them, so the only things always on screen are the time and whether anything is leaving your machine.</p></div>
 <div class="hbApp" data-sec="space" data-app="layout" hidden>
-<h3>Layout editor</h3><p class="hbWhere">Bottom right, click Layout</p>
+<h3>Layout editor</h3><p class="hbWhere">Bottom right: hover <b>Controls</b>, then click Layout</p>
 <div class="hbStep"><span class="hbN">1</span><p>Every one of the apps is listed with a dropdown naming <b>which panel it lives in</b>. Change it and it moves there.</p></div>
 <div class="hbStep"><span class="hbN">2</span><p><span class="hbB ">Hide App</span> removes one from the switcher entirely. Useful if you never touch the PDF viewer or the checkers board.</p></div>
 <div class="hbStep"><span class="hbN">3</span><p><span class="hbB ">Zoom</span> on any row turns the mouse-wheel zoom off for that app alone — handy for apps that scroll themselves.</p></div>
@@ -2884,7 +2903,7 @@ body.glass #stBtns #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff8
 <div class="hbStep"><span class="hbN">5</span><p><span class="hbB lit">Proximity</span> blurs the panels you are not using and sharpens the one you approach. Turn it off and they clear on hover instead.</p></div>
 </div>
 <div class="hbApp" data-sec="space" data-app="look" hidden>
-<h3>Themes and screensaver</h3><p class="hbWhere">Bottom right, in the control group</p>
+<h3>Themes and screensaver</h3><p class="hbWhere">Bottom right: hover <b>Controls</b> to open the control group</p>
 <div class="hbStep"><span class="hbN">1</span><p><span class="hbB lit">Glass</span> is the frosted look with depth and motion. Click it for <span class="hbB ">Performance</span>, which strips every effect for older machines.</p></div>
 <div class="hbStep"><span class="hbN">2</span><p>Performance mode also <b>disables the garden and the wear</b>, so a tired computer has nothing decorative running at all.</p></div>
 <div class="hbStep"><span class="hbN">3</span><p><span class="hbB ">Screensaver 1m</span> cycles how long before it starts: <b>1, 5, 20, 30, 60 minutes, or off</b>.</p></div>
@@ -2892,7 +2911,7 @@ body.glass #stBtns #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff8
 <div class="hbStep"><span class="hbN">5</span><p>Both themes respect your system setting for reduced motion.</p></div>
 </div>
 <div class="hbApp" data-sec="space" data-app="garden" hidden>
-<h3>The garden</h3><p class="hbWhere">Bottom right, click Katy Mae</p>
+<h3>The garden</h3><p class="hbWhere">Bottom right: hover <b>Controls</b>, then click Katy Mae</p>
 <div class="hbStep"><span class="hbN">1</span><p>Click <span class="hbB lit">Katy Mae</span> to grow flowers inside your panels. The dropdown sets how long a plant takes, from <b>1 to 60 minutes</b>.</p></div>
 <div class="hbStep"><span class="hbN">2</span><p><b>Click any plant</b> to cut it. It springs off the stem, falls away, and another comes up elsewhere.</p></div>
 <div class="hbStep"><span class="hbN">3</span><p>Each panel gets its own weather and its own seasons. In winter, snow settles along the bottom of the panel.</p></div>
@@ -2901,7 +2920,7 @@ body.glass #stBtns #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff8
 <div class="hbStep"><span class="hbN">6</span><p>It needs the <span class="hbB lit">Glass</span> theme.</p></div>
 </div>
 <div class="hbApp" data-sec="space" data-app="wear" hidden>
-<h3>Wear</h3><p class="hbWhere">Bottom right, click Wear</p>
+<h3>Wear</h3><p class="hbWhere">Bottom right: hover <b>Controls</b>, then click Wear</p>
 <div class="hbStep"><span class="hbN">1</span><p>With it on, <b>buttons age where you actually press them</b>, like the switches in a cockpit.</p></div>
 <div class="hbStep"><span class="hbN">2</span><p>The finish polishes first, then the printed label rubs away, then the paint opens to bare metal — in that order, exactly where your thumb lands.</p></div>
 <div class="hbStep"><span class="hbN">3</span><p>It is slow on purpose. A button you press twenty times a day starts to shine in about a week and reaches bare metal in about four months.</p></div>
@@ -2910,7 +2929,7 @@ body.glass #stBtns #kmBtn.on { background: linear-gradient(180deg, #ffb3d1, #ff8
 <div class="hbStep"><span class="hbN">6</span><p>It needs the <span class="hbB lit">Glass</span> theme.</p></div>
 </div>
 <div class="hbApp" data-sec="tm" data-app="tm" hidden>
-<h3>Task Manager</h3><p class="hbWhere">Bottom right, click Task Manager</p>
+<h3>Task Manager</h3><p class="hbWhere">Bottom right: hover <b>Controls</b>, then click Task Manager</p>
 <div class="hbStep"><span class="hbN">1</span><p><b>Running now</b> lists everything actually doing something: timers, stopwatches, Pomodoro rounds, recordings, the camera, playing media, tracked projects, a slideshow, and any deletion counting down.</p></div>
 <div class="hbStep"><span class="hbN">2</span><p>Each has a <span class="hbB ">Stop</span> beside it, so you can end anything from one place without hunting for the app.</p></div>
 <div class="hbStep"><span class="hbN">3</span><p><b>Apps</b> lists every app with the panel it lives in, whether it is on screen, whether it holds any data, and <b>its exact size in bytes</b>.</p></div>
@@ -3744,7 +3763,8 @@ paused, then deleted again
       <section class="panel" id="status" aria-label="Status">
         <span id="stClock"><span id="sysTime">--</span> / <span id="footprint">--</span></span>
         <span id="stDock" aria-label="Closed panels"></span>
-        <span id="netState" tabindex="0"></span><span id="stTasks" tabindex="0"></span><span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="lockBtn" title="Parental mode: nothing can be deleted">Parental</button><button id="niteBtn" title="Night: the panels go dark and each one gets its own lamp">Night</button><button id="niteTest" title="Test the flicker" hidden style="display:none">Flicker test</button><button id="niteBugs" title="Bring the bugs in now" hidden style="display:none">Bugs now</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden>×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden>Test</button><button id="kmWinter" title="Test mode: force winter and snow on every panel" hidden>Snow</button><button id="saverBtn" title="How long before the screensaver starts">Screensaver</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button><button id="wipeBtn" title="Erase everything and start the workspace fresh">Reset</button></span>
+        <span id="stMore" aria-hidden="true">Controls ▴</span>
+        <span id="netState" tabindex="0"></span><span id="stTasks" tabindex="0"></span><span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="lockBtn" title="Parental mode: nothing can be deleted">Parental</button><button id="niteBtn" title="Night: the panels go dark and each one gets its own lamp">Night</button><button id="niteTest" title="Test the flicker" hidden style="display:none">Flicker test</button><button id="niteBugs" title="Bring the bugs in now" hidden style="display:none">Bugs now</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden style="display:none">×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden style="display:none">Test</button><button id="kmWinter" title="Test mode: force winter and snow on every panel" hidden style="display:none">Snow test</button><button id="saverBtn" title="How long before the screensaver starts">Screensaver</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button><button id="wipeBtn" title="Erase everything and start the workspace fresh">Reset OS</button></span>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
     </div>
@@ -3988,7 +4008,7 @@ var Net = (function () {
   function paint() {
     var names = Object.keys(live);
     pill.classList.toggle('open', names.length > 0);
-    pill.textContent = names.length ? 'Open' : 'Sealed';
+    pill.textContent = names.length ? '\u25CF Open' : '\u25CB Sealed';
     pill.dataset.full = names.length
       ? 'Reaching out right now:\n\n' + names.map(function (n) { return '  ' + n; }).join('\n') +
         '\n\nThey can see your IP address, your device, and what you asked for.'
@@ -7792,7 +7812,7 @@ var Sys = (function () {
   function set(on) {
     document.body.classList.toggle('glass', on);
     btn.classList.toggle('on', on);
-    btn.textContent = on ? 'Glass' : 'Perf';
+    btn.textContent = on ? 'Glass' : 'Performance';
     btn.title = on ? 'Glass theme is on. Click for performance mode.' : 'Performance mode is on. Click for the glass theme.';
     btn.setAttribute('aria-pressed', String(on));
     ui.glass = on; store.set('ws.ui', ui);
@@ -8881,7 +8901,14 @@ var Garden = (function () {
     function done() {
       if (gone) return;
       gone = true;
-      b.remove(); tr.remove();
+      b.remove();
+      tr.style.animation = 'none';
+      tr.style.transform = 'scaleY(1)';
+      tr.style.opacity = '.55';
+      tr.style.transition = 'opacity ' + (rnd(900, 1800) | 0) + 'ms ease-out';
+      void tr.offsetWidth;
+      tr.style.opacity = '0';
+      setTimeout(function () { tr.remove(); }, 2000);
       var host = layer.closest ? layer.closest('.kmHost') : null;
       var stillRaining = host && host.classList.contains('raining');
       if (wet[pid] && stillRaining && layer.isConnected) {
