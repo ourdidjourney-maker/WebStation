@@ -1192,6 +1192,15 @@
   #chkCanvas { border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.45); cursor: pointer; max-width: 100%; max-height: 100%; }
   #chkStatus { font-size: 12px; opacity: .85; }
   #chkScore { font-size: 12px; opacity: .7; }
+  /* flex-basis 0, not auto. The bar wraps, and a wrapped line is chosen from each item's
+     CONTENT width before anything shrinks, so a status that changes text changes the
+     number of rows: 'Engine thinking…' is wider than 'Your move', the bar gains a row
+     for as long as the engine searches, the body loses that height and the board is
+     squeezed and springs back. With a basis of 0 these spans contribute nothing to the
+     wrap decision, so the bar's height is fixed by the buttons alone and no message can
+     move it. They grow into whatever slack the line has, and ellipsize if there is none. */
+  #chkStatus, #chkScore { flex: 1 1 0; min-width: 0; white-space: nowrap;
+                          overflow: hidden; text-overflow: ellipsis; }
   #chkSound { min-width: 30px; }
 
 /* Chess */
@@ -1203,6 +1212,10 @@
   #csSound { min-width: 30px; }
   #csTaken { font-size: 15px; letter-spacing: 1px; opacity: .8; white-space: nowrap;
              overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+  /* Same reason as the checkers bar above. #csTaken grows a glyph with every capture,
+     which moves the wrap on its own even without a status change. */
+  #csStatus, #csScore, #csTaken { flex: 1 1 0; min-width: 0; white-space: nowrap;
+                                  overflow: hidden; text-overflow: ellipsis; }
 
   /* ── Wear ──────────────────────────────────────────────────────────────
      Wear accumulates in patches where the button is actually struck, it never moves.
@@ -1511,7 +1524,9 @@
   #netState { order: -2; flex: 0 0 auto; align-self: center;
               font-size: 11px; padding: 2px 8px; margin-right: 8px; cursor: default; white-space: nowrap;
               border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: rgba(255,255,255,.05); }
-  #netState.open { border-color: rgba(232,150,58,.6); background: rgba(232,150,58,.16); color: #ffc98a; }
+  #netState.open { border-color: rgba(232,150,58,.6); background: rgba(232,150,58,.16); color: #ffc98a;
+                   cursor: pointer; }
+  #netState.open:hover { border-color: rgba(232,150,58,.9); background: rgba(232,150,58,.3); }
   body:not(.glass) #netState { color: #333; background: #f0f1f5; border-color: #bbb; }
   body:not(.glass) #netState.open { color: #8a4a00; background: #ffe9cf; border-color: #d99a4a; }
   /* Safe delete sits immediately left of the network chip. #netState is order: -2, so this
@@ -1921,6 +1936,7 @@
           <input type="text" id="bUrl" class="grow" placeholder="Enter a web address" spellcheck="false" autocomplete="off">
           <button id="bGo">Go</button>
           <button id="bOut" title="Open the current page in a new tab">Open in new tab</button>
+          <button id="bClose" title="Close the page. It stops loading and stops talking to the internet; the browser stays open.">Close page</button>
         </div>
         <div class="body">
           <iframe id="bFrame" title="Browser"
@@ -4119,11 +4135,33 @@ var Net = (function () {
     pill.textContent = names.length ? '\u25CF Open' : '\u25CB Sealed';
     pill.dataset.full = names.length
       ? 'Reaching out right now:\n\n' + names.map(function (n) { return '  ' + n; }).join('\n') +
-        '\n\nThey can see your IP address, your device, and what you asked for.'
+        '\n\nThey can see your IP address, your device, and what you asked for.' +
+        '\n\nClick to disconnect all of it.'
       : 'Nothing is leaving this machine.\n\nNo server, no account, no telemetry. The workspace is sealed.';
   }
+  var sealers = [];
+  function onSeal(fn) { if (typeof fn === 'function') sealers.push(fn); }
+  function seal() {
+    sealers.slice().forEach(function (fn) { try { fn(); } catch (e) {} });
+    paint();
+  }
+  function anyLive() { return Object.keys(live).length > 0; }
+  // The pill is a control, not a label: click it while anything is reaching out and
+  // every route registered above is shut, which is why each one registers its own.
+  pill.addEventListener('click', function () {
+    if (!anyLive()) return;
+    seal();
+    if (typeof Sys !== 'undefined' && Sys.toast) {
+      Sys.toast(anyLive() ? 'Some of it would not close. Open the pill to see what is left.'
+                          : 'Disconnected. Nothing is leaving this machine.', { ms: 3500 });
+    }
+  });
+  pill.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pill.click(); }
+  });
   paint();
-  return { ask: ask, open: open, close: close, only: only, isQuiet: function () { return quiet; } };
+  return { ask: ask, open: open, close: close, only: only, seal: seal, onSeal: onSeal,
+           anyLive: anyLive, isQuiet: function () { return quiet; } };
 })();
 
 /* ================= Flip system ================= */
@@ -4750,7 +4788,23 @@ var Sys = (function () {
     if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return null;      // other schemes not allowed
     return 'https://' + s;
   }
-  function update() { back.disabled = idx <= 0; fwd.disabled = idx >= hist.length - 1; }
+  function update() {
+    back.disabled = idx <= 0; fwd.disabled = idx >= hist.length - 1;
+    var shut = $('bClose');
+    if (shut) shut.disabled = !frame.getAttribute('src');
+  }
+  // Closing the page is the real thing, not a panel hidden over the top of it: the frame
+  // is emptied, so the page stops running and stops talking. History stays, so Back still
+  // works, and the browser itself is untouched.
+  function closePage() {
+    frame.removeAttribute('src');
+    frame._shown = null;
+    url.value = '';
+    hint.style.display = '';
+    store.set(KEY, null);                 // and it does not come back on the next boot
+    Net.only('The browser, showing ', null);
+    update();
+  }
   function show(u) {
     frame.src = u; url.value = u; hint.style.display = 'none'; update();
     store.set(KEY, { url: u, t: Date.now() });
@@ -4774,6 +4828,8 @@ var Sys = (function () {
     });
   }
 
+  $('bClose').onclick = closePage;
+  Net.onSeal(closePage);                  // sealing the workspace closes the page too
   $('bGo').onclick = go;
   url.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
   back.onclick = function () { if (idx > 0) { idx--; show(hist[idx]); } };
@@ -7847,11 +7903,11 @@ var Sys = (function () {
       var li = document.createElement('li');
       li.innerHTML = '<label><input type="checkbox"> On</label><span class="grow1"></span><button class="x">×</button>';
       var cb = li.querySelector('input'); cb.checked = f.on;
-      cb.onchange = function () { f.on = cb.checked; save(); renderRows(); };
+      cb.onchange = function () { f.on = cb.checked; save(); renderRows(); route(); };
       li.children[1].textContent = f.title ? f.title + ' (' + host(f.url) + ')' : f.url;
       li.children[1].title = f.url;
       var x = li.querySelector('.x'); x.setAttribute('aria-label', 'Remove ' + (f.title || f.url));
-      x.onclick = function () { feeds = feeds.filter(function (q) { return q !== f; }); delete cache[f.id]; save(); renderList(); renderRows(); };
+      x.onclick = function () { feeds = feeds.filter(function (q) { return q !== f; }); delete cache[f.id]; save(); renderList(); renderRows(); route(); };
       list.appendChild(li);
     });
   }
@@ -7863,7 +7919,7 @@ var Sys = (function () {
     if (feeds.some(function (f) { return f.url === u; })) { Sys.toast('That feed is already in your list.'); return; }
     feeds.push({ id: uid(), url: u, title: '', on: true });
     urlIn.value = '';
-    save(); renderList(); renderRows();
+    save(); renderList(); renderRows(); route();
   }
   function openPop(open) {
     pop.hidden = !open;
@@ -7889,6 +7945,14 @@ var Sys = (function () {
   // The ticker can be switched off entirely: no fetches, no scrolling, no row rebuilding.
   var booting = true;          // a warning at startup would be noise, not consent
   var feedBtn = $('feedBtn'), tickerOn = store.get('ws.ui', {}).ticker !== false;
+  // Derived, never pushed: the route is open only while the switch is on AND at least one
+  // feed is on. Announcing it from whichever handler happens to fire is what left the chip
+  // claiming it was fetching after every feed had been turned off or deleted.
+  function route() {
+    Net.only('The news ticker — ',
+             (tickerOn && feeds.some(function (f) { return f.on; }))
+               ? 'on, fetching every ten minutes' : null);
+  }
   function setTicker(v) {
     tickerOn = !!v;
     feedBtn.classList.toggle('on', tickerOn);
@@ -7899,12 +7963,12 @@ var Sys = (function () {
     feedTimer = null;
     if (tickerOn) {
       if (!booting) Net.ask('feeds', 'The news ticker is about to fetch your feeds from the internet.', function () {});
-      Net.only('The news ticker — ', 'on, fetching every ten minutes');
+      route();
       reconnect();
       feedTimer = setInterval(renderRows, 10 * 60 * 1000);
       renderRows();
     } else {
-      Net.only('The news ticker', null);
+      route();
       severAll();                  // anything open right now is cut off mid-flight
       cache = {};                  // and nothing fetched is kept in memory
       rows.innerHTML = '';
@@ -7919,6 +7983,7 @@ var Sys = (function () {
   };
   setTicker(tickerOn);
   booting = false;
+  Net.onSeal(function () { if (tickerOn) setTicker(false); });
   save();
   renderRows();
 })();
@@ -10183,6 +10248,7 @@ var Trash = (function () {
     });
     if (items.length !== n) { save(); render(); }
   }
+  var pendTick = null;            // set by the control-group list below, so both tick as one
   setInterval(function () {
     var pending = items.filter(function (it) { return it.purgeAt; });
     if (!pending.length) return;
@@ -10193,6 +10259,7 @@ var Trash = (function () {
       var it = order[i], el = li.querySelector('.tbTick');
       if (it && el) el.textContent = it.purgeAt ? left(it) : '';
     });
+    if (pendTick) pendTick();     // the same second the rows just used
     sweep();
   }, 1000);
 
@@ -10201,7 +10268,7 @@ var Trash = (function () {
      the same items and the same left() the bin rows use, so the two can never disagree.
      Labels go in with textContent, never innerHTML: they are whatever the person deleted. */
   (function () {
-    var btn = $('tbPendBtn'), pop = $('tbPend'), tick = null;
+    var btn = $('tbPendBtn'), pop = $('tbPend');
     if (!btn || !pop) return;
     function due() {
       return items.filter(function (it) { return it.purgeAt; })
@@ -10232,7 +10299,9 @@ var Trash = (function () {
       });
       pop.appendChild(ul);
     }
-    function run() { clearInterval(tick); tick = setInterval(draw, 1000); }
+    // No clock of its own. A second interval would sample Date.now() a fraction out of step
+    // with the one driving the rows, and the two would read a second apart on screen.
+    pendTick = function () { if (pop.classList.contains('on')) draw(); };
     function show() {
       draw();
       pop.classList.add('on');
@@ -10242,9 +10311,8 @@ var Trash = (function () {
       var x = Math.min(Math.max(0, chip.left - bar.left), Math.max(0, bar.width - w - 8));
       pop.style.right = 'auto';
       pop.style.left = Math.round(x) + 'px';
-      run();
     }
-    function hide() { pop.classList.remove('on'); clearInterval(tick); tick = null; }
+    function hide() { pop.classList.remove('on'); }
     function maybeHide() {
       setTimeout(function () {
         if (!pop.matches(':hover') && !btn.matches(':hover')) hide();
@@ -10254,7 +10322,6 @@ var Trash = (function () {
     btn.addEventListener('focus', show);
     btn.addEventListener('blur', maybeHide);
     btn.addEventListener('mouseleave', maybeHide);
-    pop.addEventListener('mouseenter', run);
     pop.addEventListener('mouseleave', maybeHide);
   })();
 
@@ -13491,6 +13558,7 @@ var soundEditorAPI = {};
       logLine('Mesh peer ' + id + ' ' + p.pc.connectionState);
       if (p.pc.connectionState === 'failed' || p.pc.connectionState === 'closed') delete peers[id];
       roomCount();
+      netRoute();
     };
     function attach(c) {
       p.chan = c;
@@ -13630,6 +13698,44 @@ var soundEditorAPI = {};
     $('poState').textContent = t;
     $('poState').classList.toggle('live', !!live);
   }
+  // How many links are actually up: the one in hand, plus any room kept open behind it.
+  // Read off the connections themselves so no handler has to remember to say anything.
+  function openLinks() {
+    var dead = { closed: 1, failed: 1, 'new': 1 }, n = 0;
+    if (pc && !dead[pc.connectionState]) n++;
+    Object.keys(peers).forEach(function (k) {
+      var q = peers[k];
+      if (q && q.pc && !dead[q.pc.connectionState]) n++;
+    });
+    return n;
+  }
+  // Named apart from route(d, c) below, which is the message router. Two function
+  // declarations of the same name in one scope do not clash loudly: the later one simply
+  // wins, and every call here would have gone to the router with no arguments.
+  function netRoute() {
+    var n = openLinks();
+    Net.only('The Post link — ',
+             n ? (n === 1 ? 'a direct link to one other machine'
+                          : 'direct links to ' + n + ' other machines') : null);
+  }
+  // Sealing the workspace has to close these too, or the chip would promise something
+  // that is not true. Hang up closes the link in hand; this closes everything.
+  function dropAll() {
+    if (chan) { try { chan.close(); } catch (e) {} }
+    if (pc) { try { pc.close(); } catch (e) {} }
+    pc = null; chan = null;
+    Object.keys(peers).forEach(function (k) {
+      var q = peers[k];
+      try { if (q && q.chan) q.chan.close(); } catch (e) {}
+      try { if (q && q.pc) q.pc.close(); } catch (e) {}
+      delete peers[k];
+    });
+    setState('');
+    lamp('off', 'Closed');
+    logLine('Everything was disconnected.');
+    netRoute();
+  }
+  Net.onSeal(dropAll);
   var keptN = 0;
   function newPeer() {
     if (chan && chan.readyState === 'open') {
@@ -13665,6 +13771,7 @@ var soundEditorAPI = {};
     pc.onconnectionstatechange = function () {
       dbg();
       setState('Link: ' + pc.connectionState, pc.connectionState === 'connected');
+      netRoute();
       lamp(pc.connectionState === 'connected' ? 'on' :
            pc.connectionState === 'connecting' ? 'busy' : 'off',
            pc.connectionState.charAt(0).toUpperCase() + pc.connectionState.slice(1));
@@ -13676,14 +13783,14 @@ var soundEditorAPI = {};
   function wire(c) {
     chan = c;
     c.onopen = function () {
-      setState('Link: open', true); lamp('on', 'Open'); logLine('The link is open.'); drain();
+      setState('Link: open', true); lamp('on', 'Open'); logLine('The link is open.'); netRoute(); drain();
       try { c.send('WSID1|' + myId); } catch (e) {}
       setTimeout(introduce, 700);
       roomCount();
       Sys.link.onState.forEach(function (f) { f(true); });
     };
     c.onclose = function () {
-      setState('Link: closed'); lamp('off', 'Closed'); logLine('The link closed.');
+      setState('Link: closed'); lamp('off', 'Closed'); logLine('The link closed.'); netRoute();
       Sys.link.onState.forEach(function (f) { f(false); });
     };
     c.onmessage = function (e) { route(String(e.data || ''), c); };
@@ -13847,6 +13954,7 @@ var soundEditorAPI = {};
     pc = null; chan = null;
     setState('');
     logLine('Hung up.');
+    netRoute();
   };
 
   // anything waiting goes out the moment a link opens
