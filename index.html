@@ -313,6 +313,29 @@
   #status.ctlOpen #stTasks:not(:empty) { display: inline-block !important; }
   #status.ctlOpen #stDock { display: inline-flex !important; }
   #status.ctlOpen #stMore { opacity: 1; }
+  /* What is still waiting to be deleted, hung off the Safe delete chip. It lives inside
+     #status on purpose: the Controls latch closes the drawer when the pointer leaves the
+     bar, and moving into a descendant never counts as leaving, so reaching this list
+     never shuts anything out from under the pointer. */
+  #tbPend { display: none; position: absolute; bottom: calc(100% - 2px); right: 170px; z-index: 71;
+            width: min(330px, calc(100vw - 40px)); max-height: 60vh; overflow-y: auto;
+            padding: 10px 12px; border-radius: 12px; text-align: left; cursor: default;
+            background: rgba(12,16,34,.97); border: 1px solid rgba(255,255,255,.14);
+            box-shadow: 0 -12px 40px rgba(0,0,0,.55); color: #e9eeff; }
+  #tbPend.on { display: block; }
+  #tbPend h4 { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; opacity: .6; margin-bottom: 8px; }
+  #tbPend .tbPendNone { font-size: 12px; line-height: 1.5; opacity: .8; }
+  #tbPend .tbPendList { list-style: none; }
+  #tbPend .tbPendList li { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; font-size: 12px;
+                           border-bottom: 1px solid rgba(255,255,255,.08); }
+  #tbPend .tbPendList li:last-child { border-bottom: 0; }
+  #tbPend .tbPendKind { opacity: .6; min-width: 62px; }
+  #tbPend .tbPendWhat { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #tbPend .tbPendLeft { font-variant-numeric: tabular-nums; color: #ffb266; white-space: nowrap; font-weight: bold; }
+  body:not(.glass) #tbPend { background: #fff; border-color: #999; color: #000; }
+  body:not(.glass) #tbPend .tbPendList li { border-bottom-color: #eee; }
+  body:not(.glass) #tbPend .tbPendLeft { color: #c2551d; }
+  body.nite #tbPend { background: #000; border-color: rgba(255,255,255,.12); color: #e9eeff; }
   /* RSS ticker */
   #ticker { position: relative; display: flex; background: #111; color: #eee; min-height: 24px; font-size: 13px; }
   #tkBtn { flex: 0 0 auto; border: 0; border-right: 1px solid #444; background: #222; color: #fff; font: 12px Arial, Helvetica, sans-serif; padding: 0 10px; cursor: pointer; }
@@ -1491,6 +1514,14 @@
   #netState.open { border-color: rgba(232,150,58,.6); background: rgba(232,150,58,.16); color: #ffc98a; }
   body:not(.glass) #netState { color: #333; background: #f0f1f5; border-color: #bbb; }
   body:not(.glass) #netState.open { color: #8a4a00; background: #ffe9cf; border-color: #d99a4a; }
+  /* Safe delete sits immediately left of the network chip. #netState is order: -2, so this
+     is -3; both are laid out by order rather than by where they appear in the markup. */
+  #tbPendBtn { order: -3; flex: 0 0 auto; align-self: center;
+               font-size: 11px; padding: 2px 8px; margin-right: 8px; cursor: default; white-space: nowrap;
+               border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: rgba(255,255,255,.05); }
+  #tbPendBtn:hover, #tbPendBtn:focus { border-color: rgba(232,150,58,.6); background: rgba(232,150,58,.16); color: #ffc98a; outline: none; }
+  body:not(.glass) #tbPendBtn { color: #333; background: #f0f1f5; border-color: #bbb; }
+  body:not(.glass) #tbPendBtn:hover, body:not(.glass) #tbPendBtn:focus { color: #8a4a00; background: #ffe9cf; border-color: #d99a4a; }
 
   /* How-to: pick an app, see only that app */
   .hbPick { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 18px; }
@@ -3840,7 +3871,8 @@ paused, then deleted again
         <span id="stClock"><span id="sysTime">--</span> / <span id="footprint">--</span></span>
         <span id="stDock" aria-label="Closed panels"></span>
         <span id="stMore" aria-hidden="true">Controls ▴</span>
-        <span id="netState" tabindex="0"></span><span id="stTasks" tabindex="0"></span><span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="lockBtn" title="Parental mode: nothing can be deleted">Parental</button><button id="niteBtn" title="Night: the panels go dark and each one gets its own lamp">Night</button><button id="niteTest" title="Test the flicker" hidden style="display:none">Flicker test</button><button id="niteBugs" title="Bring the bugs in now" hidden style="display:none">Bugs now</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden style="display:none">×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden style="display:none">Test</button><button id="kmWinter" title="Test mode: force winter and snow on every panel" hidden style="display:none">Snow test</button><button id="saverBtn" title="How long before the screensaver starts">Screensaver</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button><button id="wipeBtn" title="Erase everything and start the workspace fresh">Reset OS</button></span>
+        <span id="tbPendBtn" tabindex="0">Safe delete</span><span id="netState" tabindex="0"></span><span id="stTasks" tabindex="0"></span><span id="stBtns"><button id="themeBtn" title="Switch between the glass and plain themes">Glass</button><button id="proxBtn" title="Proximity focus">Proximity</button><button id="lockBtn" title="Parental mode: nothing can be deleted">Parental</button><button id="niteBtn" title="Night: the panels go dark and each one gets its own lamp">Night</button><button id="niteTest" title="Test the flicker" hidden style="display:none">Flicker test</button><button id="niteBugs" title="Bring the bugs in now" hidden style="display:none">Bugs now</button><button id="wearBtn" title="Buttons wear where you actually press them">Wear</button><button id="wearRate" title="Wear rate, for testing" hidden style="display:none">×1</button><button id="wearNew" title="Refinish every button" hidden>Refinish</button><button id="feedBtn" title="Turn the news ticker on or off">RSS feed</button><button id="kmBtn" title="Katy Mae — grow a garden in the workspace">Katy Mae</button><button id="kmRange" title="How long plants take to grow" hidden>1–10 min</button><button id="kmTest" title="Test mode: watch the flowers grow in seconds" hidden style="display:none">Test</button><button id="kmWinter" title="Test mode: force winter and snow on every panel" hidden style="display:none">Snow test</button><button id="saverBtn" title="How long before the screensaver starts">Screensaver</button><button id="lyOpen" title="Choose which panel each app lives in">Layout</button><button id="tmOpen" title="See and control everything running in the workspace">Task Manager</button><button id="bkSave" title="Download a backup of all your work">Backup</button><button id="bkLoad" title="Restore from a backup file">Restore</button><button id="wipeBtn" title="Erase everything and start the workspace fresh">Reset OS</button></span>
+        <div id="tbPend" role="status" aria-label="Waiting to be deleted"></div>
         <input type="file" id="bkFile" accept=".json,application/json" hidden>
       </section>
     </div>
@@ -7927,7 +7959,7 @@ var Sys = (function () {
 // bar even though it paints above it, so travelling from the chip up into it
 // never leaves the bar, and nothing closes on the way. Escape closes it too.
 (function () {
-  var bar = $('status'), more = $('stMore'), drawer = $('stBtns'), shut = 0;
+  var bar = $('status'), more = $('stMore'), drawer = $('stBtns'), pend = $('tbPend'), shut = 0;
   function open() { clearTimeout(shut); bar.classList.add('ctlOpen'); }
   function close() { clearTimeout(shut); bar.classList.remove('ctlOpen'); }
   // A short grace period, so clipping a corner on the way to a button does not
@@ -7939,6 +7971,8 @@ var Sys = (function () {
   bar.addEventListener('mouseenter', hold);
   bar.addEventListener('mouseleave', soon);
   drawer.addEventListener('mouseleave', soon);
+  // The waiting list sits beside the drawer, not inside it, so it needs the same hold.
+  if (pend) { pend.addEventListener('mouseenter', hold); pend.addEventListener('mouseleave', soon); }
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') close();
   });
@@ -10161,6 +10195,68 @@ var Trash = (function () {
     });
     sweep();
   }, 1000);
+
+  /* The control group answers "is anything on a timer right now?" without opening the bin.
+     Hovering the button lists everything still waiting, each with its own clock, read from
+     the same items and the same left() the bin rows use, so the two can never disagree.
+     Labels go in with textContent, never innerHTML: they are whatever the person deleted. */
+  (function () {
+    var btn = $('tbPendBtn'), pop = $('tbPend'), tick = null;
+    if (!btn || !pop) return;
+    function due() {
+      return items.filter(function (it) { return it.purgeAt; })
+                  .sort(function (a, b) { return a.purgeAt - b.purgeAt; });
+    }
+    function draw() {
+      var rows = due();
+      pop.textContent = '';
+      var h = document.createElement('h4');
+      h.textContent = 'Waiting to be deleted';
+      pop.appendChild(h);
+      if (!rows.length) {
+        var none = document.createElement('p');
+        none.className = 'tbPendNone';
+        none.textContent = 'Nothing is waiting. Give something in the bin a hold time and it will show up here with its clock.';
+        pop.appendChild(none);
+        return;
+      }
+      var ul = document.createElement('ul');
+      ul.className = 'tbPendList';
+      rows.forEach(function (it) {
+        var li = document.createElement('li');
+        var k = document.createElement('span'); k.className = 'tbPendKind'; k.textContent = it.kind;
+        var w = document.createElement('span'); w.className = 'tbPendWhat'; w.textContent = it.label;
+        var t = document.createElement('span'); t.className = 'tbPendLeft'; t.textContent = left(it);
+        li.appendChild(k); li.appendChild(w); li.appendChild(t);
+        ul.appendChild(li);
+      });
+      pop.appendChild(ul);
+    }
+    function run() { clearInterval(tick); tick = setInterval(draw, 1000); }
+    function show() {
+      draw();
+      pop.classList.add('on');
+      // hang it off the chip rather than the drawer, and keep it on screen
+      var bar = $('status').getBoundingClientRect(), chip = btn.getBoundingClientRect();
+      var w = pop.offsetWidth || 330;
+      var x = Math.min(Math.max(0, chip.left - bar.left), Math.max(0, bar.width - w - 8));
+      pop.style.right = 'auto';
+      pop.style.left = Math.round(x) + 'px';
+      run();
+    }
+    function hide() { pop.classList.remove('on'); clearInterval(tick); tick = null; }
+    function maybeHide() {
+      setTimeout(function () {
+        if (!pop.matches(':hover') && !btn.matches(':hover')) hide();
+      }, 180);
+    }
+    btn.addEventListener('mouseenter', show);
+    btn.addEventListener('focus', show);
+    btn.addEventListener('blur', maybeHide);
+    btn.addEventListener('mouseleave', maybeHide);
+    pop.addEventListener('mouseenter', run);
+    pop.addEventListener('mouseleave', maybeHide);
+  })();
 
   // The trash button asks to be looked at, and settles once it has been.
   // a calm pink pulse on the bin button for thirty seconds after anything is deleted
