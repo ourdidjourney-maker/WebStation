@@ -142,6 +142,27 @@
 
   /* Shared list style */
   .clist { list-style: none; overflow: auto; font-size: 12px; min-height: 0; }
+  /* A list that fills a panel body needs a height to scroll against. overflow:auto
+     alone does nothing: the ul is a block with height:auto, so it grows to its
+     content and .body { overflow: hidden } just clips it, with no scrollbar and
+     no way to reach the rows below the fold. Capping it at the height of its
+     container turns the overflow into a real scroll. Only lists that ARE the
+     body are capped; lists nested beside other controls keep their own sizing. */
+  .body > .clist:only-child, .body > .zoomInner > .clist:only-child {
+    max-height: 100%;
+    /* A full-width bar instead of the global hairline. These are the lists you pick
+       rows out of, so the bar has to be easy to see and easy to grab. Setting
+       scrollbar-color here means Chrome ignores the ::-webkit-scrollbar rules for
+       this element, so the colours below are the whole theme for it. */
+    scrollbar-width: auto;
+    scrollbar-color: rgba(120, 130, 150, .75) rgba(0, 0, 0, .06);
+  }
+  body.nite .body > .clist:only-child, body.nite .body > .zoomInner > .clist:only-child {
+    scrollbar-color: rgba(150, 160, 180, .7) rgba(255, 255, 255, .05);
+  }
+  body.glass .body > .clist:only-child, body.glass .body > .zoomInner > .clist:only-child {
+    scrollbar-color: rgba(126, 170, 255, .6) rgba(255, 255, 255, .06);
+  }
   .clist li { display: flex; gap: 6px; align-items: center; padding: 4px 8px; border-bottom: 1px solid #eee; }
   .clist li.empty { color: #777; border: 0; }
   .clist .grow1 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -271,21 +292,27 @@
   #stBtns, #stTasks, #stDock {
     display: none !important;
   }
-  #status:hover #stBtns {
+  /* The drawer is opened by the latch below, which adds .ctlOpen. It is not a
+     hover rule: a drawer that is display:none cannot be hovered, so CSS alone
+     can never keep itself open once the pointer leaves the Controls chip. */
+  #status.ctlOpen #stBtns {
     display: flex !important; flex-direction: column; align-items: stretch; gap: 3px;
     position: absolute; right: 8px; bottom: calc(100% - 2px); z-index: 70;
     padding: 8px; min-width: 150px; max-height: 70vh; overflow-y: auto;
     background: rgba(12,16,34,.97); border: 1px solid rgba(255,255,255,.14); border-radius: 12px;
     box-shadow: 0 -12px 40px rgba(0,0,0,.55);
   }
-  body:not(.glass) #status:hover #stBtns { background: #fff; border-color: #999; }
-  body.nite #status:hover #stBtns { background: #000; border-color: rgba(255,255,255,.12); }
-  #status:hover #stBtns button { width: 100%; text-align: left; height: 24px; }
+  body:not(.glass) #status.ctlOpen #stBtns { background: #fff; border-color: #999; }
+  body.nite #status.ctlOpen #stBtns { background: #000; border-color: rgba(255,255,255,.12); }
+  #status.ctlOpen #stBtns button { width: 100%; text-align: left; height: 24px; }
   #stBtns button[hidden] { display: none !important; }
   #stBtns button[style*="display:none"] { display: none !important; }
-  #status:hover #stTasks { display: inline-block !important; }
-  #status:hover #stDock { display: inline-flex !important; }
-  #status:hover #stMore { opacity: 1; }
+  /* :not(:empty) matters: when there are no tasks the script sets an inline
+     display:none on this badge, and an !important rule would override it,
+     leaving an empty pill (padding + border) showing as a small nub. */
+  #status.ctlOpen #stTasks:not(:empty) { display: inline-block !important; }
+  #status.ctlOpen #stDock { display: inline-flex !important; }
+  #status.ctlOpen #stMore { opacity: 1; }
   /* RSS ticker */
   #ticker { position: relative; display: flex; background: #111; color: #eee; min-height: 24px; font-size: 13px; }
   #tkBtn { flex: 0 0 auto; border: 0; border-right: 1px solid #444; background: #222; color: #fff; font: 12px Arial, Helvetica, sans-serif; padding: 0 10px; cursor: pointer; }
@@ -799,17 +826,20 @@
     -webkit-backdrop-filter: blur(.7px) brightness(1.06);
     backdrop-filter: blur(.7px) brightness(1.06);
     opacity: 0;
-    animation: kmBeadIn 700ms ease-out var(--delay, 0s) forwards;
+    animation: kmBeadIn 0ms linear var(--delay, 0s) forwards;
     will-change: transform;
   }
-  @keyframes kmBeadIn { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
+  /* It lands, and there it is. The delay is when it hits; the drop itself takes no time,
+     so the keyframe only has to switch it on. A bead that grows into place reads as
+     condensation forming, not as rain striking glass. */
+  @keyframes kmBeadIn { to { opacity: 1; transform: scale(1); } }
 
   /* Once it releases, it runs down the glass, stretching as it accelerates */
   .kmBead.rolling { animation: kmRoll var(--rdur, 2.4s) cubic-bezier(.42,0,.85,.55) forwards; }
   @keyframes kmRoll {
     0%   { transform: translate(0, 0) scaleY(1); opacity: 1; }
     8%   { transform: translate(0, 4px) scaleY(1.25); }
-    55%  { transform: translate(var(--wob, 3px), calc(var(--rdist, 300px) * .55)) scaleY(1.5); opacity: 1; }
+    55%  { transform: translate(0, calc(var(--rdist, 300px) * .55)) scaleY(1.5); opacity: 1; }
     86%  { opacity: .8; }
     100% { transform: translate(0, var(--rdist, 300px)) scaleY(1.7); opacity: 0; }
   }
@@ -924,6 +954,13 @@
   body.saver .unblurChip, body.saver #toasts { opacity: 0; pointer-events: none; }
   body.saver .panel { border-color: rgba(255,255,255,.1); }
   body.saver #splitH { display: none; }
+  /* The status bar does not just fade in the screensaver — its row closes, so
+     the panel above grows down into the space instead of leaving a hole. The
+     collapse waits out the 2.2s fade, and the transition only exists while the
+     screensaver is on, so dragging the seam stays instant. */
+  body.saver #right { grid-template-rows: var(--rowRT, 42fr) var(--rowRB, 51fr) 0px;
+                      transition: grid-template-rows 0s linear 2.2s; }
+  body.saver #status { min-height: 0; padding-top: 0; padding-bottom: 0; overflow: hidden !important; }
   .card, #ticker, #status { transition: opacity 1.4s ease; }
   #saverHint { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 1500;
                font: 12px Arial, Helvetica, sans-serif; color: rgba(255,255,255,.45); letter-spacing: .08em;
@@ -1133,6 +1170,16 @@
   #chkStatus { font-size: 12px; opacity: .85; }
   #chkScore { font-size: 12px; opacity: .7; }
   #chkSound { min-width: 30px; }
+
+/* Chess */
+  #csBody { display: flex; align-items: center; justify-content: center; }
+  #csBoard { max-width: 100%; max-height: 100%; cursor: pointer;
+             border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.45); }
+  #csStatus { font-size: 12px; opacity: .85; }
+  #csScore { font-size: 12px; opacity: .7; }
+  #csSound { min-width: 30px; }
+  #csTaken { font-size: 15px; letter-spacing: 1px; opacity: .8; white-space: nowrap;
+             overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
 
   /* ── Wear ──────────────────────────────────────────────────────────────
      Wear accumulates in patches where the button is actually struck, it never moves.
@@ -2494,7 +2541,7 @@
   <h3>Double-click the file. That is the installation.</h3>
   <p>There is no setup, no build step, no package manager and no first-run wizard. WebStation is one
      HTML document. Open it in any modern browser and the whole workspace is running: five panels,
-     thirty-two applications, and every piece of your work stored on your own machine.</p>
+     thirty-three applications, and every piece of your work stored on your own machine.</p>
 
   <div class="hbGrid">
     <div class="hbCard">
@@ -2531,7 +2578,7 @@
      so click a name and the card turns over to that app. Below, choose what kind of work you are doing,
      then the app, and you will get its buttons in order.</p>
   <div class="hbSecs" id="hbSecs"><button data-sec="art">Art tools</button><button data-sec="av">Sound and video</button><button data-sec="word">Word tools</button><button data-sec="do">Getting things done</button><button data-sec="keep">Keeping things</button><button data-sec="web">Web and privacy</button><button data-sec="space">The workspace</button><button data-sec="tm">Task Manager</button><button data-sec="play">Play</button></div>
-  <div class="hbPick" id="hbPick"><button data-sec="art" data-go="paint" hidden>Paint</button><button data-sec="art" data-go="gallery" hidden>Gallery</button><button data-sec="art" data-go="img" hidden>Image editor</button><button data-sec="art" data-go="gif" hidden>GIF maker</button><button data-sec="art" data-go="chars" hidden>Character map</button><button data-sec="av" data-go="snd" hidden>Sound editor</button><button data-sec="av" data-go="theatre" hidden>Theatre</button><button data-sec="av" data-go="media" hidden>Media player</button><button data-sec="av" data-go="rec" hidden>Recorder</button><button data-sec="word" data-go="wp" hidden>Word processor</button><button data-sec="word" data-go="notes" hidden>Notes</button><button data-sec="word" data-go="slides" hidden>Slides</button><button data-sec="word" data-go="sticky" hidden>Sticky notes</button><button data-sec="word" data-go="sheet" hidden>Spreadsheet</button><button data-sec="word" data-go="code" hidden>Code playground</button><button data-sec="word" data-go="pdf" hidden>PDF viewer</button><button data-sec="do" data-go="tasks" hidden>Tasks</button><button data-sec="do" data-go="cal" hidden>Calendar</button><button data-sec="do" data-go="clock" hidden>Clock</button><button data-sec="do" data-go="time" hidden>Time tracker</button><button data-sec="do" data-go="calc" hidden>Calculator</button><button data-sec="do" data-go="units" hidden>Unit converter</button><button data-sec="keep" data-go="files" hidden>Files</button><button data-sec="keep" data-go="trash" hidden>Trash bin</button><button data-sec="keep" data-go="clip" hidden>Clipboard history</button><button data-sec="keep" data-go="marks" hidden>Bookmarks</button><button data-sec="keep" data-go="pass" hidden>Password generator</button><button data-sec="keep" data-go="vault" hidden>Password vault</button><button data-sec="keep" data-go="tm" hidden>Task Manager</button><button data-sec="keep" data-go="backup" hidden>Backup and Restore</button><button data-sec="web" data-go="post" hidden>Post</button><button data-sec="web" data-go="link" hidden>Live link</button><button data-sec="web" data-go="chat" hidden>Chat</button><button data-sec="web" data-go="ping" hidden>Ping</button><button data-sec="web" data-go="web" hidden>Web browser</button><button data-sec="web" data-go="net" hidden>Network monitor</button><button data-sec="web" data-go="rss" hidden>News ticker</button><button data-sec="space" data-go="controls" hidden>The control group</button><button data-sec="space" data-go="layout" hidden>Layout editor</button><button data-sec="space" data-go="panels" hidden>Panels, zoom and blur</button><button data-sec="space" data-go="seams" hidden>Resizing the panels</button><button data-sec="space" data-go="look" hidden>Themes and screensaver</button><button data-sec="space" data-go="night" hidden>Night</button><button data-sec="space" data-go="parental" hidden>Parental mode</button><button data-sec="space" data-go="garden" hidden>The garden</button><button data-sec="space" data-go="wear" hidden>Wear</button><button data-sec="tm" data-go="tm" hidden>Task Manager</button><button data-sec="play" data-go="chk" hidden>Checkers</button></div>
+  <div class="hbPick" id="hbPick"><button data-sec="art" data-go="paint" hidden>Paint</button><button data-sec="art" data-go="gallery" hidden>Gallery</button><button data-sec="art" data-go="img" hidden>Image editor</button><button data-sec="art" data-go="gif" hidden>GIF maker</button><button data-sec="art" data-go="chars" hidden>Character map</button><button data-sec="av" data-go="snd" hidden>Sound editor</button><button data-sec="av" data-go="theatre" hidden>Theatre</button><button data-sec="av" data-go="media" hidden>Media player</button><button data-sec="av" data-go="rec" hidden>Recorder</button><button data-sec="word" data-go="wp" hidden>Word processor</button><button data-sec="word" data-go="notes" hidden>Notes</button><button data-sec="word" data-go="slides" hidden>Slides</button><button data-sec="word" data-go="sticky" hidden>Sticky notes</button><button data-sec="word" data-go="sheet" hidden>Spreadsheet</button><button data-sec="word" data-go="code" hidden>Code playground</button><button data-sec="word" data-go="pdf" hidden>PDF viewer</button><button data-sec="do" data-go="tasks" hidden>Tasks</button><button data-sec="do" data-go="cal" hidden>Calendar</button><button data-sec="do" data-go="clock" hidden>Clock</button><button data-sec="do" data-go="time" hidden>Time tracker</button><button data-sec="do" data-go="calc" hidden>Calculator</button><button data-sec="do" data-go="units" hidden>Unit converter</button><button data-sec="keep" data-go="files" hidden>Files</button><button data-sec="keep" data-go="trash" hidden>Trash bin</button><button data-sec="keep" data-go="clip" hidden>Clipboard history</button><button data-sec="keep" data-go="marks" hidden>Bookmarks</button><button data-sec="keep" data-go="pass" hidden>Password generator</button><button data-sec="keep" data-go="vault" hidden>Password vault</button><button data-sec="keep" data-go="tm" hidden>Task Manager</button><button data-sec="keep" data-go="backup" hidden>Backup and Restore</button><button data-sec="web" data-go="post" hidden>Post</button><button data-sec="web" data-go="link" hidden>Live link</button><button data-sec="web" data-go="chat" hidden>Chat</button><button data-sec="web" data-go="ping" hidden>Ping</button><button data-sec="web" data-go="web" hidden>Web browser</button><button data-sec="web" data-go="net" hidden>Network monitor</button><button data-sec="web" data-go="rss" hidden>News ticker</button><button data-sec="space" data-go="controls" hidden>The control group</button><button data-sec="space" data-go="layout" hidden>Layout editor</button><button data-sec="space" data-go="panels" hidden>Panels, zoom and blur</button><button data-sec="space" data-go="seams" hidden>Resizing the panels</button><button data-sec="space" data-go="look" hidden>Themes and screensaver</button><button data-sec="space" data-go="night" hidden>Night</button><button data-sec="space" data-go="parental" hidden>Parental mode</button><button data-sec="space" data-go="garden" hidden>The garden</button><button data-sec="space" data-go="wear" hidden>Wear</button><button data-sec="tm" data-go="tm" hidden>Task Manager</button><button data-sec="play" data-go="chk" hidden>Checkers</button><button data-sec="play" data-go="chess" hidden>Chess</button></div>
 <div class="hbApp" data-sec="art" data-app="paint" hidden>
 <h3>Paint</h3><p class="hbWhere">Left panel, click Paint</p>
 <div class="hbStep"><span class="hbN">1</span><p>Pick a tool: <span class="hbB lit">Brush</span> <span class="hbB ">Eraser</span> <span class="hbB ">Spray</span> <span class="hbB ">Line</span> <span class="hbB ">Rect</span> <span class="hbB ">Ellipse</span> <span class="hbB ">Fill</span> <span class="hbB ">Picker</span> <span class="hbB ">Text</span></p></div>
@@ -2947,6 +2994,15 @@
 <div class="hbStep"><span class="hbN">4</span><p><span class="hbB ">&#128266;</span> mutes the sound. Every tone is generated on the spot, not a file.</p></div>
 <div class="hbStep"><span class="hbN">5</span><p>Your game is saved. Flip away to do real work and the position is exactly as you left it when you come back.</p></div>
 </div>
+<div class="hbApp" data-sec="play" data-app="chess" hidden>
+<h3>Chess</h3><p class="hbWhere">Lower right panel, click Chess</p>
+<div class="hbStep"><span class="hbN">1</span><p>You are <b>white</b> and you move first. Click a piece, then click where it goes. Only legal moves are offered, and a move that would leave your own king in check is refused.</p></div>
+<div class="hbStep"><span class="hbN">2</span><p>The basic rules, played properly: check, checkmate and stalemate are all recognised, and a pawn reaching the far rank is promoted to a queen. Castling and taking a pawn in passing are deliberately left out.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p>The first dropdown picks your opponent &mdash; <span class="hbB ">Against the engine</span> or <span class="hbB ">Two players</span> on the one board.</p></div>
+<div class="hbStep"><span class="hbN">4</span><p>The second sets how far the engine looks ahead: <span class="hbB ">Easy</span> <span class="hbB lit">Normal</span> <span class="hbB ">Hard</span>. Hard takes about a second a move and plays a sharper game for it.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p><span class="hbB ">Take it back</span> undoes your last move and the reply with it. <span class="hbB ">Turn the board</span> swaps which side faces you. <span class="hbB ">&#128266;</span> mutes the sound, and every tone is generated on the spot, not a file.</p></div>
+<div class="hbStep"><span class="hbN">6</span><p>Captured pieces and the running score sit in the bar beside the status. Your game is saved, so flipping away and coming back finds the position exactly as you left it.</p></div>
+</div>
 </section>
 
 
@@ -2960,7 +3016,7 @@
 <div class="hbStep"><span class="hbN">2</span><p>Flipping right turns one way and flipping left turns the other, which means the deck has a real spatial order. After a day you stop reading the names and just know that Trash is two to the right of Paint.</p></div>
 <div class="hbStep"><span class="hbN">3</span><p>Every face behind the card stays alive while it is hidden. A timer keeps counting, a recording keeps recording, a video keeps playing, a garden keeps growing.</p></div>
 <div class="hbStep"><span class="hbN">4</span><p><b>Hover any app name</b> and that app appears live in place, framed in blue, without committing to the flip. A short delay stops it flickering as you move along the row.</p></div>
-<div class="hbStep"><span class="hbN">5</span><p>This is what made the whole project possible. Five panels holding a deck of apps each is thirty-two apps on one screen with no window management, no taskbar, no overlapping windows and nothing to arrange.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>This is what made the whole project possible. Five panels holding a deck of apps each is thirty-three apps on one screen with no window management, no taskbar, no overlapping windows and nothing to arrange.</p></div>
 <p class="hbTip">The peeked app is given its own solid backing, so two transparent apps can never show through each other.</p>
 </div>
 <div class="hbApp" data-sec="first" data-app="peek" hidden>
@@ -2997,7 +3053,7 @@
 <h3>Weather, per panel</h3><p class="hbWhere">Every panel has its own sky</p>
 <div class="hbStep"><span class="hbN">1</span><p>Rain, snow, wind, lightning and the seasons are tracked <b>separately for every panel</b>. One can be in a thunderstorm while the panel beside it sits in calm sunlight.</p></div>
 <div class="hbStep"><span class="hbN">2</span><p><b>Rain</b> falls in three depth layers for parallax, each streak a soft gradient rather than a hard line. Each shower rolls its own weight: barely spitting, steady, heavy, or a downpour. Light rain uses thinner, shorter, fainter streaks rather than simply fewer of them.</p></div>
-<div class="hbStep"><span class="hbN">3</span><p><b>Water behaves like water.</b> Beads cling to the glass, heavier ones release sooner, they stretch as they accelerate, wobble off course, and leave a wet trail that thins and dries behind them.</p></div>
+<div class="hbStep"><span class="hbN">3</span><p><b>Water behaves like water.</b> Beads land on the glass at once and cling there, heavier ones release sooner, and they stretch as they accelerate, running straight down a wet trail that thins and dries behind them.</p></div>
 <div class="hbStep"><span class="hbN">4</span><p><b>Lightning</b> carries in fewer than half of storms. Three multi-stroke flicker patterns, brightness banded into four distances, and the light falls directionally using screen blending, so it lights the flowers, the rain and the leaves together rather than washing the screen white.</p></div>
 <div class="hbStep"><span class="hbN">5</span><p><b>Wind</b> is owned by the panel, so leaves never cross in opposite directions, and it only changes direction when the air is clear. Leaves travel at a capped speed rather than a capped time, so none of them crawl in a narrow panel.</p></div>
 <div class="hbStep"><span class="hbN">6</span><p><b>Seasons scale to the garden.</b> A season runs 1.6 to 2.8 times the growing time you chose, so a plant is never cut down before it has had a chance to bloom.</p></div>
@@ -3078,7 +3134,7 @@
 <div class="hbStep"><span class="hbN">2</span><p>If IndexedDB is blocked &mdash; private browsing, a locked-down machine, an odd browser &mdash; it falls back to <b>localStorage</b> automatically. No error, no lost work.</p></div>
 <div class="hbStep"><span class="hbN">3</span><p>If even that is unavailable it runs from <b>memory</b>, so the workspace still works. And the Task Manager says so in plain language: <i>data is not being saved</i>.</p></div>
 <div class="hbStep"><span class="hbN">4</span><p>That last part matters. Most software either pretends everything is fine or refuses to start. This tells you the truth and keeps working.</p></div>
-<div class="hbStep"><span class="hbN">5</span><p>Everything sits behind an in-memory cache, so all thirty-two apps read instantly after boot with no waiting on storage.</p></div>
+<div class="hbStep"><span class="hbN">5</span><p>Everything sits behind an in-memory cache, so all thirty-three apps read instantly after boot with no waiting on storage.</p></div>
 <div class="hbStep"><span class="hbN">6</span><p><b>Backup</b> writes every key and every binary file into one dated file. <b>Restore</b> reads it back inside a single transaction that <b>rolls back completely</b> if anything fails, so you can never end up half-restored.</p></div>
 </div>
 <div class="hbApp" data-sec="first" data-app="panels" hidden>
@@ -3247,9 +3303,9 @@
 <!-- ══════════════════════════════════ APPS ══════════════════════════════════ -->
 <section id="apps">
   <h2>The applications</h2>
-  <h3>Thirty-two of them, and none are stubs</h3>
+  <h3>Thirty-three of them, and none are stubs</h3>
   <p>Every one is a working tool, not a placeholder. Several are substantial pieces of engineering in their
-     own right — the spreadsheet, the calculator and the checkers engine were all written from scratch.</p>
+     own right — the spreadsheet, the calculator and the checkers and chess engines were all written from scratch.</p>
 
   <table>
     <tr><th style="width:170px">Application</th><th>What it does</th></tr>
@@ -3279,6 +3335,7 @@
     <tr><td><b>Password vault</b></td><td>Every generated password is filed here automatically; add your own too. Renewal periods, sorted by what is due soonest, overdue entries in red, masked by default.</td></tr>
     <tr><td><b>Character map</b></td><td>Nine categories, click to copy, shows the Unicode code point.</td></tr>
     <tr><td><b>Checkers</b></td><td>A real engine — forced captures, multi-jump chains, kings, and minimax search with alpha-beta pruning at three depths.</td></tr>
+    <tr><td><b>Chess</b></td><td>Legal move generation with check, checkmate and stalemate, queen promotion, two players or minimax search with alpha-beta pruning at three strengths. Pieces drawn as SVG.</td></tr>
     <tr><td><b>Handbook</b></td><td>This document, inside the workspace itself, with search and a section jump.</td></tr>
     <tr><td><b>GIF maker</b></td><td>Turns any video into an animated GIF at full resolution and 30 frames a second. Hand-written encoder: median-cut colour, Floyd&ndash;Steinberg dithering, LZW compression. No account, no watermark, nothing uploaded.</td></tr>
     <tr><td><b>Image editor</b></td><td>Crop, rotate, flip, brightness, contrast and colour, nine looks including vignette, and text with an outline that stays readable on any picture.</td></tr>
@@ -3397,8 +3454,8 @@ paused, then deleted again
       <h4>Water on the glass</h4>
       <p>Beads are built from three layered gradients — a bright highlight top-left, a secondary bounce
          bottom-right, and a cool refracted body — and they blur and brighten what is behind them. They cling
-         for a random stretch, heavier ones releasing sooner, then stretch as they accelerate, wobble off
-         course and leave a wet trail that thins and dries.</p>
+         for a random stretch, heavier ones releasing sooner, then stretch as they accelerate and run
+         straight down their own wet trail, which thins and dries behind them.</p>
     </div>
     <div class="hbCard">
       <h4>Lightning</h4>
@@ -3709,6 +3766,25 @@ paused, then deleted again
             <span id="chkStatus"></span><span id="chkScore"></span>
           </div>
           <div class="body" id="chkBody"><canvas id="chkCanvas" width="360" height="360"></canvas></div>
+        </div>
+        <div class="face" data-face="chess" id="chessFace" tabindex="-1">
+          <div class="bar"><span class="seg"></span><span class="sep"></span>
+            <button id="csNew">New game</button>
+            <select id="csMode" aria-label="Opponent">
+              <option value="ai">Against the engine</option>
+              <option value="two">Two players</option>
+            </select>
+            <select id="csLevel" aria-label="Strength">
+              <option value="2">Easy</option>
+              <option value="3" selected>Normal</option>
+              <option value="4">Hard</option>
+            </select>
+            <button id="csUndo">Take it back</button>
+            <button id="csFlip" title="Turn the board around">Turn the board</button>
+            <button id="csSound" title="Sound">🔊</button>
+            <span id="csStatus"></span><span id="csScore"></span><span id="csTaken"></span>
+          </div>
+          <div class="body" id="csBody"><svg id="csBoard" viewBox="0 0 360 360" aria-label="Chess board"></svg></div>
         </div>
 <div class="face" data-face="snd" id="sndFace" tabindex="-1">
   <div class="bar"><span class="seg"></span><span class="sep"></span>
@@ -4035,7 +4111,7 @@ var Layout = (function () {
               ['sticky', 'Sticky notes'], ['clip', 'Clipboard history'], ['units', 'Unit converter'],
               ['pass', 'Password generator'], ['chars', 'Character map'],
               ['vault', 'Password vault'], ['trash', 'Trash bin'],
-              ['marks', 'Bookmarks'], ['slides', 'Slides'], ['checkers', 'Checkers'], ['help', 'Handbook'], ['gif', 'GIF maker'], ['img', 'Image editor'], ['snd', 'Sound editor'], ['post', 'Post'], ['chat', 'Chat']];
+              ['marks', 'Bookmarks'], ['slides', 'Slides'], ['checkers', 'Checkers'], ['chess', 'Chess'], ['help', 'Handbook'], ['gif', 'GIF maker'], ['img', 'Image editor'], ['snd', 'Sound editor'], ['post', 'Post'], ['chat', 'Chat']];
   var HOME = {};   // where each app started out
   document.querySelectorAll('.face').forEach(function (f) {
     var p = f.closest('.panel');
@@ -4081,7 +4157,7 @@ var Layout = (function () {
                   calendar: 'Calendar', calc: 'Calc', clock: 'Clock', time: 'Time', word: 'Word', sheet: 'Sheet',
                   code: 'Code', notes: 'Notes', media: 'Media', rec: 'Recorder',
                   sticky: 'Sticky', clip: 'Clipboard', units: 'Units', pass: 'Password', chars: 'Chars',
-                  vault: 'Vault', trash: 'Trash', marks: 'Bookmarks', slides: 'Slides', checkers: 'Checkers', help: 'Handbook', gif: 'GIF maker', img: 'Image editor', snd: 'Sound editor', post: 'Post', chat: 'Chat' };
+                  vault: 'Vault', trash: 'Trash', marks: 'Bookmarks', slides: 'Slides', checkers: 'Checkers', chess: 'Chess', help: 'Handbook', gif: 'GIF maker', img: 'Image editor', snd: 'Sound editor', post: 'Post', chat: 'Chat' };
     document.querySelectorAll('.card').forEach(function (card) {
       var names = [].filter.call(card.querySelectorAll('.face'), function (f) { return !f.classList.contains('faceOff'); })
                     .map(function (f) { return f.dataset.face; });
@@ -6760,6 +6836,15 @@ var Sys = (function () {
         return 'Game in progress\n  You ' + red + ' · Engine ' + black +
                '\n  ' + (v.over ? 'finished' : (v.red === false ? 'engine to move' : 'your move'));
       } },
+    { key: 'ws.chess', name: 'Chess game', app: 'chess',
+      text: function (v) {
+        if (!v || !v.b) return '(no game in progress)';
+        var w = 0, b = 0;
+        v.b.forEach(function (p) { if (p > 0) w++; else if (p < 0) b++; });
+        return 'Game in progress\n  White ' + w + ' pieces · Black ' + b + ' pieces' +
+               '\n  ' + (v.over ? 'finished' : (v.w === false ? 'black to move' : 'white to move')) +
+               '\n  ' + (v.mode === 'two' ? 'two players' : 'against the engine');
+      } },
     { key: 'ws.slides', name: 'Slides', app: 'slides', count: function (v) { return (v || []).length; },
       text: function (v) { return (v || []).map(function (sl, i) { return 'Slide ' + (i + 1) + ': ' + (sl.t || '(untitled)') + (sl.x ? '\n  ' + sl.x : ''); }).join('\n') || '(no slides)'; } },
     { key: 'ws.ui', name: 'Workspace settings', app: 'web', text: function (v) {
@@ -7837,6 +7922,28 @@ var Sys = (function () {
 })();
 
 /* ================= Panel close / reopen ================= */
+// The control group opens from the Controls chip and stays open until the
+// pointer leaves the bar and the drawer together. The drawer is a child of the
+// bar even though it paints above it, so travelling from the chip up into it
+// never leaves the bar, and nothing closes on the way. Escape closes it too.
+(function () {
+  var bar = $('status'), more = $('stMore'), drawer = $('stBtns'), shut = 0;
+  function open() { clearTimeout(shut); bar.classList.add('ctlOpen'); }
+  function close() { clearTimeout(shut); bar.classList.remove('ctlOpen'); }
+  // A short grace period, so clipping a corner on the way to a button does not
+  // shut the drawer out from under the pointer.
+  function soon() { clearTimeout(shut); shut = setTimeout(close, 280); }
+  function hold() { clearTimeout(shut); }
+  more.addEventListener('mouseenter', open);
+  drawer.addEventListener('mouseenter', hold);
+  bar.addEventListener('mouseenter', hold);
+  bar.addEventListener('mouseleave', soon);
+  drawer.addEventListener('mouseleave', soon);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close();
+  });
+})();
+
 // Closing a panel hides it; the remaining panels take its space. Closed panels are listed in the status bar.
 // Desktop only: on narrow screens every panel stays reachable from the mobile nav.
 var Panels = (function () {
@@ -8895,7 +9002,6 @@ var Garden = (function () {
     layer.insertBefore(tr, b);
     b.style.setProperty('--rdist', dist + 'px');
     b.style.setProperty('--rdur', dur + 'ms');
-    b.style.setProperty('--wob', (rnd(-5, 5)).toFixed(1) + 'px');
     b.classList.add('rolling');
     var gone = false;
     function done() {
@@ -9418,6 +9524,7 @@ var Garden = (function () {
     marks: function () { return any('#bmList li:not(.empty)'); },
     slides: function () { return any('#slStrip li'); },
     checkers: function () { return !!store.get('ws.checkers', null); },
+    chess: function () { return !!store.get('ws.chess', null); },
     help: function () { return false; },
     gif: function () { return false; },
     img: function () { return false; },
@@ -9459,6 +9566,7 @@ var Garden = (function () {
     { k: 'marks', name: 'Bookmarks', panel: 'browser', key: 'ws.marks' },
     { k: 'slides', name: 'Slides', panel: 'word', key: 'ws.slides' },
     { k: 'checkers', name: 'Checkers', panel: 'media', key: 'ws.checkers' },
+    { k: 'chess', name: 'Chess', panel: 'media', key: 'ws.chess' },
     { k: 'help', name: 'Handbook', panel: 'word', note: 'Built in' },
     { k: 'gif', name: 'GIF maker', panel: 'paint', note: 'Built in' },
     { k: 'img', name: 'Image editor', panel: 'paint', note: 'Built in' },
@@ -10714,6 +10822,436 @@ var chkSoundOn = true, _chkAudio = null;
   chkSetStatus(chkOver ? 'Game over — start a new one' : 'Your move');
   fit();
   chkDraw();
+})();
+
+/* ================= Chess =================
+   Built the same way as Checkers: a real engine, not a move checker.
+   Legal move generation with check, checkmate and stalemate, minimax
+   search with alpha-beta pruning at three strengths, pieces drawn as
+   SVG rather than images. Castling and en passant are deliberately not
+   here — the rules are the basic set. A pawn reaching the far rank is
+   promoted to a queen, because without that it would simply stall.
+
+   Every tone is generated on the spot; there are no sound files. */
+(function () {
+  var csSoundOn = true, _csAudio = null;
+  function csTone(freq, dur, vol, type, delay) {
+    if (!csSoundOn) return;
+    try {
+      if (!_csAudio) _csAudio = new (window.AudioContext || window.webkitAudioContext)();
+      if (_csAudio.state === 'suspended') _csAudio.resume();
+      var t = _csAudio.currentTime + (delay || 0);
+      var o = _csAudio.createOscillator(), g = _csAudio.createGain();
+      o.type = type || 'sine';
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol || 0.05, t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.3));
+      o.connect(g); g.connect(_csAudio.destination);
+      o.start(t); o.stop(t + (dur || 0.3) + 0.05);
+    } catch (e) {}
+  }
+  var csSfx = {
+    pick:    function () { csTone(523.25, 0.22, 0.035, 'sine'); },
+    move:    function () { csTone(392.00, 0.30, 0.045, 'sine'); },
+    capture: function () { csTone(329.63, 0.34, 0.05, 'sine'); csTone(493.88, 0.40, 0.035, 'sine', 0.07); },
+    crown:   function () { csTone(523.25, 0.35, 0.04, 'sine'); csTone(659.25, 0.35, 0.04, 'sine', 0.09); csTone(783.99, 0.5, 0.04, 'sine', 0.18); },
+    check:   function () { csTone(880.00, 0.26, 0.045, 'triangle'); csTone(1174.66, 0.3, 0.03, 'sine', 0.08); },
+    engine:  function () { csTone(293.66, 0.28, 0.035, 'sine'); },
+    win:     function () { [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) { csTone(f, 0.5, 0.04, 'sine', i * 0.12); }); },
+    lose:    function () { [440, 392, 329.63].forEach(function (f, i) { csTone(f, 0.55, 0.04, 'sine', i * 0.15); }); }
+  };
+
+  // ── ENGINE START ──────────────────────────────────────────────────
+  // Board is 64 squares, index 0 = a8 down to 63 = h1. White is positive,
+  // black negative: 1 pawn, 2 knight, 3 bishop, 4 rook, 5 queen, 6 king.
+  var csBoard = null, csWhite = true, csSel = null, csBusy = false, csOver = false;
+  var csHist = [], csTaken = [], csFlip = false;
+
+  var csOnB = function (r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; };
+  var csMine = function (v, white) { return white ? v > 0 : v < 0; };
+  var csFoe = function (v, white) { return white ? v < 0 : v > 0; };
+
+  function csNewBoard() {
+    var back = [4, 2, 3, 5, 6, 3, 2, 4], b = new Array(64).fill(0);
+    for (var c = 0; c < 8; c++) {
+      b[c] = -back[c];          // black on rank 8
+      b[8 + c] = -1;            // black pawns
+      b[48 + c] = 1;            // white pawns
+      b[56 + c] = back[c];      // white on rank 1
+    }
+    return b;
+  }
+
+  // Sliding directions per piece.
+  var CS_DIR = {
+    2: [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]],   // knight
+    3: [[-1,-1],[-1,1],[1,-1],[1,1]],                                // bishop
+    4: [[-1,0],[1,0],[0,-1],[0,1]],                                  // rook
+    5: [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]],      // queen
+    6: [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]]       // king
+  };
+
+  function csApply(b, mv) {
+    var nb = b.slice();
+    var v = nb[mv.from];
+    nb[mv.from] = 0;
+    // A pawn that reaches the far rank is promoted. Without this it would
+    // sit on the last rank with nowhere legal to go.
+    var row = (mv.to / 8) | 0;
+    if (v === 1 && row === 0) v = 5;
+    if (v === -1 && row === 7) v = -5;
+    nb[mv.to] = v;
+    return nb;
+  }
+
+  // Every move the side to move could make, ignoring whether it leaves
+  // its own king attacked. csMoves filters those out.
+  function csRaw(b, white) {
+    var out = [];
+    for (var i = 0; i < 64; i++) {
+      var v = b[i];
+      if (!v || !csMine(v, white)) continue;
+      var p = Math.abs(v), r = (i / 8) | 0, c = i % 8;
+      if (p === 1) {
+        var fwd = white ? -1 : 1, start = white ? 6 : 1;
+        var one = r + fwd;
+        if (csOnB(one, c) && b[one * 8 + c] === 0) {
+          out.push({ from: i, to: one * 8 + c, cap: 0 });
+          var two = r + fwd * 2;
+          if (r === start && b[two * 8 + c] === 0) out.push({ from: i, to: two * 8 + c, cap: 0 });
+        }
+        [-1, 1].forEach(function (dc) {
+          var nc = c + dc;
+          if (!csOnB(one, nc)) return;
+          var t = b[one * 8 + nc];
+          if (t && csFoe(t, white)) out.push({ from: i, to: one * 8 + nc, cap: t });
+        });
+        continue;
+      }
+      var dirs = CS_DIR[p], slide = (p === 3 || p === 4 || p === 5);
+      for (var d = 0; d < dirs.length; d++) {
+        var nr = r + dirs[d][0], nc2 = c + dirs[d][1];
+        while (csOnB(nr, nc2)) {
+          var t2 = b[nr * 8 + nc2];
+          if (t2 === 0) out.push({ from: i, to: nr * 8 + nc2, cap: 0 });
+          else {
+            if (csFoe(t2, white)) out.push({ from: i, to: nr * 8 + nc2, cap: t2 });
+            break;
+          }
+          if (!slide) break;
+          nr += dirs[d][0]; nc2 += dirs[d][1];
+        }
+      }
+    }
+    return out;
+  }
+
+  function csKing(b, white) {
+    var want = white ? 6 : -6;
+    for (var i = 0; i < 64; i++) if (b[i] === want) return i;
+    return -1;
+  }
+  function csAttacked(b, sq, byWhite) {
+    var m = csRaw(b, byWhite);
+    for (var i = 0; i < m.length; i++) if (m[i].to === sq) return true;
+    return false;
+  }
+  function csInCheck(b, white) {
+    var k = csKing(b, white);
+    return k >= 0 && csAttacked(b, k, !white);
+  }
+  // Legal moves: anything that does not leave your own king attacked.
+  function csMoves(b, white) {
+    var raw = csRaw(b, white), out = [];
+    for (var i = 0; i < raw.length; i++) {
+      if (!csInCheck(csApply(b, raw[i]), white)) out.push(raw[i]);
+    }
+    return out;
+  }
+
+  // Material, plus a small nudge toward the centre and up the board, which
+  // is enough to stop the engine shuffling pieces aimlessly.
+  var CS_VAL = [0, 100, 320, 330, 500, 900, 20000];
+  function csEval(b) {
+    var s = 0;
+    for (var i = 0; i < 64; i++) {
+      var v = b[i];
+      if (!v) continue;
+      var p = Math.abs(v), r = (i / 8) | 0, c = i % 8;
+      var mid = 3.5;
+      var centre = (3.5 - Math.abs(c - mid)) + (3.5 - Math.abs(r - mid));
+      var bonus = p === 2 || p === 3 ? centre * 4 : p === 1 ? centre * 2 : 0;
+      if (p === 1) bonus += (v > 0 ? (6 - r) : (r - 1)) * 6;   // pawns want to advance
+      s += (v < 0 ? 1 : -1) * (CS_VAL[p] + bonus);             // positive favours black
+    }
+    return s;
+  }
+
+  function csOrder(moves) {   // captures first, so pruning has something to cut
+    return moves.slice().sort(function (a, b) { return Math.abs(b.cap) - Math.abs(a.cap); });
+  }
+
+  function csSearch(b, depth, alpha, beta, blackTurn) {
+    var moves = csMoves(b, !blackTurn);
+    if (!moves.length) {
+      if (csInCheck(b, !blackTurn)) return blackTurn ? -99999 + depth : 99999 - depth;
+      return 0;                                   // stalemate is a draw
+    }
+    if (depth === 0) return csEval(b);
+    moves = csOrder(moves);
+    var i;
+    if (blackTurn) {
+      var best = -Infinity;
+      for (i = 0; i < moves.length; i++) {
+        best = Math.max(best, csSearch(csApply(b, moves[i]), depth - 1, alpha, beta, false));
+        alpha = Math.max(alpha, best);
+        if (beta <= alpha) break;
+      }
+      return best;
+    }
+    var worst = Infinity;
+    for (i = 0; i < moves.length; i++) {
+      worst = Math.min(worst, csSearch(csApply(b, moves[i]), depth - 1, alpha, beta, true));
+      beta = Math.min(beta, worst);
+      if (beta <= alpha) break;
+    }
+    return worst;
+  }
+
+  function csBest(b, depth) {
+    var moves = csOrder(csMoves(b, false));
+    if (!moves.length) return null;
+    var best = null, bv = -Infinity;
+    for (var i = 0; i < moves.length; i++) {
+      var v = csSearch(csApply(b, moves[i]), depth - 1, -Infinity, Infinity, false);
+      if (v > bv) { bv = v; best = moves[i]; }
+    }
+    return best;
+  }
+  // ── ENGINE END ────────────────────────────────────────────────────
+
+  // ── The board, drawn as SVG ───────────────────────────────────────
+  // Each piece is a path, so it stays sharp at any panel size and costs
+  // nothing to store. No images anywhere.
+  var CS_PATH = {
+    1: 'M0,-13 a5,5 0 1,1 0.1,0 M-4,-8 h8 l2,6 h-12 z M-7,-2 h14 l2,10 h-18 z',
+    2: 'M-7,12 h14 l-1,-9 c0,-7 -3,-11 -7,-13 l-2,-4 l-2,3 c-5,2 -8,6 -8,11 l4,2 l2,-3 l3,1 c-2,3 -5,5 -5,9 z',
+    3: 'M0,-16 a2.6,2.6 0 1,1 0.1,0 M0,-13 c6,3 8,9 6,14 h-12 c-2,-5 0,-11 6,-14 z M-8,3 h16 l1,4 h-18 z M-9,8 h18 l1,5 h-20 z',
+    4: 'M-9,-12 h3.5 v4 h3.5 v-4 h4 v4 h3.5 v-4 h3.5 v7 l-2.5,3 v8 l2.5,3 h-18 l2.5,-3 v-8 l-2.5,-3 z',
+    5: 'M-11,-11 a2.3,2.3 0 1,1 0.1,0 M0,-14 a2.3,2.3 0 1,1 0.1,0 M11,-11 a2.3,2.3 0 1,1 0.1,0 M-11,-9 l3,10 h16 l3,-10 l-5,6 l-6,-9 l-6,9 z M-8,3 h16 l2,10 h-20 z',
+    6: 'M-1.6,-17 h3.2 v3.4 h3.4 v3.2 h-3.4 v3.4 h-3.2 v-3.4 h-3.4 v-3.2 h3.4 z M0,-9 c-5.4,0 -9,4 -9,9 c0,3.6 2.6,6 4.6,8 h8.8 c2,-2 4.6,-4.4 4.6,-8 c0,-5 -3.6,-9 -9,-9 z M-9,7 h18 l2,6 h-22 z'
+  };
+
+  function csEl(tag, attrs) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function csView(i) { return csFlip ? 63 - i : i; }   // which square shows where
+
+  function csDraw() {
+    var svg = $('csBoard');
+    if (!svg || !csBoard) return;
+    svg.textContent = '';
+    var S = 45;
+    var human = csMode() === 'two' ? csWhite : true;
+    var legal = (!csOver && (csMode() === 'two' || csWhite)) ? csMoves(csBoard, csWhite) : [];
+    var targets = csSel !== null ? legal.filter(function (m) { return m.from === csSel; }).map(function (m) { return m.to; }) : [];
+    var movable = legal.map(function (m) { return m.from; });
+    var checked = csInCheck(csBoard, csWhite) ? csKing(csBoard, csWhite) : -1;
+
+    for (var vi = 0; vi < 64; vi++) {
+      var i = csView(vi), r = (vi / 8) | 0, c = vi % 8;
+      var dark = (r + c) % 2 === 1;
+      svg.appendChild(csEl('rect', { x: c * S, y: r * S, width: S, height: S,
+        fill: dark ? '#5D4037' : '#D7CCC8' }));
+      if (i === checked) svg.appendChild(csEl('rect', { x: c * S, y: r * S, width: S, height: S, fill: 'rgba(229,115,115,.55)' }));
+      if (csSel === i) svg.appendChild(csEl('rect', { x: c * S, y: r * S, width: S, height: S, fill: 'rgba(255,213,79,.55)' }));
+      else if (targets.indexOf(i) >= 0) {
+        svg.appendChild(csEl('circle', { cx: c * S + S / 2, cy: r * S + S / 2,
+          r: csBoard[i] ? S * 0.44 : S * 0.14,
+          fill: csBoard[i] ? 'none' : 'rgba(129,199,132,.65)',
+          stroke: csBoard[i] ? 'rgba(129,199,132,.85)' : 'none', 'stroke-width': 3 }));
+      } else if (csSel === null && movable.indexOf(i) >= 0) {
+        svg.appendChild(csEl('rect', { x: c * S + 2, y: r * S + 2, width: S - 4, height: S - 4,
+          fill: 'none', stroke: 'rgba(255,204,128,.5)', 'stroke-width': 2 }));
+      }
+      var v = csBoard[i];
+      if (!v) continue;
+      var g = csEl('g', { transform: 'translate(' + (c * S + S / 2) + ',' + (r * S + S / 2) + ') scale(1.08)' });
+      g.appendChild(csEl('path', { d: CS_PATH[Math.abs(v)], fill: 'rgba(0,0,0,.4)', transform: 'translate(1.5,2.5)' }));
+      g.appendChild(csEl('path', { d: CS_PATH[Math.abs(v)],
+        fill: v > 0 ? '#F5EFE6' : '#2b2b2b',
+        stroke: v > 0 ? '#8d7f6c' : '#000', 'stroke-width': 1.2, 'stroke-linejoin': 'round' }));
+      svg.appendChild(g);
+    }
+    csScore();
+    csSave();
+  }
+
+  function csScore() {
+    var w = 0, b = 0;
+    for (var i = 0; i < 64; i++) {
+      var v = csBoard[i];
+      if (v > 0) w += CS_VAL[v]; else if (v < 0) b += CS_VAL[-v];
+    }
+    var el = $('csScore');
+    if (el) el.textContent = 'White ' + Math.round(w / 100) + '  ·  Black ' + Math.round(b / 100);
+    var t = $('csTaken');
+    if (t) t.textContent = csTaken.join('');
+  }
+  function csSetStatus(t) { var el = $('csStatus'); if (el) el.textContent = t; }
+  function csMode() { return $('csMode').value; }
+
+  var CS_GLYPH = { 1: '♙', 2: '♘', 3: '♗', 4: '♖', 5: '♕', 6: '♔',
+                   '-1': '♟', '-2': '♞', '-3': '♝', '-4': '♜', '-5': '♛', '-6': '♚' };
+
+  function csEnd() {
+    var side = csWhite;
+    if (csMoves(csBoard, side).length) return false;
+    csOver = true;
+    if (csInCheck(csBoard, side)) {
+      csSetStatus(side ? 'Checkmate — black wins' : 'Checkmate — white wins');
+      if (csMode() === 'ai') { if (side) csSfx.lose(); else csSfx.win(); }
+      else csSfx.win();
+    } else {
+      csSetStatus('Stalemate — nobody wins');
+      csSfx.lose();
+    }
+    return true;
+  }
+
+  function csTurnText() {
+    var who = csWhite ? 'White' : 'Black';
+    var chk = csInCheck(csBoard, csWhite) ? ' — in check' : '';
+    if (csMode() === 'two') return who + ' to move' + chk;
+    return (csWhite ? 'Your move' : 'Engine to move') + chk;
+  }
+
+  function csPlay(mv) {
+    var was = csBoard[mv.from], taken = csBoard[mv.to];
+    csHist.push({ b: csBoard.slice(), w: csWhite, t: csTaken.slice() });
+    if (csHist.length > 60) csHist.shift();
+    csBoard = csApply(csBoard, mv);
+    if (taken) csTaken.push(CS_GLYPH[String(taken)] || '');
+    if (taken) csSfx.capture(); else csSfx.move();
+    if (Math.abs(was) === 1 && Math.abs(csBoard[mv.to]) === 5) csSfx.crown();
+    csWhite = !csWhite;
+    if (csInCheck(csBoard, csWhite)) csSfx.check();
+    csSel = null;
+    csDraw();
+  }
+
+  function csEngine() {
+    if (csOver || csMode() !== 'ai') return;
+    csBusy = true;
+    csSetStatus('Engine thinking…');
+    setTimeout(function () {
+      var depth = parseInt($('csLevel').value, 10) || 3;
+      var mv = csBest(csBoard, depth);
+      csBusy = false;
+      if (!mv) { csEnd(); csDraw(); return; }
+      csPlay(mv);
+      csSfx.engine();
+      if (!csEnd()) csSetStatus(csTurnText());
+    }, 30);
+  }
+
+  function csClick(ev) {
+    if (csBusy || csOver) return;
+    if (csMode() === 'ai' && !csWhite) return;
+    var svg = $('csBoard'), r0 = svg.getBoundingClientRect();
+    var c = Math.floor((ev.clientX - r0.left) / (r0.width / 8));
+    var r = Math.floor((ev.clientY - r0.top) / (r0.height / 8));
+    if (!csOnB(r, c)) return;
+    var i = csView(r * 8 + c);
+    var legal = csMoves(csBoard, csWhite);
+    if (csSel !== null) {
+      var mv = legal.filter(function (m) { return m.from === csSel && m.to === i; })[0];
+      if (mv) {
+        csPlay(mv);
+        if (csEnd()) return;
+        csSetStatus(csTurnText());
+        if (csMode() === 'ai') csEngine();
+        return;
+      }
+    }
+    var prev = csSel;
+    csSel = legal.some(function (m) { return m.from === i; }) ? i : null;
+    if (csSel !== null && csSel !== prev) csSfx.pick();
+    csDraw();
+  }
+
+  function csNewGame() {
+    csBoard = csNewBoard();
+    csWhite = true; csSel = null; csOver = false; csBusy = false;
+    csHist = []; csTaken = [];
+    csSetStatus(csTurnText());
+    csDraw();
+  }
+
+  // ── WebStation wiring ─────────────────────────────────────────────
+  var KEY = 'ws.chess';
+  function csSave() {
+    store.set(KEY, { b: csBoard, w: csWhite, over: csOver, taken: csTaken,
+                     lvl: $('csLevel').value, mode: $('csMode').value, flip: csFlip });
+  }
+  var saved = store.get(KEY, null);
+  if (saved && saved.b && saved.b.length === 64) {
+    csBoard = saved.b; csWhite = saved.w !== false; csOver = !!saved.over;
+    csTaken = saved.taken || []; csFlip = !!saved.flip;
+    if (saved.lvl) $('csLevel').value = saved.lvl;
+    if (saved.mode) $('csMode').value = saved.mode;
+  } else csBoard = csNewBoard();
+
+  $('csBoard').addEventListener('click', csClick);
+  $('csNew').onclick = function () {
+    csNewGame();
+    Sys.toast('New game. White moves first.', { ms: 3000 });
+  };
+  $('csUndo').onclick = function () {
+    if (csBusy || !csHist.length) return;
+    // In a game against the engine one press takes back the pair, so you
+    // land back on your own move rather than its reply.
+    var steps = (csMode() === 'ai' && csHist.length > 1 && csWhite) ? 2 : 1;
+    while (steps-- && csHist.length) {
+      var h = csHist.pop();
+      csBoard = h.b; csWhite = h.w; csTaken = h.t;
+    }
+    csOver = false; csSel = null;
+    csSetStatus(csTurnText());
+    csDraw();
+  };
+  $('csFlip').onclick = function () { csFlip = !csFlip; csDraw(); };
+  $('csMode').onchange = function () {
+    csSave();
+    csSetStatus(csTurnText());
+    csDraw();
+    if (csMode() === 'ai' && !csWhite && !csOver) csEngine();
+  };
+  $('csLevel').onchange = csSave;
+  $('csSound').onclick = function () {
+    csSoundOn = !csSoundOn;
+    this.textContent = csSoundOn ? '🔊' : '🔇';
+    this.style.opacity = csSoundOn ? '1' : '.5';
+  };
+
+  // The board is sized to the panel it is in, never to the window.
+  function csFit() {
+    var body = $('csBody'), svg = $('csBoard');
+    if (!body || !svg) return;
+    var n = Math.max(180, Math.min(body.clientWidth - 16, body.clientHeight - 16));
+    if (!n || !isFinite(n)) return;
+    svg.style.width = n + 'px';
+    svg.style.height = n + 'px';
+  }
+  $('chessFace').addEventListener('faceshown', function () { csFit(); csDraw(); });
+  window.addEventListener('resize', csFit);
+  csSetStatus(csOver ? 'Game over — start a new one' : csTurnText());
+  csFit();
+  csDraw();
+  if (csMode() === 'ai' && !csWhite && !csOver) csEngine();
 })();
 
 /* ================= Wear =================
