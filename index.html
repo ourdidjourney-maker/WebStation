@@ -1432,6 +1432,14 @@
              display: flex; align-items: center; justify-content: center; overflow: hidden; }
   #ieCanvas { display: block; box-shadow: 0 2px 14px rgba(0,0,0,.45); max-width: 100%; max-height: 100%; }
   #ieCanvas.ieArmed { cursor: crosshair; }
+  /* Centre guides sit over the picture and are never drawn into it. The box is placed on
+     the canvas rather than the stage, because the canvas is letterboxed inside it. */
+  #ieGuideBox { position: absolute; pointer-events: none; }
+  #ieGuideBox i { position: absolute; display: block; }
+  #ieGuideBox .ieGV { left: 50%; top: 0; bottom: 0; width: 1px; margin-left: -.5px; }
+  #ieGuideBox .ieGH { top: 50%; left: 0; right: 0; height: 1px; margin-top: -.5px; }
+  #ieGuideBox .ieGV { background: repeating-linear-gradient(180deg, rgba(255,255,255,.95) 0 6px, rgba(0,0,0,.85) 6px 12px); }
+  #ieGuideBox .ieGH { background: repeating-linear-gradient(90deg, rgba(255,255,255,.95) 0 6px, rgba(0,0,0,.85) 6px 12px); }
   #ieStage.ieOver { outline: 2px dashed #7eaaff; outline-offset: -8px; }
   #ieDrop[hidden] { display: none !important; }
   #ieDrop { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px;
@@ -1526,6 +1534,8 @@
               border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: rgba(255,255,255,.05); }
   #netState.open { border-color: rgba(232,150,58,.6); background: rgba(232,150,58,.16); color: #ffc98a;
                    cursor: pointer; }
+  /* It is clickable sealed as well now, so it has to look it. */
+  #netState { cursor: pointer; }
   #netState.open:hover { border-color: rgba(232,150,58,.9); background: rgba(232,150,58,.3); }
   body:not(.glass) #netState { color: #333; background: #f0f1f5; border-color: #bbb; }
   body:not(.glass) #netState.open { color: #8a4a00; background: #ffe9cf; border-color: #d99a4a; }
@@ -1644,6 +1654,12 @@
     background: linear-gradient(180deg, rgba(126,170,255,.95), rgba(86,128,240,.95)); color: #071024;
   }
   #poInList li.unread .grow1 { font-weight: bold; }
+  #llReportBox { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px;
+                 line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+                 max-height: 340px; overflow: auto; padding: 10px 12px; margin: 0 0 8px;
+                 border-radius: 10px; background: rgba(0,0,0,.35);
+                 border: 1px solid rgba(255,255,255,.14); }
+  body:not(.glass) #llReportBox { background: #f6f7fa; border-color: #bbb; color: #111; }
   .poWhen { font-size: 11px; opacity: .55; }
 
   /* Chat */
@@ -2068,6 +2084,8 @@
         <span class="poHint" id="poCodeHint"></span>
       </div>
       <div class="poRow"><span class="poHint" id="llCount"></span><button id="llClear">Clear the history</button></div>
+      <div class="poRow"><button id="llReport" class="poPrimary">Full report</button><button id="llReportCopy">Copy the report</button><button id="llReportHide">Hide</button></div>
+      <pre id="llReportBox" hidden></pre>
       <ul id="poLog" class="clist"></ul>
     </div>
 
@@ -2159,6 +2177,7 @@
               <button data-tool="fill">Fill</button>
               <button data-tool="picker">Picker</button>
               <button data-tool="text">Text</button>
+              <button data-tool="lasso" title="Draw round something to cut it out, then drag it where you want it">Lasso</button>
               <span class="sep"></span>
               <label title="Color for brush, spray, lines, outlines, fill and text">Color <input type="color" id="pStroke" value="#000000"></label>
               <label title="Interior color for filled shapes">Shape fill <input type="color" id="pFill" value="#ffffff"></label>
@@ -2297,6 +2316,7 @@
     <button id="ieOpen">Open a picture</button>
     <button id="ieAddText" disabled>Add text</button>
     <button id="ieCrop" disabled>Crop</button>
+    <button id="ieGuides" disabled>Centre guides</button>
     <button id="ieRotL" disabled title="Turn left">&#8630;</button>
     <button id="ieRotR" disabled title="Turn right">&#8631;</button>
     <button id="ieFlipH" disabled>Flip across</button>
@@ -2308,6 +2328,7 @@
   <div class="body" id="ieMain">
     <div id="ieStage">
       <canvas id="ieCanvas"></canvas>
+      <div id="ieGuideBox" hidden><i class="ieGV"></i><i class="ieGH"></i></div>
       <div id="ieDrop"><button id="ieOpen2">Open a picture</button><p>Or drop one here, or paste one in.</p></div>
     </div>
     <div id="ieSide">
@@ -4139,8 +4160,15 @@ var Net = (function () {
         '\n\nClick to disconnect all of it.'
       : 'Nothing is leaving this machine.\n\nNo server, no account, no telemetry. The workspace is sealed.';
   }
-  var sealers = [];
+  var sealers = [], unsealers = [];
   function onSeal(fn) { if (typeof fn === 'function') sealers.push(fn); }
+  // Every subsystem that says how to shut down must also say how to come back, or the
+  // pill is a one-way door: sealed, with no way out but a hard reset.
+  function onUnseal(fn) { if (typeof fn === 'function') unsealers.push(fn); }
+  function unseal() {
+    unsealers.slice().forEach(function (fn) { try { fn(); } catch (e) {} });
+    paint();
+  }
   function seal() {
     sealers.slice().forEach(function (fn) { try { fn(); } catch (e) {} });
     paint();
@@ -4149,11 +4177,17 @@ var Net = (function () {
   // The pill is a control, not a label: click it while anything is reaching out and
   // every route registered above is shut, which is why each one registers its own.
   pill.addEventListener('click', function () {
-    if (!anyLive()) return;
-    seal();
-    if (typeof Sys !== 'undefined' && Sys.toast) {
-      Sys.toast(anyLive() ? 'Some of it would not close. Open the pill to see what is left.'
-                          : 'Disconnected. Nothing is leaving this machine.', { ms: 3500 });
+    if (anyLive()) {
+      seal();
+      if (typeof Sys !== 'undefined' && Sys.toast) {
+        Sys.toast(anyLive() ? 'Some of it would not close. Open the pill to see what is left.'
+                            : 'Disconnected. Nothing is leaving this machine.', { ms: 3500 });
+      }
+    } else {
+      unseal();
+      if (typeof Sys !== 'undefined' && Sys.toast) {
+        Sys.toast('Back online. The news ticker, the page you had open and the live link are\ncoming back.', { ms: 4000 });
+      }
     }
   });
   pill.addEventListener('keydown', function (e) {
@@ -4161,6 +4195,7 @@ var Net = (function () {
   });
   paint();
   return { ask: ask, open: open, close: close, only: only, seal: seal, onSeal: onSeal,
+           unseal: unseal, onUnseal: onUnseal,
            anyLive: anyLive, isQuiet: function () { return quiet; } };
 })();
 
@@ -4243,7 +4278,9 @@ var Layout = (function () {
   function dialog() {
     var body = document.querySelector('#lyTable tbody');
     body.innerHTML = '';
-    APPS.forEach(function (a) {
+    // A to Z for the reader. A copy is sorted, never APPS itself: the declared order
+    // groups the apps by the panel they start in, and that is worth keeping in the file.
+    APPS.slice().sort(function (x, y) { return x[1].localeCompare(y[1]); }).forEach(function (a) {
       var f = faceEl(a[0]);
       if (!f) return;
       var now = saved[a[0]] || HOME[a[0]];
@@ -4829,7 +4866,10 @@ var Sys = (function () {
   }
 
   $('bClose').onclick = closePage;
-  Net.onSeal(closePage);                  // sealing the workspace closes the page too
+  // Sealing closes the page; unsealing puts the same page back, so the pill is reversible.
+  var sealedUrl = null;
+  Net.onSeal(function () { sealedUrl = frame.getAttribute('src') || null; closePage(); });
+  Net.onUnseal(function () { if (sealedUrl) { show(sealedUrl); sealedUrl = null; } });
   $('bGo').onclick = go;
   url.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
   back.onclick = function () { if (idx > 0) { idx--; show(hist[idx]); } };
@@ -4889,6 +4929,10 @@ var Sys = (function () {
   $('pUndo').onclick = function () { commitText(); restore(undo, redo); };
   $('pRedo').onclick = function () { commitText(); restore(redo, undo); };
   panel.addEventListener('keydown', function (e) {
+    if (e.target !== txt && piece) {
+      if (e.key === 'Enter') { stampPiece(); e.preventDefault(); return; }
+      if (e.key === 'Escape') { piece.x = piece.ox; piece.y = piece.oy; stampPiece(); e.preventDefault(); return; }
+    }
     if (e.target === txt || !(e.ctrlKey || e.metaKey) || e.altKey) return;
     var k = e.key.toLowerCase();
     if (k === 'z' && !e.shiftKey) { restore(undo, redo); e.preventDefault(); }
@@ -5012,6 +5056,68 @@ var Sys = (function () {
   });
   txt.addEventListener('blur', commitText);
 
+  /* --- Lasso: cut a shape out and move it --------------------------------
+     Draw round something and it is lifted off the picture onto the overlay, leaving white
+     behind. While it is lifted you can drag it anywhere. It is put down when you click away
+     from it, pick another tool, or press Enter; Escape puts it back where it came from. */
+  var lassoPts = null, piece = null, grabDX = 0, grabDY = 0, movingPiece = false;
+
+  function lassoPath(ctx, pts, dx, dy) {
+    ctx.beginPath();
+    pts.forEach(function (q, i) {
+      var x = q.x + (dx || 0), y = q.y + (dy || 0);
+      if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+    });
+    ctx.closePath();
+  }
+  // Two dashed strokes, offset from each other, so the outline shows on any colour.
+  function ants(pts, dx, dy) {
+    octx.save();
+    octx.lineWidth = 1; octx.setLineDash([5, 5]);
+    octx.strokeStyle = '#000'; octx.lineDashOffset = 0;
+    lassoPath(octx, pts, dx, dy); octx.stroke();
+    octx.strokeStyle = '#fff'; octx.lineDashOffset = 5;
+    lassoPath(octx, pts, dx, dy); octx.stroke();
+    octx.restore();
+  }
+  function showPiece() {
+    octx.clearRect(0, 0, ov.width, ov.height);
+    if (!piece) return;
+    octx.drawImage(piece.cv, piece.x, piece.y);
+    ants(piece.pts, piece.x - piece.ox, piece.y - piece.oy);
+  }
+  function liftPiece(pts) {
+    var xs = pts.map(function (q) { return q.x; }), ys = pts.map(function (q) { return q.y; });
+    var x0 = Math.max(0, Math.floor(Math.min.apply(null, xs)));
+    var y0 = Math.max(0, Math.floor(Math.min.apply(null, ys)));
+    var x1 = Math.min(base.width, Math.ceil(Math.max.apply(null, xs)));
+    var y1 = Math.min(base.height, Math.ceil(Math.max.apply(null, ys)));
+    var w = x1 - x0, h = y1 - y0;
+    if (w < 3 || h < 3) return null;                 // a stray click is not a selection
+    var cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    var c = cv.getContext('2d');
+    c.save(); lassoPath(c, pts, -x0, -y0); c.clip();
+    c.drawImage(base, -x0, -y0);
+    c.restore();
+    snap();                                          // cutting it out is undoable
+    bctx.save(); lassoPath(bctx, pts, 0, 0);
+    bctx.fillStyle = '#ffffff'; bctx.fill();
+    bctx.restore();
+    return { cv: cv, x: x0, y: y0, ox: x0, oy: y0, w: w, h: h, pts: pts };
+  }
+  function stampPiece() {
+    if (!piece) return;
+    snap();
+    bctx.drawImage(piece.cv, piece.x, piece.y);
+    piece = null;
+    octx.clearRect(0, 0, ov.width, ov.height);
+  }
+  function inPiece(p) {
+    return piece && p.x >= piece.x && p.x <= piece.x + piece.w &&
+                    p.y >= piece.y && p.y <= piece.y + piece.h;
+  }
+
   /* --- Pointer handling --- */
   ov.addEventListener('pointerdown', function (e) {
     if (e.button !== 0) return;
@@ -5020,6 +5126,18 @@ var Sys = (function () {
     panel.focus({ preventScroll: true });
     if (tool === 'picker') { pick(p); return; }
     if (tool === 'fill') { snap(); flood(p); return; }
+    if (tool === 'lasso') {
+      e.preventDefault();
+      ov.setPointerCapture(e.pointerId);
+      ov.style.opacity = 1;
+      if (inPiece(p)) {                      // grab what is already cut out and move it
+        movingPiece = true; grabDX = p.x - piece.x; grabDY = p.y - piece.y;
+        return;
+      }
+      stampPiece();                          // clicking away puts the last one down
+      lassoPts = [p];
+      return;
+    }
     e.preventDefault();
     drawing = true; start = last = p;
     ov.setPointerCapture(e.pointerId);
@@ -5036,6 +5154,16 @@ var Sys = (function () {
   });
 
   ov.addEventListener('pointermove', function (e) {
+    if (tool === 'lasso') {
+      var q = pos(e);
+      if (movingPiece && piece) { piece.x = q.x - grabDX; piece.y = q.y - grabDY; showPiece(); }
+      else if (lassoPts) {
+        lassoPts.push(q);
+        octx.clearRect(0, 0, ov.width, ov.height);
+        ants(lassoPts, 0, 0);
+      }
+      return;
+    }
     if (!drawing) return;
     var p = pos(e);
     if (tool === 'brush' || tool === 'eraser') {
@@ -5050,6 +5178,15 @@ var Sys = (function () {
   });
 
   function endStroke() {
+    if (tool === 'lasso') {
+      if (movingPiece) { movingPiece = false; return; }
+      if (!lassoPts) return;
+      var pts = lassoPts; lassoPts = null;
+      if (pts.length < 3) { octx.clearRect(0, 0, ov.width, ov.height); return; }
+      piece = liftPiece(pts);
+      showPiece();
+      return;
+    }
     if (!drawing) return;
     drawing = false;
     clearInterval(sprayTimer); sprayTimer = null;
@@ -5064,6 +5201,7 @@ var Sys = (function () {
   toolBtns.forEach(function (b) {
     b.onclick = function () {
       commitText();
+      stampPiece();                 // a lifted piece is put down before leaving the lasso
       tool = b.dataset.tool;
       toolBtns.forEach(function (x) { x.classList.toggle('on', x === b); });
       ov.style.cursor = tool === 'text' ? 'text' : 'crosshair';
@@ -7984,6 +8122,7 @@ var Sys = (function () {
   setTicker(tickerOn);
   booting = false;
   Net.onSeal(function () { if (tickerOn) setTicker(false); });
+  Net.onUnseal(function () { if (!tickerOn) setTicker(true); });
   save();
   renderRows();
 })();
@@ -9715,9 +9854,10 @@ var Garden = (function () {
       li.appendChild(btn('Stop', function () { x.stop(); render(); }));
       runEl.appendChild(li);
     });
-    // Apps
+    // Apps, A to Z. A copy is sorted so the declared order, which groups them by panel,
+    // stays intact in the file.
     body.innerHTML = '';
-    APPS.forEach(function (a) {
+    APPS.slice().sort(function (x, y) { return x.name.localeCompare(y.name); }).forEach(function (a) {
       var open = Panels.isOpen(a.panel), tr = document.createElement('tr');
       var status = !open ? 'Panel closed' : frontOf(a.panel) === a.k ? 'On screen' : 'In background';
       var stored = a.note ? a.note : a.key ? bytes(kvSize(a.key)) : a.file ? bytes(fileSizes[a.file] || 0) : 'Not saved';
@@ -12284,7 +12424,7 @@ var imageEditorAPI = {};
       URL.revokeObjectURL(url);
       resetAll();
       $("ieDrop").hidden = true;
-      ["ieAddText", "ieCrop", "ieRotL", "ieRotR", "ieFlipH", "ieFlipV", "ieReset", "ieExport", "ieClear"]
+      ["ieAddText", "ieCrop", "ieGuides", "ieRotL", "ieRotR", "ieFlipH", "ieFlipV", "ieReset", "ieExport", "ieClear"]
         .forEach(function (id) { $(id).disabled = false; });
     };
     img.onerror = function () { URL.revokeObjectURL(url); Sys.toast("That file could not be opened as a picture.", { ms: 3500 }); };
@@ -12318,7 +12458,7 @@ var imageEditorAPI = {};
     $("ieCropBar").hidden = true;
     $("ieDrop").hidden = false;
     listTexts();
-    ["ieAddText", "ieCrop", "ieRotL", "ieRotR", "ieFlipH", "ieFlipV", "ieReset", "ieExport", "ieClear"]
+    ["ieAddText", "ieCrop", "ieGuides", "ieRotL", "ieRotR", "ieFlipH", "ieFlipV", "ieReset", "ieExport", "ieClear"]
       .forEach(function (id) { $(id).disabled = true; });
     Sys.toast("Cleared. Nothing is loaded.", { ms: 2200 });
   };
@@ -12350,6 +12490,26 @@ var imageEditorAPI = {};
     buildOriented();
     render();
   }
+  /* Centre guides. An overlay on the canvas, never drawn into the picture, so nothing about
+     them is saved or exported. The box is matched to the canvas and not the stage, because
+     the canvas is letterboxed inside it. */
+  function placeGuides() {
+    var box = $("ieGuideBox");
+    if (!box || box.hidden) return;
+    box.style.left = canvas.offsetLeft + "px";
+    box.style.top = canvas.offsetTop + "px";
+    box.style.width = canvas.offsetWidth + "px";
+    box.style.height = canvas.offsetHeight + "px";
+  }
+  $("ieGuides").onclick = function () {
+    var box = $("ieGuideBox");
+    box.hidden = !box.hidden;
+    $("ieGuides").classList.toggle("on", !box.hidden);
+    placeGuides();
+  };
+  if (window.ResizeObserver) new ResizeObserver(placeGuides).observe(canvas);
+  addEventListener("resize", placeGuides);
+
   $("ieRotL").onclick = function () { turn(-90); };
   $("ieRotR").onclick = function () { turn(90); };
   $("ieFlipH").onclick = function () { flattenCrop(); st.flipH = !st.flipH; st.crop = null; buildOriented(); render(); };
@@ -13690,6 +13850,17 @@ var soundEditorAPI = {};
     Sys.toast('Link history cleared.', { ms: 4000, actions: [{ label: 'Undo', fn: function () { st.link = old; save(); drawLog(); meter(); } }] });
   };
 
+  // Every line in the connection log can carry the state that produced it, so a problem
+  // is read off the record instead of reconstructed afterwards.
+  function linkFacts() {
+    return 'channel ' + (chan ? chan.readyState : 'none') +
+           ' · connection ' + (pc ? pc.connectionState : 'none') +
+           ' · ice ' + (pc ? pc.iceConnectionState : '-') +
+           ' · rooms ' + Object.keys(peers).length +
+           ' · open channels ' + allChannels().length +
+           ' · queued ' + (chan ? chan.bufferedAmount : 0) + ' B';
+  }
+  function logWhy(t) { logLine(t + '  [' + linkFacts() + ']'); }
   function logLine(t) {
     st.link.hist.push({ dir: 'note', kind: 'Link', label: t, at: Date.now(), n: 0 });
     save(); drawLog(); meter();
@@ -13721,6 +13892,8 @@ var soundEditorAPI = {};
   // Sealing the workspace has to close these too, or the chip would promise something
   // that is not true. Hang up closes the link in hand; this closes everything.
   function dropAll() {
+    logWhy('Sealing: closing every link.');
+    var hadRooms = Object.keys(peers).length;
     if (chan) { try { chan.close(); } catch (e) {} }
     if (pc) { try { pc.close(); } catch (e) {} }
     pc = null; chan = null;
@@ -13730,12 +13903,25 @@ var soundEditorAPI = {};
       try { if (q && q.pc) q.pc.close(); } catch (e) {}
       delete peers[k];
     });
+    // direct{} is a gate: 'already linked to them' is read from it before a reconnection
+    // is set up. Left holding dead channels, the other machine sits on Connecting for
+    // ever, which is why only a hard reset brought the link back.
+    var stale = Object.keys(direct).length;
+    Object.keys(direct).forEach(function (k) { delete direct[k]; });
     setState('');
     lamp('off', 'Closed');
-    logLine('Everything was disconnected.');
+    logLine('Everything was disconnected. Closed ' + hadRooms + ' room(s) and cleared ' +
+            stale + ' remembered channel(s).');
     netRoute();
   }
   Net.onSeal(dropAll);
+  // Lifting the seal puts the link back without a reset.
+  Net.onUnseal(function () {
+    Object.keys(direct).forEach(function (k) { delete direct[k]; });
+    logWhy('The seal was lifted. Bringing the link back.');
+    logLine('The link cannot reopen itself: a connect code only works once. Press Connect ' +
+            'on the Live link tab and send them the fresh code.');
+  });
   var keptN = 0;
   function newPeer() {
     if (chan && chan.readyState === 'open') {
@@ -13775,7 +13961,7 @@ var soundEditorAPI = {};
       lamp(pc.connectionState === 'connected' ? 'on' :
            pc.connectionState === 'connecting' ? 'busy' : 'off',
            pc.connectionState.charAt(0).toUpperCase() + pc.connectionState.slice(1));
-      logLine('Link ' + pc.connectionState);
+      logWhy('Link ' + pc.connectionState);
       if (pc.connectionState === 'connected') drain();
     };
     return pc;
@@ -13783,14 +13969,17 @@ var soundEditorAPI = {};
   function wire(c) {
     chan = c;
     c.onopen = function () {
-      setState('Link: open', true); lamp('on', 'Open'); logLine('The link is open.'); netRoute(); drain();
+      setState('Link: open', true); lamp('on', 'Open'); netRoute();
+      logWhy('The link is open.');
+      drain();
       try { c.send('WSID1|' + myId); } catch (e) {}
       setTimeout(introduce, 700);
       roomCount();
       Sys.link.onState.forEach(function (f) { f(true); });
     };
     c.onclose = function () {
-      setState('Link: closed'); lamp('off', 'Closed'); logLine('The link closed.'); netRoute();
+      setState('Link: closed'); lamp('off', 'Closed'); netRoute();
+      logWhy('The link closed.');
       Sys.link.onState.forEach(function (f) { f(false); });
     };
     c.onmessage = function (e) { route(String(e.data || ''), c); };
@@ -13850,19 +14039,157 @@ var soundEditorAPI = {};
   }
   // What we learned about reaching someone, kept per contact so the next
   // connection is one button rather than a procedure.
+  // Codes saved by earlier versions are dead weight: drop them on the way in so no path
+  // can replay one.
+  (function () {
+    var had = 0;
+    (st.who || []).forEach(function (w) { if (w.code) { delete w.code; had++; } });
+    if (had) save();
+  })();
   function remembered(addr) {
     var w = st.who.filter(function (x) { return x.addr === addr; })[0];
     return w && w.code;
   }
-  function remember(addr, code) {
-    if (!addr || !code) return;
+  /* A connect code is not a key and it is not an address. It is one single attempt: the
+     ports that attempt opened, the passwords that attempt agreed, and a fingerprint tied
+     to that one connection. The other machine throws all of it away the moment the
+     attempt finishes. Keeping one and using it again can only ever fail, and it fails
+     silently by sitting on Connecting for ever. So nothing keeps one. What is worth
+     remembering about a contact is that we reached them, and when. */
+  function remember(addr) {
+    if (!addr) return;
     var w = st.who.filter(function (x) { return x.addr === addr; })[0];
     if (!w) return;
-    w.code = code;
+    delete w.code;
     w.lastSeen = Date.now();
     save();
     render();
   }
+
+  /* ---- The full report -------------------------------------------------------
+     Who, what, where, when, why, in words anyone can read. Every answer is taken
+     from the live objects or from something that was written down as it happened,
+     never worked out after the fact. */
+  var attempt = null;          // what the current connection attempt is doing
+  function markAttempt(how, detail) {
+    attempt = { how: how, at: Date.now(), detail: detail || '' };
+  }
+  function ago(ms) {
+    if (ms == null) return 'never';
+    var s = Math.round((Date.now() - ms) / 1000);
+    if (s < 60) return s + ' second' + (s === 1 ? '' : 's') + ' ago';
+    var m = Math.round(s / 60);
+    if (m < 60) return m + ' minute' + (m === 1 ? '' : 's') + ' ago';
+    var h = Math.round(m / 60);
+    if (h < 48) return h + ' hour' + (h === 1 ? '' : 's') + ' ago';
+    return Math.round(h / 24) + ' days ago';
+  }
+  function clock(ms) {
+    var d = new Date(ms), z = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) +
+           ' ' + z(d.getHours()) + ':' + z(d.getMinutes()) + ':' + z(d.getSeconds());
+  }
+  function plainState(v) {
+    return ({ 'new': 'not started', connecting: 'still trying', connected: 'connected',
+              disconnected: 'dropped out', failed: 'gave up', closed: 'closed',
+              checking: 'still trying', completed: 'connected', open: 'open' })[v] || v || 'nothing yet';
+  }
+  function report() {
+    var L = [], now = Date.now();
+    var addr = $('poPeer').value;
+    var them = st.who.filter(function (w) { return w.addr === addr; })[0];
+    L.push('WEBSTATION LINK REPORT');
+    L.push('Taken ' + clock(now));
+    L.push('');
+
+    L.push('WHO');
+    var mine = address();
+    L.push('  You are            ' + (mine ? mine.slice(0, 38) + '…' : 'no address made yet'));
+    L.push('  Trying to reach    ' + (them ? them.name + '  ' + them.addr : (addr || 'nobody chosen')));
+    if (them) {
+      L.push('  Saved connect code ' + (them.code ? 'yes, stored ' + clock(them.lastSeen || 0) +
+             ' (' + ago(them.lastSeen) + ')' : 'none'));
+    }
+    L.push('  Contacts known     ' + st.who.length);
+    L.push('');
+
+    L.push('WHAT IS HAPPENING RIGHT NOW');
+    L.push('  Connection         ' + plainState(pc && pc.connectionState) +
+           (pc ? '  (' + pc.connectionState + ')' : ''));
+    L.push('  Finding a route    ' + plainState(pc && pc.iceConnectionState) +
+           (pc ? '  (' + pc.iceConnectionState + ')' : ''));
+    L.push('  Handshake stage    ' + (pc ? pc.signalingState : 'not started'));
+    L.push('  Data channel       ' + (chan ? chan.readyState : 'none'));
+    L.push('  Channels open      ' + allChannels().length);
+    L.push('  Rooms held         ' + Object.keys(peers).length);
+    L.push('  Waiting to be sent ' + (chan ? chan.bufferedAmount : 0) + ' bytes');
+    L.push('');
+
+    L.push('WHERE IT IS GOING');
+    L.push('  Route              ' + (Object.keys(peers).length || chan ? 'direct, machine to machine' : 'no route yet'));
+    L.push('  Through            nobody — there is no server in the middle');
+    L.push('  Ways found in      ' + ($('llCand') ? $('llCand').textContent : '—'));
+    L.push('     host  = your own network.  srflx = seen from outside.  relay = through a relay.');
+    L.push('     With 0 of all three, this machine never worked out how to be reached.');
+    L.push('');
+
+    L.push('WHEN');
+    L.push('  This attempt       ' + (attempt ? clock(attempt.at) + ' (' + ago(attempt.at) + ')' : 'none started'));
+    L.push('  Started by         ' + (attempt ? attempt.how : '—'));
+    if (attempt && attempt.detail) L.push('  Detail             ' + attempt.detail);
+    L.push('  Link last carried  ' + (st.link && st.link.since ? clock(st.link.since) + ' (' + ago(st.link.since) + ')' : 'not this session'));
+    L.push('  Sent / received    ' + (st.link ? st.link.sent + ' / ' + st.link.recv : '0 / 0') + ' messages');
+    L.push('');
+
+    L.push('WHY IT MIGHT NOT BE WORKING');
+    var said = 0;
+    if (them && them.code && attempt && /saved code/i.test(attempt.how)) {
+      said++;
+      L.push('  * This attempt used the code saved for ' + them.name + ' on ' + clock(them.lastSeen || 0) + '.');
+      L.push('    A connect code can only be used once. It carries the ports and passwords of');
+      L.push('    one single attempt, and the other machine closed those the moment it finished.');
+      L.push('    A saved code will never connect. Both of you need to swap a fresh one.');
+    }
+    if (pc && pc.iceConnectionState === 'failed') {
+      said++;
+      L.push('  * No route was found between the two machines. Each one knows how to be reached');
+      L.push('    on its own network, but neither could find a way through to the other.');
+    }
+    if (!pc) { said++; L.push('  * Nothing has been started yet on this machine. Press Connect.'); }
+    else if (pc.connectionState === 'connecting' && (now - (attempt ? attempt.at : now)) > 30000) {
+      said++;
+      L.push('  * It has been trying for ' + Math.round((now - attempt.at) / 1000) + ' seconds.');
+      L.push('    It has stopped getting anywhere. The code used was almost certainly stale.');
+    }
+    if (chan && chan.readyState !== 'open') {
+      said++; L.push('  * The channel exists but is ' + chan.readyState + ', so nothing can pass through it.');
+    }
+    if (!said) {
+      L.push(allChannels().length ? '  Nothing is wrong. The link is up and able to carry messages.'
+                                  : '  Nothing has gone wrong that this machine can see.');
+    }
+    L.push('');
+
+    L.push('WHAT HAPPENED, OLDEST FIRST');
+    var h = (st.link && st.link.hist ? st.link.hist : []).slice(-40);
+    if (!h.length) L.push('  Nothing recorded yet.');
+    h.forEach(function (e) {
+      L.push('  ' + clock(e.at) + '  ' + (e.label || e.kind || ''));
+    });
+    return L.join('\n');
+  }
+  $('llReport').onclick = function () {
+    var box = $('llReportBox');
+    box.textContent = report();
+    box.hidden = false;
+  };
+  $('llReportHide').onclick = function () { $('llReportBox').hidden = true; };
+  $('llReportCopy').onclick = function () {
+    var ta = document.createElement('textarea');
+    ta.value = report(); document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+    Sys.toast('Report copied. Paste it wherever it is needed.', { ms: 2600 });
+  };
   function pack(sdp) { return btoa(JSON.stringify(sdp)); }
   function unpackSdp(code) { return JSON.parse(atob(String(code).replace(/\s+/g, ''))); }
 
@@ -13891,22 +14218,20 @@ var soundEditorAPI = {};
 
   $('poGo').onclick = function () {
     var addr = $('poPeer').value;
-    var saved = addr && remembered(addr);
     $('poCodeRow').hidden = false; $('poCodeBtns').hidden = false;
-    if (saved) {
-      // we have done this before: reuse what we learned and skip the dance
-      $('poCode').value = saved;
-      logLine('Using the code saved for ' + who(addr) + '.');
-      $('poCodeUse').click();
-      return;
-    }
-    if ($('poCode').value.trim()) { $('poCodeUse').click(); return; }   // they went first
+    if ($('poCode').value.trim()) {
+      markAttempt('Connect, with their code already pasted in');
+      $('poCodeUse').click(); return;
+    }   // they went first
+    markAttempt('Connect, making a fresh code to send them');
+    logLine('Making a fresh code for ' + who(addr) + '.');
     makeOffer();
   };
   $('poCodeUse').onclick = function () {
     var code;
     try { code = unpackSdp($('poCode').value); } catch (e) { Sys.toast('That code could not be read.', { ms: 3500 }); return; }
     if (code.type === 'offer') {
+      if (!attempt) markAttempt('Their code was pasted in, answering it');
       newPeer();
       pc.ondatachannel = function (e) { wire(e.channel); };
       pc.setRemoteDescription(code).then(function () { return pc.createAnswer(); })
@@ -13928,7 +14253,7 @@ var soundEditorAPI = {};
       pc.setRemoteDescription(code).then(function () {
         logLine('Answer accepted. Connecting.');
         step('Connecting');
-        remember($('poPeer').value, $('poCode').value);
+        remember($('poPeer').value);
       });
     }
   };
@@ -13980,15 +14305,30 @@ var soundEditorAPI = {};
     }
   };
   function drain() {
-    if (!chan || chan.readyState !== 'open') return;
+    var holding = st.outbox.filter(function (m) { return !m.delivered; }).length;
+    if (!chan || chan.readyState !== 'open') {
+      if (holding) logWhy('Nothing sent: ' + holding + ' message(s) held, the channel is not open.');
+      return;
+    }
     var waiting = st.outbox.filter(function (m) { return !m.delivered && m.blob; });
+    if (holding !== waiting.length) {
+      logWhy('Skipped ' + (holding - waiting.length) + ' message(s): nothing sealed to send.');
+    }
+    var gone = 0;
     waiting.forEach(function (m) {
       try {
-        chan.send(m.blob); m.delivered = Date.now();
+        chan.send(m.blob); m.delivered = Date.now(); gone++;
         record('sent', 'Message', (m.s || '(no subject)') + ' → ' + who(m.to), m.blob);
-      } catch (e) {}
+      } catch (e) {
+        // This was an empty catch. A refusal here vanished with nothing written down
+        // anywhere, which is how a message sits in the Outbox for months unexplained.
+        m.failed = { at: Date.now(), why: String((e && e.message) || e) };
+        logWhy('The link refused "' + (m.s || '(no subject)') + '" (' + blen(m.blob) +
+               ' B): ' + m.failed.why);
+      }
     });
-    if (waiting.length) { save(); render(); logLine('Sent ' + waiting.length + ' waiting message(s).'); }
+    if (waiting.length) { save(); render(); }
+    if (gone) logWhy('Sent ' + gone + ' waiting message(s).');
   }
   $('poSend').onclick = function () {
     var m = compose();
@@ -14008,14 +14348,9 @@ var soundEditorAPI = {};
     render(); drawLog(); meter(); lamp('off', 'Closed');
     // Anyone we have linked to before gets a quiet attempt at reconnecting, so
     // that when both machines are open the link is simply there.
-    setTimeout(function () {
-      var known = st.who.filter(function (w) { return w.code; })[0];
-      if (!known || (chan && chan.readyState === 'open')) return;
-      logLine('Trying the link saved for ' + known.name + '.');
-      $('poPeer').value = known.addr;
-      $('poCode').value = known.code;
-      $('poCodeUse').click();
-    }, 2500);
+    // A link cannot be reopened on its own. Reaching someone needs a fresh code from
+    // this machine and a fresh answer from theirs, and neither exists until a person
+    // starts it. Pretending otherwise is what left people watching Connecting for ever.
   });
   show('write');
 })();
